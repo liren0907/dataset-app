@@ -12,4 +12,4 @@ vite.config.ts.timestamp-*
 # Other
 docs/dev/
 deprecated/
-stored/
+stored/src-tauri/tests/resources/
