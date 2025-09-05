@@ -1,0 +1,77 @@
+{
+    "source_directory": "data/vessel_labelme_v4",
+    "labelme_action": "export_yolo",
+    "labelme_extraction": {
+        "output_directory": "output",
+        "shape": "bounding_box",
+        "scale_factor": 1,
+        "label": "person"
+    },
+    "change_label_name": {
+        "output_directory": "output",
+        "old_label": "ladder",
+        "new_label": "ladder1"
+    },
+    "extract": {
+        "output_directory": "output",
+        "labels": [
+            "working_platform",
+            "bucket",
+            "opening",
+            "liftcar_scissor",
+            "liftcar",
+            "spark",
+            "step_ladder",
+            "manhole",
+            "rubber_pipe",
+            "electric_box",
+            "platform",
+            "extension_ladder",
+            "insulation_blanket",
+            "crane",
+            "transformer_box",
+            "pole",
+            "electric_tower",
+            "manhole_cover",
+            "versalift",
+            "excavator",
+            "scaffolding_ng",
+            "tripod",
+            "scaffolding_ok"
+        ]
+    },
+    "clear_image_data": {
+        "output_directory": "output"
+    },
+    "visualization": {
+        "output_directory": "output",
+        "annotation_type": "bounding_box"
+    },
+    "export_yolo": {
+        "output_directory": "vessel_bbox_yolo",
+        "train_ratio": 0.9,
+        "val_ratio": 0.1,
+        "test_ratio": 0,
+        "shape": "bounding_box",
+        "specific_labels": true,
+        "class_names": ["vessel"]
+    },
+    "convert_labelme": {
+        "version": "4.5.7",
+        "output_directory": "labelme_output",
+        "class_label_file": "class_label.yaml"
+    },
+    "base_yolo_export": {
+        "json_dir": "dataset_bounding_box",
+        "val_size": 0.2,
+        "test_size": 0.1,
+        "output_format": "yolov5",
+        "seed": 42,
+        "include_background": false,
+        "label_list": [
+            "crane",
+            "liftcar",
+            "opening"
+        ]
+    }
+}
