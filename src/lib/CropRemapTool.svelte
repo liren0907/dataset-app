@@ -75,24 +75,25 @@
 
 </script>
 
-<Accordion class="mb-6 border border-gray-200 rounded-lg" bind:open={cropToolOpen} on:change={() => dispatch('update:cropToolOpen', cropToolOpen)}>
+<Accordion class="mb-6 border border-slate-200/60 rounded-xl bg-white/70 backdrop-blur shadow-sm" bind:open={cropToolOpen} on:change={() => dispatch('update:cropToolOpen', cropToolOpen)}>
     <AccordionItem>
-        <span slot="header" class="text-lg font-medium text-gray-700">Crop & Remap Tool</span>
-        <div class="p-4 bg-gray-50 space-y-4">
+        <span slot="header" class="text-lg font-medium text-slate-800">Crop & Remap Tool</span>
+        <div class="p-4 bg-slate-50 space-y-4">
             <!-- Source Directory -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Crop Source Directory</label>
+                <label class="block text-sm font-medium text-slate-700 mb-1" for="cropSourceDirInput">Crop Source Directory</label>
                 <div class="flex items-center gap-2">
                     <input
                         type="text"
+                        id="cropSourceDirInput"
                         readonly
                         placeholder="Select source directory for cropping..."
                         value={internalCropSourceDir || ''}
-                        class="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 text-sm truncate"
+                        class="flex-1 px-3 py-2 border border-slate-300 rounded-md bg-slate-100 text-slate-600 text-sm truncate"
                     />
                     <button
                         on:click={() => selectDirectoryLocal('source')}
-                        class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md border border-gray-300 text-sm"
+                        class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md border border-slate-300 text-sm"
                     >
                         Browse...
                     </button>
@@ -101,36 +102,37 @@
 
             <!-- Output Directory -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Crop Output Directory</label>
+                <label class="block text-sm font-medium text-slate-700 mb-1" for="cropOutputDirInput">Crop Output Directory</label>
                 <div class="flex items-center gap-2">
                     <input
                         type="text"
+                        id="cropOutputDirInput"
                         readonly
                         placeholder="Select output directory for cropped results..."
                         value={internalCropOutputDir || ''}
-                        class="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 text-sm truncate"
+                        class="flex-1 px-3 py-2 border border-slate-300 rounded-md bg-slate-100 text-slate-600 text-sm truncate"
                     />
                     <button
                         on:click={() => selectDirectoryLocal('output')}
-                        class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md border border-gray-300 text-sm"
+                        class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md border border-slate-300 text-sm"
                     >
                         Browse...
                     </button>
                 </div>
-                <p class="text-xs text-gray-500 mt-1">Results will be loaded into the viewer automatically from this directory after processing.</p>
+                <p class="text-xs text-slate-500 mt-1">Results will be loaded into the viewer automatically from this directory after processing.</p>
             </div>
 
             <!-- Parent Label Input -->
             <div>
-                <label for="parentLabelInputTool" class="block text-sm font-medium text-gray-700 mb-1">Parent Label</label>
+                <label for="parentLabelInputTool" class="block text-sm font-medium text-slate-700 mb-1">Parent Label</label>
                 <input
                     type="text"
                     id="parentLabelInputTool"
                     bind:value={internalParentLabel} 
                     placeholder="e.g., person, car"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                    class="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                 />
-                <p class="text-xs text-gray-500 mt-1">The label of the object to crop around (only the first found instance per image will be used).</p>
+                <p class="text-xs text-slate-500 mt-1">The label of the object to crop around (only the first found instance per image will be used).</p>
             </div>
 
             <!-- Run Button -->
@@ -151,7 +153,7 @@
 
             <!-- Status Messages -->
             {#if internalCropStatusMessage}
-                <div class={`p-3 rounded-md text-sm mt-4 ${internalCropIsError ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                <div class={`p-3 rounded-md text-sm mt-4 ${internalCropIsError ? 'bg-red-50/80 backdrop-blur text-red-800 border border-red-200' : 'bg-green-50/80 backdrop-blur text-green-800 border border-green-200'}`}>
                     <p class="font-medium">{internalCropIsError ? 'Error!' : 'Status:'}</p>
                     <p>{internalCropStatusMessage}</p>
                 </div>

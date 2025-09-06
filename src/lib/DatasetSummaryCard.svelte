@@ -14,13 +14,13 @@
 </script>
 
 {#if datasetSummary}
-    <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+    <div class="bg-white/80 backdrop-blur rounded-xl border border-slate-200/60 shadow-sm p-4 mb-6">
         <h2 class="text-xl font-semibold text-gray-800 mb-3">
             Dataset Summary
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-blue-50 p-3 rounded-md">
-                <h3 class="text-sm font-medium text-blue-700">
+            <div class="bg-blue-50/80 backdrop-blur p-3 rounded-md border border-blue-200">
+                <h3 class="text-sm font-medium text-blue-800">
                     File Statistics
                 </h3>
                 <p class="text-sm mt-1">
@@ -41,8 +41,8 @@
                 </p>
             </div>
 
-            <div class="bg-green-50 p-3 rounded-md">
-                <h3 class="text-sm font-medium text-green-700">
+            <div class="bg-green-50/80 backdrop-blur p-3 rounded-md border border-green-200">
+                <h3 class="text-sm font-medium text-green-800">
                     Annotation Statistics
                 </h3>
                 <p class="text-sm mt-1">
@@ -66,8 +66,8 @@
                 {/if}
             </div>
 
-            <div class="bg-purple-50 p-3 rounded-md">
-                <h3 class="text-sm font-medium text-purple-700">
+            <div class="bg-purple-50/80 backdrop-blur p-3 rounded-md border border-purple-200">
+                <h3 class="text-sm font-medium text-purple-800">
                     Label Statistics
                 </h3>
                 <p class="text-sm mt-1">

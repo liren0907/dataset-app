@@ -145,23 +145,26 @@
 
 {#if selectedImage}
     <div
-        class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-title"
-        on:click|self={close}
+        class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
     >
+        <button
+            class="absolute inset-0 w-full h-full bg-transparent"
+            aria-label="Close image viewer"
+            on:click={close}
+        />
         <div
-            class="relative max-w-6xl w-full bg-white rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-2rem)]"
-            on:click|stopPropagation
+            class="relative z-10 max-w-6xl w-full bg-white/90 backdrop-blur rounded-2xl shadow-xl overflow-hidden flex flex-col border border-slate-200/60 max-h-[calc(100vh-2rem)]"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
         >
             <div class="flex justify-between items-center p-4 border-b">
-                <h3 id="modal-title" class="text-lg font-medium text-gray-800 truncate">
+                <h3 id="modal-title" class="text-lg font-medium text-slate-800 truncate">
                     {selectedImage.name || 'Image Details'}
                 </h3>
                 <button
                     on:click={close}
-                    class="text-gray-400 hover:text-gray-600 p-2 -mr-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="text-slate-400 hover:text-slate-600 p-2 -mr-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     aria-label="Close image viewer"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
@@ -188,10 +191,10 @@
                     {/if}
                 </div>
             </div>
-            <div class="p-4 border-t bg-gray-50 text-xs">
+            <div class="p-4 border-t bg-slate-50 text-xs">
                 {#if selectedImage.annotations && selectedImage.annotations.length > 0}
                     <div
-                        class="mb-3 p-3 bg-green-50 rounded-md border border-green-200 max-h-32 overflow-y-auto"
+                        class="mb-3 p-3 bg-green-50/80 backdrop-blur rounded-md border border-green-200 max-h-32 overflow-y-auto"
                     >
                         <h4 class="text-xs font-semibold text-green-800 mb-2">
                             {annotationType === "bounding_box" ? "Bounding Box" : "Polygon"} Annotations ({selectedImage.annotations.length})
@@ -199,8 +202,8 @@
                         <ul class="space-y-1">
                             {#each selectedImage.annotations as annotation, i (i)}
                                 <li class="flex justify-between items-center">
-                                    <span class="text-gray-700 truncate pr-2">{annotation.label || 'Unlabelled'}</span>
-                                    <span class="text-gray-500 font-medium bg-gray-100 px-1.5 py-0.5 rounded text-xs">{annotation.shape_type}</span>
+                                    <span class="text-slate-700 truncate pr-2">{annotation.label || 'Unlabelled'}</span>
+                                    <span class="text-slate-600 font-medium bg-slate-100 px-1.5 py-0.5 rounded text-xs">{annotation.shape_type}</span>
                                 </li>
                             {/each}
                         </ul>
@@ -209,26 +212,26 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-2">
                     {#if selectedImage.size != null}
                         <div>
-                            <span class="text-gray-500">Size:</span>
-                            <span class="text-gray-800 font-medium ml-1">{formatFileSize(selectedImage.size)}</span>
+                            <span class="text-slate-500">Size:</span>
+                            <span class="text-slate-800 font-medium ml-1">{formatFileSize(selectedImage.size)}</span>
                         </div>
                     {/if}
                     {#if selectedImage.dimensions}
                         <div>
-                            <span class="text-gray-500">Dimensions:</span>
-                            <span class="text-gray-800 font-medium ml-1">{selectedImage.dimensions.width} × {selectedImage.dimensions.height}</span>
+                            <span class="text-slate-500">Dimensions:</span>
+                            <span class="text-slate-800 font-medium ml-1">{selectedImage.dimensions.width} × {selectedImage.dimensions.height}</span>
                         </div>
                     {/if}
                     {#if selectedImage.path}
                          <div class="sm:col-span-3">
-                            <span class="text-gray-500">Path:</span>
-                            <span class="text-gray-800 font-medium ml-1 break-all">{selectedImage.path}</span>
+                            <span class="text-slate-500">Path:</span>
+                            <span class="text-slate-800 font-medium ml-1 break-all">{selectedImage.path}</span>
                         </div>
                     {/if}
                     {#if selectedImage.created}
                         <div class="sm:col-span-3 mt-1">
-                            <span class="text-gray-500">Created:</span>
-                            <span class="text-gray-800 font-medium ml-1">{new Date(selectedImage.created).toLocaleString()}</span>
+                            <span class="text-slate-500">Created:</span>
+                            <span class="text-slate-800 font-medium ml-1">{new Date(selectedImage.created).toLocaleString()}</span>
                         </div>
                     {/if}
                 </div>

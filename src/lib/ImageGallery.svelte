@@ -120,7 +120,7 @@
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {#each images as image, i (image.path)}
                     <button type="button"
-                        class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200 cursor-pointer relative text-left p-0 border-none block w-full"
+                        class="bg-white/80 backdrop-blur rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer relative text-left p-0 border border-slate-200/60 block w-full hover:-translate-y-0.5"
                         on:click={() => handleImageClick(image, i)}
                         aria-label={`View details for ${image.name}`}
                     >
@@ -150,20 +150,20 @@
                             />
                             <div class="absolute top-2 right-2 flex flex-col gap-1">
                                 {#if image.hasJson}
-                                    <div class="bg-blue-500 text-white text-xs px-2 py-1 rounded-full shadow">JSON</div>
+                                    <div class="bg-blue-600/90 backdrop-blur text-white text-[10px] px-2 py-0.5 rounded-full shadow">JSON</div>
                                 {/if}
                                 {#if image.annotated}
-                                    <div class="bg-green-500 text-white text-xs px-2 py-1 rounded-full shadow">
+                                    <div class="bg-green-600/90 backdrop-blur text-white text-[10px] px-2 py-0.5 rounded-full shadow">
                                         {annotationType === "bounding_box" ? "Boxes" : "Polygons"}
                                     </div>
                                 {/if}
                             </div>
                         </div>
                         <div class="p-3">
-                            <p class="text-sm text-gray-800 truncate">{image.name}</p>
-                            {#if image.size != null} <p class="text-xs text-gray-500 mt-1">{formatFileSize(image.size)}</p> {/if}
+                            <p class="text-sm text-slate-800 truncate">{image.name}</p>
+                            {#if image.size != null} <p class="text-xs text-slate-500 mt-1">{formatFileSize(image.size)}</p> {/if}
                             {#if image.annotations && image.annotations.length > 0}
-                                <p class="text-xs text-green-600 mt-1">
+                                <p class="text-xs text-green-700 mt-1">
                                     {image.annotations.length} {annotationType === "bounding_box" ? "box" : "polygon"}{image.annotations.length !== 1 ? "es" : ""}
                                 </p>
                             {/if}
@@ -176,7 +176,7 @@
             <div class="space-y-4">
                 {#each images as image, i (image.path)}
                     <button type="button"
-                        class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200 cursor-pointer relative w-full text-left p-0 border-none block"
+                        class="bg-white/80 backdrop-blur rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer relative w-full text-left p-0 border border-slate-200/60 block hover:-translate-y-0.5"
                         on:click={() => handleImageClick(image, i)}
                         aria-label={`View details for ${image.name}`}
                     >
@@ -207,31 +207,31 @@
                                 />
                                 <div class="absolute top-2 right-2 flex flex-col gap-1">
                                     {#if image.hasJson}
-                                        <div class="bg-blue-500 text-white text-xs px-2 py-1 rounded-full shadow">JSON</div>
+                                        <div class="bg-blue-600/90 backdrop-blur text-white text-[10px] px-2 py-0.5 rounded-full shadow">JSON</div>
                                     {/if}
                                     {#if image.annotated}
-                                        <div class="bg-green-500 text-white text-xs px-2 py-1 rounded-full shadow">
+                                        <div class="bg-green-600/90 backdrop-blur text-white text-[10px] px-2 py-0.5 rounded-full shadow">
                                             {annotationType === "bounding_box" ? "Boxes" : "Polygons"}
                                         </div>
                                     {/if}
                                 </div>
                             </div>
                             <div class="p-4 flex-1">
-                                <h3 class="text-lg font-medium text-gray-800">{image.name}</h3>
-                                {#if image.size != null} <p class="text-sm text-gray-500 mt-1">Size: {formatFileSize(image.size)}</p> {/if}
-                                {#if image.dimensions} <p class="text-sm text-gray-500 mt-1">Dimensions: {image.dimensions.width} × {image.dimensions.height}</p> {/if}
-                                {#if image.created} <p class="text-sm text-gray-500 mt-1">Created: {new Date(image.created).toLocaleString()}</p> {/if}
+                                <h3 class="text-lg font-medium text-slate-800">{image.name}</h3>
+                                {#if image.size != null} <p class="text-sm text-slate-500 mt-1">Size: {formatFileSize(image.size)}</p> {/if}
+                                {#if image.dimensions} <p class="text-sm text-slate-500 mt-1">Dimensions: {image.dimensions.width} × {image.dimensions.height}</p> {/if}
+                                {#if image.created} <p class="text-sm text-slate-500 mt-1">Created: {new Date(image.created).toLocaleString()}</p> {/if}
                                 {#if image.annotations && image.annotations.length > 0}
                                     <div class="mt-2">
-                                        <p class="text-sm font-medium text-green-600">
+                                        <p class="text-sm font-medium text-green-700">
                                             {image.annotations.length} {annotationType === "bounding_box" ? "bounding box" : "polygon"}{image.annotations.length !== 1 ? "es" : ""}:
                                         </p>
-                                        <ul class="mt-1 list-disc list-inside text-sm text-gray-600">
+                                        <ul class="mt-1 list-disc list-inside text-sm text-slate-600">
                                             {#each image.annotations.slice(0, 3) as annotation, annotationIndex (annotationIndex)}
                                                 <li class="truncate">{annotation.label}</li>
                                             {/each}
                                             {#if image.annotations.length > 3}
-                                                <li class="text-gray-500">+{image.annotations.length - 3} more</li>
+                                                <li class="text-slate-500">+{image.annotations.length - 3} more</li>
                                             {/if}
                                         </ul>
                                     </div>
@@ -289,8 +289,8 @@
             </div>
         {/if}
     </div>
-{:else if !loading && totalImages === 0 && typeof directoryPath === 'string' && directoryPath.length > 0}
-    <!-- Content for no images in directory shown by parent -->
+{:else if !loading && totalImages === 0}
+    <!-- No images placeholder handled by parent page -->
 {/if}
 
 <style>

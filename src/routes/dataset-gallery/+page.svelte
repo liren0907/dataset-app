@@ -466,7 +466,7 @@
 </script>
 
 <svelte:head>
-    <title>Image Viewer</title>
+    <title>Dataset Gallery</title>
     <meta
         name="description"
         content="Efficient image viewer for large image collections"
@@ -478,7 +478,7 @@
 <div class="container mx-auto px-4 py-8">
     <div class="max-w-6xl mx-auto">
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-800 mb-6">Image Viewer</h1>
+            <h1 class="text-3xl font-bold text-slate-800 mb-6">Dataset Gallery</h1>
 
             <div class="flex flex-wrap items-center gap-4 mb-6">
                 <!-- Controls that appear *after* directory selection -->
@@ -494,7 +494,7 @@
                     </button>
 
                     <!-- Directory Path Display -->
-                    <div class="text-sm text-gray-600 flex-1 truncate">
+                    <div class="text-sm text-slate-600 flex-1 truncate">
                         <span class="font-medium">Directory:</span>
                         {directoryPath}
                     </div>
@@ -504,7 +504,7 @@
                         <div class="flex items-center gap-2">
                             <select
                                 bind:value={annotationType}
-                                class="inline-flex items-center bg-white border border-gray-300 rounded-md shadow-sm py-2 pl-3 pr-8 text-sm font-medium transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-gray-400 appearance-none"
+                                class="inline-flex items-center bg-white/80 backdrop-blur border border-slate-300 rounded-md shadow-sm py-2 pl-3 pr-8 text-sm font-medium transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400 appearance-none"
                             >
                                 <option value="bounding_box"
                                     >Bounding Boxes</option
@@ -514,7 +514,7 @@
 
                             <button
                                 on:click={annotateImages}
-                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                                 disabled={annotating}
                             >
                                 {annotating
@@ -529,7 +529,7 @@
                                     pageExportError = "";
                                     pageExportSuccess = "";
                                 }}
-                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                                 disabled={!directoryPath || images.length === 0}
                             >
                                 Export Dataset
@@ -537,16 +537,16 @@
                         </div>
                         
                         <!-- View Mode Controls -->
-                        <div class="flex items-center space-x-4 ml-auto">
-                            <span class="text-sm text-gray-600">View:</span>
+                        <div class="flex items-center space-x-3 ml-auto">
+                            <span class="text-sm text-slate-600">View:</span>
                             <button
-                                class={`px-3 py-1 rounded-md text-sm ${viewMode === "grid" ? "bg-indigo-100 text-indigo-700" : "text-gray-700 hover:bg-gray-100"}`}
+                                class={`px-3 py-1 rounded text-sm transition-colors ${viewMode === "grid" ? "bg-indigo-100 text-indigo-700" : "text-slate-700 hover:bg-slate-100"}`}
                                 on:click={() => changeViewMode("grid")}
                             >
                                 Grid
                             </button>
                             <button
-                                class={`px-3 py-1 rounded-md text-sm ${viewMode === "column" ? "bg-indigo-100 text-indigo-700" : "text-gray-700 hover:bg-gray-100"}`}
+                                class={`px-3 py-1 rounded text-sm transition-colors ${viewMode === "column" ? "bg-indigo-100 text-indigo-700" : "text-slate-700 hover:bg-slate-100"}`}
                                 on:click={() => changeViewMode("column")}
                             >
                                 Column
@@ -564,7 +564,7 @@
             />
 
             {#if error}
-                <div class="bg-red-50 text-red-700 p-4 rounded-md mb-6">
+                <div class="bg-red-50/80 backdrop-blur text-red-800 border border-red-200 p-4 rounded-md mb-6">
                     {error}
                 </div>
             {/if}
@@ -573,7 +573,7 @@
             <DatasetSummaryCard {datasetSummary} />
 
             {#if totalImages > 0}
-                <div class="text-sm text-gray-600 mb-4">
+                <div class="text-sm text-slate-600 mb-4">
                     Showing {Math.min(images.length, totalImages)} of {totalImages}
                     images
                 </div>

@@ -3,10 +3,10 @@
 	import "../app.css";
 </script>
 
-<div class="app">
+<div class="app min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50">
 	<Header />
 
-	<main>
+	<main class="flex-1 w-full max-w-7xl mx-auto px-6 py-8">
 		<slot />
 	</main>
 </div>
@@ -22,10 +22,6 @@
 		flex: 1;
 		display: flex;
 		flex-direction: column;
-		padding: 1rem;
-		width: 100%;
-		max-width: 64rem;
-		margin: 0 auto;
 		box-sizing: border-box;
 	}
 

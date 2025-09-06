@@ -1,22 +1,29 @@
 <script lang="ts">
-	import { onMount } from "svelte";
-	import { dragHandling } from "../funcs/file";
-	import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+	import { onMount, onDestroy } from "svelte";
 	import { listen } from "@tauri-apps/api/event";
-	import { type } from "@tauri-apps/plugin-os";
 
 	let isDragHover: boolean = false;
 
+	let unlistenDrop: (() => void) | null = null;
+	let unlistenHover: (() => void) | null = null;
+	let unlistenCancel: (() => void) | null = null;
+
 	onMount(async () => {
-		const unlisten = await listen("tauri://file-drop", async (event) => {
+		unlistenDrop = await listen("tauri://file-drop", async () => {
 			isDragHover = false;
 		});
-		await listen("tauri://file-drop-hover", async () => {
+		unlistenHover = await listen("tauri://file-drop-hover", async () => {
 			isDragHover = true;
 		});
-		await listen("tauri://file-drop-cancelled", () => {
+		unlistenCancel = await listen("tauri://file-drop-cancelled", () => {
 			isDragHover = false;
 		});
+	});
+
+	onDestroy(() => {
+		unlistenDrop?.();
+		unlistenHover?.();
+		unlistenCancel?.();
 	});
 </script>
 
@@ -25,72 +32,70 @@
 	<meta name="description" content="A modern dataset viewer application" />
 </svelte:head>
 
-<div class="container mx-auto px-4 py-8">
-	<div class="max-w-4xl mx-auto">
-		<div class="text-center mb-12">
-			<h1 class="text-4xl font-bold text-gray-900 mb-4">Dataset Viewer</h1>
-			<p class="text-lg text-gray-600">View and analyze your media files with ease</p>
-		</div>
+<div class="px-4 py-10">
+	<div class="max-w-6xl mx-auto">
+		<section class="text-center mb-12">
+			<h1 class="text-5xl font-extrabold tracking-tight text-slate-800 mb-4">
+				Work with datasets beautifully
+			</h1>
+			<p class="text-lg text-slate-600 max-w-2xl mx-auto">
+				Analyze, visualize, and export your datasets with a refined, fast, and modern interface.
+			</p>
+		</section>
 
-		<div class="bg-white rounded-lg shadow-lg p-8 mb-16">
-			<div
-				class="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center
-					{isDragHover ? 'bg-indigo-50 border-indigo-300' : 'hover:border-gray-400'}"
-			>
-				<div class="space-y-4">
-					<div class="text-gray-500">
-						{#if isDragHover}
-							<p class="text-lg">Drop your files here</p>
-						{:else}
-							<p class="text-lg">Drag and drop files here</p>
-							<p class="text-sm mt-2">or use the navigation links below</p>
-						{/if}
-					</div>
+		<section class="relative mb-16">
+			<div class="rounded-2xl border border-slate-200/60 bg-white/70 backdrop-blur p-10 shadow-sm">
+				<div class={`rounded-xl border-2 border-dashed text-center py-16 transition-all duration-300 ${isDragHover ? 'bg-indigo-50/70 border-indigo-300' : 'hover:border-slate-300'}`}>
+					{#if isDragHover}
+						<p class="text-lg text-slate-700">Drop your files here</p>
+					{:else}
+						<p class="text-lg text-slate-700">Drag & drop files anywhere here</p>
+						<p class="text-sm text-slate-500 mt-2">or explore tools below</p>
+					{/if}
 				</div>
 			</div>
-		</div>
+		</section>
 
-		<div class="mb-12">
-			<h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">Available Tools</h2>
-			<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-				<a href="/smart-tools" class="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 no-underline">
-					<h3 class="text-lg font-semibold text-indigo-600 mb-2">Smart Tools</h3>
-					<p class="text-sm text-gray-600">Interactive image cropping and processing tools with drag-and-drop functionality.</p>
+		<section class="mb-4">
+			<h2 class="text-2xl font-semibold text-slate-800 mb-6 text-center">Tools</h2>
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+				<a href="/smart-tools" class="group no-underline">
+					<div class="h-full rounded-xl border border-slate-200/60 bg-white/70 backdrop-blur p-6 shadow-sm transition-all duration-200 group-hover:shadow-md group-hover:-translate-y-0.5">
+						<h3 class="text-lg font-semibold text-indigo-600 mb-1">Smart Tools</h3>
+						<p class="text-sm text-slate-600">Interactive cropping and processing with drag-and-drop.</p>
+					</div>
 				</a>
-
-				<a href="/dataset-gallery" class="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 no-underline">
-					<h3 class="text-lg font-semibold text-indigo-600 mb-2">Dataset Gallery</h3>
-					<p class="text-sm text-gray-600">Main tool for viewing and managing datasets with annotations, YOLO export, and LabelMe extraction.</p>
+				<a href="/dataset-gallery" class="group no-underline">
+					<div class="h-full rounded-xl border border-slate-200/60 bg-white/70 backdrop-blur p-6 shadow-sm transition-all duration-200 group-hover:shadow-md group-hover:-translate-y-0.5">
+						<h3 class="text-lg font-semibold text-indigo-600 mb-1">Dataset Gallery</h3>
+						<p class="text-sm text-slate-600">Browse, annotate, export YOLO, and extract LabelMe.</p>
+					</div>
 				</a>
-
-				<a
-					href="/crop-remap"
-					class="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 no-underline"
-				>
-					<h3 class="text-lg font-semibold text-indigo-600 mb-2">Crop & Remap Tool</h3>
-					<p class="text-sm text-gray-600">Advanced annotation processing with dynamic label detection and safety equipment analysis.</p>
+				<a href="/crop-remap" class="group no-underline">
+					<div class="h-full rounded-xl border border-slate-200/60 bg-white/70 backdrop-blur p-6 shadow-sm transition-all duration-200 group-hover:shadow-md group-hover:-translate-y-0.5">
+						<h3 class="text-lg font-semibold text-indigo-600 mb-1">Crop & Remap Tool</h3>
+						<p class="text-sm text-slate-600">Advanced annotation processing with smart label detection.</p>
+					</div>
 				</a>
-
-				<a href="/optimizedGallery" class="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 no-underline">
-					<h3 class="text-lg font-semibold text-indigo-600 mb-2">Optimized Gallery</h3>
-					<p class="text-sm text-gray-600">View images in a performance-optimized gallery.</p>
+				<a href="/optimizedGallery" class="group no-underline">
+					<div class="h-full rounded-xl border border-slate-200/60 bg-white/70 backdrop-blur p-6 shadow-sm transition-all duration-200 group-hover:shadow-md group-hover:-translate-y-0.5">
+						<h3 class="text-lg font-semibold text-indigo-600 mb-1">Optimized Gallery</h3>
+						<p class="text-sm text-slate-600">Performance-focused gallery for large collections.</p>
+					</div>
 				</a>
-
-				<a href="/imageViewer"
-					class="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 no-underline"
-				>
-					<h3 class="text-lg font-semibold text-indigo-600 mb-2">Image Viewer</h3>
-					<p class="text-sm text-gray-600">View individual images and basic info.</p>
+				<a href="/imageViewer" class="group no-underline">
+					<div class="h-full rounded-xl border border-slate-200/60 bg-white/70 backdrop-blur p-6 shadow-sm transition-all duration-200 group-hover:shadow-md group-hover:-translate-y-0.5">
+						<h3 class="text-lg font-semibold text-indigo-600 mb-1">Image Viewer</h3>
+						<p class="text-sm text-slate-600">View single images with metadata.</p>
+					</div>
 				</a>
-
-				<a href="/imageViewer3"
-					class="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 no-underline"
-				>
-					<h3 class="text-lg font-semibold text-indigo-600 mb-2">Image Viewer 3</h3>
-					<p class="text-sm text-gray-600">Another image viewer implementation.</p>
+				<a href="/imageViewer3" class="group no-underline">
+					<div class="h-full rounded-xl border border-slate-200/60 bg-white/70 backdrop-blur p-6 shadow-sm transition-all duration-200 group-hover:shadow-md group-hover:-translate-y-0.5">
+						<h3 class="text-lg font-semibold text-indigo-600 mb-1">Image Viewer 3</h3>
+						<p class="text-sm text-slate-600">Alternate viewer implementation.</p>
+					</div>
 				</a>
 			</div>
-		</div>
-
+		</section>
 	</div>
 </div>

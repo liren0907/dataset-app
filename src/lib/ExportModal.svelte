@@ -116,16 +116,16 @@
 
 {#if showModal}
     <div
-        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-        on:click|self={closeModalEvent} 
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
         role="dialog"
         aria-modal="true"
         aria-labelledby="export-modal-title"
     >
-        <div class="max-w-2xl w-full bg-white rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+        <button class="absolute inset-0 w-full h-full bg-transparent" aria-label="Close export modal" on:click={closeModalEvent} />
+        <div class="max-w-2xl w-full bg-white/90 backdrop-blur rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200/60">
             <div class="px-6 py-4 border-b flex justify-between items-center">
-                <h3 id="export-modal-title" class="text-xl font-bold text-gray-800">Export Dataset</h3>
-                <button on:click={closeModalEvent} class="text-gray-400 hover:text-gray-600 p-1 -mr-1" aria-label="Close export modal">
+                <h3 id="export-modal-title" class="text-xl font-bold text-slate-800">Export Dataset</h3>
+                <button on:click={closeModalEvent} class="text-slate-400 hover:text-slate-600 p-1 -mr-1" aria-label="Close export modal">
                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -134,13 +134,13 @@
 
             <div class="px-6 py-4 overflow-y-auto space-y-6">
                 {#if localError}
-                    <div class="bg-red-50 text-red-700 p-3 rounded-md text-sm">
+                    <div class="bg-red-50/80 backdrop-blur text-red-800 border border-red-200 p-3 rounded-md text-sm">
                         {localError}
                     </div>
                 {/if}
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Export Mode</label>
+                    <p class="block text-sm font-medium text-gray-700 mb-2">Export Mode</p>
                     <div class="flex items-center space-x-4">
                         <div>
                             <input type="radio" id="exportModeYoloModal" name="exportModeModal" value="yolo" bind:group={exportMode} class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 cursor-pointer">
@@ -160,7 +160,7 @@
                         id="sourceDirInputModal" 
                         value={currentDirectoryPath}
                         readonly
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 text-sm"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-md bg-slate-100 text-slate-600 text-sm"
                     />
                 </div>
 
@@ -173,11 +173,11 @@
                             bind:value={outputDir}
                             readonly
                             placeholder="Select output directory..."
-                            class="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 text-sm"
+                            class="flex-1 px-3 py-2 border border-slate-300 rounded-md bg-slate-100 text-slate-600 text-sm"
                         />
                         <button
                             on:click={selectOutputDirectory} 
-                            class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md border border-gray-400 text-sm shadow-sm"
+                            class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-md border border-slate-300 text-sm shadow-sm"
                         >
                             Browse...
                         </button>
@@ -190,7 +190,7 @@
                         <select
                             id="shapeTypeSelectModal"
                             bind:value={shapeType}
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                            class="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white/80 backdrop-blur"
                         >
                             <option value="polygon">Polygon</option>
                             <option value="bounding_box">Bounding Box</option>
@@ -207,7 +207,7 @@
                                 min="0"
                                 max="1"
                                 step="0.01"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                                class="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                             />
                         </div>
                         <div>
@@ -219,7 +219,7 @@
                                 min="0"
                                 max="1"
                                 step="0.01"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                                class="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                             />
                         </div>
                         <div>
@@ -231,24 +231,24 @@
                                 min="0"
                                 max="1"
                                 step="0.01"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                                class="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                             />
                         </div>
                     </div>
                 {/if}
 
                 <div>
-                    <label class="block text-gray-700 mb-2 font-medium text-sm">Labels to Include in Export</label>
+                    <p class="block text-gray-700 mb-2 font-medium text-sm">Labels to Include in Export</p>
                     {#if currentDatasetSummary?.label_counts && availableLabelsForSelection.length > 0}
                         <p class="text-xs text-gray-500 mb-2">Select labels to include. By default, all are included.</p>
-                        <div class="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 border rounded-md bg-gray-50">
+                        <div class="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 border rounded-md bg-slate-50">
                             {#each Object.entries(currentDatasetSummary.label_counts) as [label, count] (label)}
                                 <button
                                     type="button"
                                     class={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors duration-150 shadow-sm
                                         ${!internalExcludedLabels.has(label)
                                             ? 'bg-sky-100 text-sky-800 border-sky-300 hover:bg-sky-200'
-                                            : 'bg-gray-100 text-gray-500 border-gray-300 hover:bg-gray-200 line-through opacity-80'}`}
+                                            : 'bg-slate-100 text-slate-500 border-slate-300 hover:bg-slate-200 line-through opacity-80'}`}
                                     on:click={() => toggleLabelExclusion(label)}
                                 >
                                     {label} ({count})
@@ -263,10 +263,10 @@
                 </div>
             </div>
 
-            <div class="px-6 py-4 border-t bg-gray-50 flex justify-end space-x-3 mt-auto">
+            <div class="px-6 py-4 border-t bg-slate-50 flex justify-end space-x-3 mt-auto">
                 <button
                     type="button"
-                    class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 text-gray-700 text-sm shadow-sm"
+                    class="px-4 py-2 border border-slate-300 rounded-md hover:bg-slate-100 text-slate-700 text-sm shadow-sm"
                     on:click={closeModalEvent}
                     disabled={localLoading} 
                 >
