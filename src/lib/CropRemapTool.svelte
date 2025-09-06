@@ -75,7 +75,7 @@
 
 </script>
 
-<Accordion class="mb-6 border border-slate-200/60 rounded-xl bg-white/70 backdrop-blur shadow-sm" bind:open={cropToolOpen} on:change={() => dispatch('update:cropToolOpen', cropToolOpen)}>
+<Accordion class="mb-6 border border-slate-200/60 rounded-xl bg-white/70 backdrop-blur shadow-sm" bind:open={cropToolOpen} on:change={() => dispatch('update:cropToolOpen', cropToolOpen)} data-crop-tool>
     <AccordionItem>
         <span slot="header" class="text-lg font-medium text-slate-800">Crop & Remap Tool</span>
         <div class="p-4 bg-slate-50 space-y-4">

@@ -534,6 +534,25 @@
                             >
                                 Export Dataset
                             </button>
+
+                            <!-- Crop & Remap Button -->
+                            <button
+                                on:click={() => {
+                                    cropToolOpen = !cropToolOpen;
+                                    if (cropToolOpen) {
+                                        // Scroll to the CropRemapTool when opening
+                                        setTimeout(() => {
+                                            const element = document.querySelector('[data-crop-tool]');
+                                            if (element) {
+                                                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                            }
+                                        }, 100);
+                                    }
+                                }}
+                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+                            >
+                                {cropToolOpen ? '✂️ Hide' : '✂️ Show'} Crop & Remap
+                            </button>
                         </div>
                         
                         <!-- View Mode Controls -->

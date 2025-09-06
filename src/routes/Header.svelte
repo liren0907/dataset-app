@@ -31,9 +31,15 @@
 					</a>
 					<a
 						href="/crop-remap"
-						class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:text-slate-900 hover:bg-slate-100 no-underline {$page.url.pathname.startsWith('/crop-remap') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-300' : 'text-slate-600'}"
+						class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:text-slate-900 hover:bg-slate-100 no-underline {$page.url.pathname === '/crop-remap' ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-300' : 'text-slate-600'}"
 					>
 						Crop & Remap
+					</a>
+					<a
+						href="/crop-remap-component"
+						class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:text-slate-900 hover:bg-slate-100 no-underline {$page.url.pathname.startsWith('/crop-remap-component') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-300' : 'text-slate-600'}"
+					>
+						Crop & Remap Component
 					</a>
 					<a
 						href="/imageViewer3"
