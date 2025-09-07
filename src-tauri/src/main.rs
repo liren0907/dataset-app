@@ -36,6 +36,7 @@ fn main() {
             get_video_info,
             read_video_file,
             read_image_file,
+            read_file_content,
             open_file_dialog,
             draw_bounding_boxes,
             draw_polygons,
@@ -171,6 +172,14 @@ fn read_video_file(file_path: String) -> Result<String, String> {
 #[tauri::command]
 fn read_image_file(file_path: String) -> Result<String, String> {
     ImageHandler::read_image_info(&file_path)
+}
+
+#[tauri::command]
+fn read_file_content(file_path: String) -> Result<String, String> {
+    match fs::read_to_string(&file_path) {
+        Ok(content) => Ok(content),
+        Err(e) => Err(format!("Failed to read file {}: {}", file_path, e)),
+    }
 }
 
 #[tauri::command]
@@ -848,10 +857,27 @@ fn generate_annotated_previews(
         }
     }
 
+    // Use annotation data directly (no preview paths needed)
+    let mut annotated_images_result = Vec::new();
+    let empty_annotations = Vec::new();
+
+    for image in annotated_images_data {
+        let has_json = image["has_json"].as_bool().unwrap_or(false);
+        let annotations = image["annotations"].as_array().unwrap_or(&empty_annotations);
+
+        // Only include images that have annotations
+        if has_json && !annotations.is_empty() {
+            annotated_images_result.push(image.clone());
+        }
+    }
+
+    // Take only the first num_previews images
+    let annotated_images_result = annotated_images_result.into_iter().take(num_previews).collect::<Vec<_>>();
+
     let result = json!({
-        "success": true,
-        "preview_count": preview_paths.len(),
-        "previews": preview_paths
+        "annotated_images": annotated_images_result,
+        "total": annotated_images_data.len(),
+        "preview_count": annotated_images_result.len()
     });
 
     Ok(result.to_string())

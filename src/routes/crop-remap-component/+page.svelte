@@ -3,6 +3,8 @@
     import { convertFileSrc } from "@tauri-apps/api/core";
     import { open } from '@tauri-apps/plugin-dialog';
     import { appDataDir } from '@tauri-apps/api/path';
+    import Konva from 'konva';
+    import { onMount } from 'svelte';
 
     let sourceDir: string | null = null;
     let outputDir: string | null = null;
@@ -27,11 +29,72 @@
     // Preview modal state
     let showPreviewModal: boolean = false;
     let previewModalImage: any = null;
+    
+    // KonvaJS variables - Enhanced
+    let konvaContainer: HTMLDivElement;
+    let stage: Konva.Stage | null = null;
+    let mainLayer: Konva.Layer | null = null;
+    let annotationLayer: Konva.Layer | null = null;
+    let uiLayer: Konva.Layer | null = null;
+    let imageNode: Konva.Image | null = null;
+    let transformer: Konva.Transformer | null = null;
 
-    // Handle keyboard events for modal
+    // Enhanced state for KonvaJS
+    let scale = 1;
+    let stageX = 0;
+    let stageY = 0;
+    let selectedAnnotation: any = null;
+    let annotationGroups: Konva.Group[] = [];
+    let isDragging = false;
+    let lastPointerPosition = { x: 0, y: 0 };
+
+    // Handle keyboard events for modal and KonvaJS controls
     function handleKeydown(event: KeyboardEvent) {
-        if (event.key === "Escape" && showPreviewModal) {
-            closePreviewModal();
+        if (event.key === "Escape") {
+            if (showPreviewModal) {
+                closePreviewModal();
+            } else if (selectedAnnotation) {
+                deselectAnnotation();
+            }
+        }
+
+        // KonvaJS keyboard shortcuts
+        if (showPreviewModal && stage) {
+            switch (event.key.toLowerCase()) {
+                case 'delete':
+                case 'backspace':
+                    event.preventDefault();
+                    deleteSelectedAnnotation();
+                    break;
+                case 'a':
+                    if (event.ctrlKey || event.metaKey) {
+                        event.preventDefault();
+                        selectAllAnnotations();
+                    }
+                    break;
+                case 'escape':
+                    event.preventDefault();
+                    deselectAnnotation();
+                    break;
+                case '=':
+                case '+':
+                    event.preventDefault();
+                    zoomIn();
+                    break;
+                case '-':
+                case '_':
+                    event.preventDefault();
+                    zoomOut();
+                    break;
+                case '0':
+                    event.preventDefault();
+                    resetZoom();
+                    break;
+                case 'r':
+                    event.preventDefault();
+                    fitToScreen();
+                    break;
+            }
         }
     }
 
@@ -174,16 +237,16 @@
 
             const data = JSON.parse(result);
 
-            if (data.success && data.previews && data.previews.length > 0) {
-                console.log(`Generated ${data.preview_count} annotated preview images`);
+            if (data.annotated_images && data.annotated_images.length > 0) {
+                console.log(`Loaded ${data.annotated_images.length} images with annotation data`);
 
                 // Convert file paths to proper Tauri URLs and prepare preview data
-                const selectedImages = data.previews.map((path: string, index: number) => ({
+                const selectedImages = data.annotated_images.map((imageData: any, index: number) => ({
                     id: `preview_${index}`,
-                    path: path,
-                    previewUrl: convertFileSrc(path),
+                    path: imageData.path,
+                    previewUrl: convertFileSrc(imageData.path), // Load original clean image
                     name: `Preview ${index + 1}`,
-                    annotations: [] // Annotations are already baked into the image
+                    annotations: imageData.annotations || [] // Draw annotations with KonvaJS
                 }));
 
                 previewImages = selectedImages;
@@ -202,14 +265,613 @@
 
     // Function to open preview modal
     function openPreviewModal(image: any) {
+        console.log('Opening preview modal for image:', image);
         previewModalImage = image;
         showPreviewModal = true;
+        // Initialize KonvaJS after modal opens
+        setTimeout(() => {
+            console.log('Initializing Konva stage after timeout');
+            initializeKonvaStage(image);
+        }, 300); // Increased timeout for better DOM readiness
     }
 
     // Function to close preview modal
     function closePreviewModal() {
         showPreviewModal = false;
         previewModalImage = null;
+        // Clean up Konva stage
+        if (stage) {
+            stage.destroy();
+            stage = null;
+            mainLayer = null;
+            annotationLayer = null;
+            uiLayer = null;
+            imageNode = null;
+            transformer = null;
+        }
+        // Reset state
+        scale = 1;
+        stageX = 0;
+        stageY = 0;
+        selectedAnnotation = null;
+        annotationGroups = [];
+        isDragging = false;
+    }
+    
+    // Initialize KonvaJS stage with advanced features
+    function initializeKonvaStage(image: any) {
+        console.log('initializeKonvaStage called with:', image);
+        console.log('konvaContainer:', konvaContainer);
+
+        if (!konvaContainer) {
+            console.error('konvaContainer is not available');
+            return;
+        }
+
+        // Get container dimensions
+        const containerRect = konvaContainer.getBoundingClientRect();
+        console.log('Container dimensions:', containerRect);
+
+        // Clean up existing stage
+        if (stage) {
+            stage.destroy();
+        }
+
+        // Create new stage with container dimensions
+        const stageWidth = Math.max(containerRect.width || 800, 800);
+        const stageHeight = Math.max(containerRect.height || 600, 600);
+
+        console.log('Creating stage with dimensions:', stageWidth, 'x', stageHeight);
+
+        // Create stage with enhanced configuration
+        stage = new Konva.Stage({
+            container: konvaContainer,
+            width: stageWidth,
+            height: stageHeight,
+            x: stageX,
+            y: stageY,
+            scaleX: scale,
+            scaleY: scale,
+            draggable: true,
+        });
+
+        // Create multiple layers for better organization
+        mainLayer = new Konva.Layer();
+        annotationLayer = new Konva.Layer();
+        uiLayer = new Konva.Layer();
+
+        stage.add(mainLayer);
+        stage.add(annotationLayer);
+        stage.add(uiLayer);
+
+        // Create transformer for editing annotations
+        transformer = new Konva.Transformer({
+            rotateEnabled: true,
+            borderEnabled: true,
+            borderStroke: '#4A90E2',
+            borderStrokeWidth: 2,
+            anchorFill: '#4A90E2',
+            anchorStroke: '#FFFFFF',
+            anchorStrokeWidth: 2,
+            anchorSize: 8,
+        });
+        uiLayer.add(transformer);
+
+        // Setup mouse wheel zoom
+        setupZoomControls();
+
+        // Setup stage event listeners
+        setupStageEvents();
+
+        console.log('Enhanced Konva stage created successfully');
+
+        // Load and display image
+        loadImageWithAnnotations(image);
+    }
+    
+    // Setup zoom controls (mouse wheel)
+    function setupZoomControls() {
+        if (!stage) return;
+
+        // Mouse wheel zoom
+        stage.on('wheel', (e) => {
+            e.evt.preventDefault();
+
+            const pointer = stage.getPointerPosition();
+            if (!pointer) return;
+
+            const oldScale = stage.scaleX();
+            const newScale = e.evt.deltaY > 0 ? oldScale * 0.9 : oldScale * 1.1;
+
+            // Limit zoom levels
+            const clampedScale = Math.max(0.1, Math.min(5, newScale));
+
+            const mousePointTo = {
+                x: (pointer.x - stage.x()) / oldScale,
+                y: (pointer.y - stage.y()) / oldScale,
+            };
+
+            stage.scale({ x: clampedScale, y: clampedScale });
+
+            const newPos = {
+                x: pointer.x - mousePointTo.x * clampedScale,
+                y: pointer.y - mousePointTo.y * clampedScale,
+            };
+
+            stage.position(newPos);
+            stage.batchDraw();
+
+            // Update global state
+            scale = clampedScale;
+            stageX = newPos.x;
+            stageY = newPos.y;
+        });
+    }
+
+    // Setup stage event listeners
+    function setupStageEvents() {
+        if (!stage) return;
+
+        // Click to select/deselect annotations
+        stage.on('click tap', (e) => {
+            if (e.target === stage) {
+                deselectAnnotation();
+            } else if (e.target.getParent() && annotationGroups.includes(e.target.getParent())) {
+                selectAnnotation(e.target.getParent());
+            }
+        });
+
+        // Prevent default drag behavior when clicking on annotations
+        stage.on('dragstart', (e) => {
+            if (annotationGroups.includes(e.target.getParent())) {
+                e.cancelBubble = true;
+            }
+        });
+    }
+
+    // Zoom functions
+    function zoomIn() {
+        if (!stage) return;
+        const newScale = Math.min(5, stage.scaleX() * 1.2);
+        zoomToScale(newScale);
+    }
+
+    function zoomOut() {
+        if (!stage) return;
+        const newScale = Math.max(0.1, stage.scaleX() * 0.8);
+        zoomToScale(newScale);
+    }
+
+    function resetZoom() {
+        zoomToScale(1);
+        stage.position({ x: 0, y: 0 });
+        stageX = 0;
+        stageY = 0;
+    }
+
+    function fitToScreen() {
+        if (!stage || !imageNode) return;
+
+        const containerRect = konvaContainer.getBoundingClientRect();
+        const imageRect = imageNode.getClientRect();
+
+        const scaleX = containerRect.width / imageRect.width;
+        const scaleY = containerRect.height / imageRect.height;
+        const newScale = Math.min(scaleX, scaleY, 1);
+
+        zoomToScale(newScale);
+        stage.position({ x: 0, y: 0 });
+        stageX = 0;
+        stageY = 0;
+    }
+
+    function zoomToScale(newScale: number) {
+        if (!stage) return;
+
+        const center = {
+            x: stage.width() / 2,
+            y: stage.height() / 2,
+        };
+
+        const relatedTo = {
+            x: (center.x - stage.x()) / stage.scaleX(),
+            y: (center.y - stage.y()) / stage.scaleY(),
+        };
+
+        stage.scale({ x: newScale, y: newScale });
+
+        const newPos = {
+            x: center.x - relatedTo.x * newScale,
+            y: center.y - relatedTo.y * newScale,
+        };
+
+        stage.position(newPos);
+        stage.batchDraw();
+
+        scale = newScale;
+        stageX = newPos.x;
+        stageY = newPos.y;
+    }
+
+    // Load image and draw annotations
+    async function loadImageWithAnnotations(image: any) {
+        console.log('loadImageWithAnnotations called with:', image);
+        console.log('Stage:', stage, 'MainLayer:', mainLayer);
+
+        if (!stage || !mainLayer) {
+            console.error('Stage or mainLayer not available');
+            return;
+        }
+        
+        const imageObj = new Image();
+        imageObj.crossOrigin = 'anonymous';
+        
+        imageObj.onload = async () => {
+            console.log('Image loaded successfully:', imageObj.width, 'x', imageObj.height);
+
+            // Calculate scaling to fit the stage
+            const scaleX = stage!.width() / imageObj.width;
+            const scaleY = stage!.height() / imageObj.height;
+            const fitScale = Math.min(scaleX, scaleY, 1); // Don't scale up
+
+            const scaledWidth = imageObj.width * fitScale;
+            const scaledHeight = imageObj.height * fitScale;
+
+            console.log('Calculated scale:', fitScale, 'Scaled dimensions:', scaledWidth, 'x', scaledHeight);
+
+            // Center the image
+            const x = (stage!.width() - scaledWidth) / 2;
+            const y = (stage!.height() - scaledHeight) / 2;
+
+            console.log('Image position:', x, y);
+
+            // Create Konva image
+            imageNode = new Konva.Image({
+                x: x,
+                y: y,
+                image: imageObj,
+                width: scaledWidth,
+                height: scaledHeight,
+            });
+
+            console.log('Created Konva image node');
+            mainLayer!.add(imageNode);
+            mainLayer!.draw();
+
+            // Load and draw annotations if available
+            await loadAnnotations(image, fitScale, x, y);
+
+            console.log('Drawing layers');
+            stage!.batchDraw();
+        };
+        
+        imageObj.onerror = (error) => {
+            console.error('Failed to load image:', error);
+            console.error('Image src was:', imageObj.src);
+        };
+        
+        // Load the original image from the path provided by backend
+        const originalImageUrl = convertFileSrc(image.path);
+
+        console.log('Loading image from path:', image.path);
+        console.log('Converted URL:', originalImageUrl);
+
+        imageObj.src = originalImageUrl;
+    }
+    
+    // Annotation selection and editing functions
+    function selectAnnotation(annotationGroup: any) {
+        if (!transformer || !stage) return;
+
+        selectedAnnotation = annotationGroup;
+        transformer.nodes([annotationGroup]);
+        uiLayer!.draw();
+
+        console.log('Selected annotation:', annotationGroup);
+    }
+
+    function deselectAnnotation() {
+        if (!transformer) return;
+
+        selectedAnnotation = null;
+        transformer.nodes([]);
+        uiLayer!.draw();
+
+        console.log('Deselected annotation');
+    }
+
+    function selectAllAnnotations() {
+        if (!transformer || !stage) return;
+
+        if (annotationGroups.length > 0) {
+            selectedAnnotation = annotationGroups;
+            transformer.nodes(annotationGroups);
+            uiLayer!.draw();
+        }
+    }
+
+    function deleteSelectedAnnotation() {
+        if (!selectedAnnotation || !annotationLayer) return;
+
+        if (Array.isArray(selectedAnnotation)) {
+            selectedAnnotation.forEach(group => {
+                group.destroy();
+            });
+            annotationGroups = annotationGroups.filter(group =>
+                !selectedAnnotation.includes(group)
+            );
+        } else {
+            selectedAnnotation.destroy();
+            annotationGroups = annotationGroups.filter(group => group !== selectedAnnotation);
+        }
+
+        deselectAnnotation();
+        annotationLayer.draw();
+
+        console.log('Deleted selected annotation(s)');
+    }
+
+    // Load annotations from the image data (already available from generate_annotated_previews)
+    async function loadAnnotations(image: any, scale: number, offsetX: number, offsetY: number) {
+        console.log('loadAnnotations called for:', image.name);
+        console.log('Scale:', scale, 'Offset:', offsetX, offsetY);
+
+        if (!annotationLayer) {
+            console.error('Annotation layer not available');
+            return;
+        }
+
+        try {
+            // Use annotation data that's already available in the image object
+            if (image.annotations && image.annotations.length > 0) {
+                console.log('Drawing', image.annotations.length, 'annotations from cached data');
+                drawAnnotationsOnCanvas(image.annotations, scale, offsetX, offsetY);
+            } else {
+                console.log('No annotations found for this image');
+            }
+        } catch (error) {
+            console.error('Error loading annotations:', error);
+        }
+    }
+    
+    // Helper function to draw annotations on the Konva canvas
+    function drawAnnotationsOnCanvas(annotations: any[], scale: number, offsetX: number, offsetY: number) {
+        if (!annotationLayer || !uiLayer) return;
+
+        // Clear existing annotations
+        annotationLayer.destroyChildren();
+        annotationGroups = [];
+
+        annotations.forEach((annotation: any, index: number) => {
+            console.log(`Drawing annotation ${index}:`, annotation);
+            const annotationGroup = drawAnnotationShape(annotation, scale, offsetX, offsetY, index);
+            if (annotationGroup) {
+                annotationGroups.push(annotationGroup);
+            }
+        });
+
+        annotationLayer.draw();
+        uiLayer.draw();
+    }
+    
+    // Draw individual annotation shape with advanced features
+    function drawAnnotationShape(annotation: any, scale: number, offsetX: number, offsetY: number, index: number) {
+        console.log('Drawing annotation:', annotation.shape_type, 'with', annotation.points?.length, 'points');
+
+        if (!annotationLayer || !uiLayer) {
+            console.error('Layers not available for drawing');
+            return null;
+        }
+
+        // Enhanced color palette with better contrast
+        const colors = [
+            { fill: '#FF6B6B', stroke: '#E53E3E', text: '#FFFFFF' }, // Red
+            { fill: '#4ECDC4', stroke: '#319795', text: '#FFFFFF' }, // Teal
+            { fill: '#45B7D1', stroke: '#3182CE', text: '#FFFFFF' }, // Blue
+            { fill: '#96CEB4', stroke: '#38A169', text: '#FFFFFF' }, // Green
+            { fill: '#FFEAA7', stroke: '#D69E2E', text: '#000000' }, // Yellow
+            { fill: '#DDA0DD', stroke: '#9F7AEA', text: '#FFFFFF' }, // Purple
+            { fill: '#98D8C8', stroke: '#4FD1C9', text: '#000000' }, // Cyan
+        ];
+        const colorScheme = colors[index % colors.length];
+
+        try {
+            const annotationGroup = new Konva.Group({
+                draggable: true,
+                name: `annotation-${index}`,
+            });
+
+            let shape;
+            let bounds;
+
+            if (annotation.shape_type === 'rectangle' && annotation.points && annotation.points.length >= 2) {
+                const x1 = annotation.points[0][0] * scale + offsetX;
+                const y1 = annotation.points[0][1] * scale + offsetY;
+                const x2 = annotation.points[1][0] * scale + offsetX;
+                const y2 = annotation.points[1][1] * scale + offsetY;
+
+                bounds = {
+                    x: Math.min(x1, x2),
+                    y: Math.min(y1, y2),
+                    width: Math.abs(x2 - x1),
+                    height: Math.abs(y2 - y1)
+                };
+
+                shape = new Konva.Rect({
+                    x: bounds.x,
+                    y: bounds.y,
+                    width: bounds.width,
+                    height: bounds.height,
+                    fill: colorScheme.fill,
+                    stroke: colorScheme.stroke,
+                    strokeWidth: 2,
+                    opacity: 0.25,
+                    shadowColor: colorScheme.stroke,
+                    shadowBlur: 4,
+                    shadowOpacity: 0.3,
+                });
+
+            } else if (annotation.shape_type === 'bounding_box' && annotation.points && annotation.points.length >= 2) {
+                const x1 = annotation.points[0][0] * scale + offsetX;
+                const y1 = annotation.points[0][1] * scale + offsetY;
+                const x2 = annotation.points[1][0] * scale + offsetX;
+                const y2 = annotation.points[1][1] * scale + offsetY;
+
+                bounds = {
+                    x: Math.min(x1, x2),
+                    y: Math.min(y1, y2),
+                    width: Math.abs(x2 - x1),
+                    height: Math.abs(y2 - y1)
+                };
+
+                shape = new Konva.Rect({
+                    x: bounds.x,
+                    y: bounds.y,
+                    width: bounds.width,
+                    height: bounds.height,
+                    fill: colorScheme.fill,
+                    stroke: colorScheme.stroke,
+                    strokeWidth: 2,
+                    opacity: 0.25,
+                    shadowColor: colorScheme.stroke,
+                    shadowBlur: 4,
+                    shadowOpacity: 0.3,
+                });
+
+            } else if (annotation.shape_type === 'polygon' && annotation.points && annotation.points.length > 2) {
+                const points: number[] = [];
+                annotation.points.forEach((point: number[]) => {
+                    points.push(point[0] * scale + offsetX);
+                    points.push(point[1] * scale + offsetY);
+                });
+
+                // Calculate bounds for polygon
+                const xs = annotation.points.map(p => p[0] * scale + offsetX);
+                const ys = annotation.points.map(p => p[1] * scale + offsetY);
+                bounds = {
+                    x: Math.min(...xs),
+                    y: Math.min(...ys),
+                    width: Math.max(...xs) - Math.min(...xs),
+                    height: Math.max(...ys) - Math.min(...ys)
+                };
+
+                shape = new Konva.Line({
+                    points: points,
+                    fill: colorScheme.fill,
+                    stroke: colorScheme.stroke,
+                    strokeWidth: 2,
+                    opacity: 0.25,
+                    closed: true,
+                    shadowColor: colorScheme.stroke,
+                    shadowBlur: 4,
+                    shadowOpacity: 0.3,
+                });
+            }
+
+            if (shape && bounds) {
+                annotationGroup.add(shape);
+
+                // Enhanced label with background
+                if (annotation.label) {
+                    const labelBg = new Konva.Rect({
+                        x: bounds.x,
+                        y: bounds.y - 25,
+                        width: annotation.label.length * 8 + 10,
+                        height: 20,
+                        fill: colorScheme.stroke,
+                        opacity: 0.8,
+                        cornerRadius: 4,
+                    });
+
+                    const label = new Konva.Text({
+                        x: bounds.x + 5,
+                        y: bounds.y - 23,
+                        text: annotation.label,
+                        fontSize: 12,
+                        fontFamily: 'Arial',
+                        fontStyle: 'bold',
+                        fill: colorScheme.text,
+                    });
+
+                    annotationGroup.add(labelBg);
+                    annotationGroup.add(label);
+                }
+
+                // Add tooltip on hover
+                const tooltip = new Konva.Text({
+                    text: `${annotation.label || 'Unknown'}\nType: ${annotation.shape_type}\nConfidence: ${annotation.confidence || 'N/A'}`,
+                    fontSize: 12,
+                    fontFamily: 'Arial',
+                    fill: '#000000',
+                    padding: 8,
+                    visible: false,
+                    opacity: 0.9,
+                });
+
+                const tooltipBg = new Konva.Rect({
+                    fill: '#FFFFFF',
+                    stroke: '#CCCCCC',
+                    strokeWidth: 1,
+                    cornerRadius: 4,
+                    shadowColor: '#000000',
+                    shadowBlur: 8,
+                    shadowOpacity: 0.2,
+                });
+
+                uiLayer.add(tooltipBg);
+                uiLayer.add(tooltip);
+
+                // Hover effects
+                annotationGroup.on('mouseenter', () => {
+                    document.body.style.cursor = 'pointer';
+                    shape.opacity(0.4);
+                    annotationLayer.draw();
+
+                    // Show tooltip
+                    const mousePos = stage!.getPointerPosition();
+                    if (mousePos) {
+                        tooltip.position({
+                            x: mousePos.x + 10,
+                            y: mousePos.y - 10,
+                        });
+                        tooltipBg.position({
+                            x: mousePos.x + 5,
+                            y: mousePos.y - 15,
+                        });
+                        tooltipBg.width(tooltip.width() + 16);
+                        tooltipBg.height(tooltip.height() + 16);
+                        tooltip.visible(true);
+                        tooltipBg.visible(true);
+                        uiLayer.draw();
+                    }
+                });
+
+                annotationGroup.on('mouseleave', () => {
+                    document.body.style.cursor = 'default';
+                    shape.opacity(0.25);
+                    annotationLayer.draw();
+
+                    // Hide tooltip
+                    tooltip.visible(false);
+                    tooltipBg.visible(false);
+                    uiLayer.draw();
+                });
+
+                // Click to select
+                annotationGroup.on('click tap', (e) => {
+                    e.cancelBubble = true;
+                    selectAnnotation(annotationGroup);
+                });
+
+                annotationLayer.add(annotationGroup);
+                return annotationGroup;
+            }
+
+        } catch (error) {
+            console.error('Error drawing annotation:', error, annotation);
+        }
+
+        return null;
     }
 
     // Function to handle window resize for modal
@@ -565,7 +1227,7 @@
         tabindex="-1"
     >
         <div
-            class="bg-white rounded-lg shadow-xl max-w-4xl max-h-[90vh] overflow-hidden"
+            class="bg-white rounded-lg shadow-xl max-w-6xl max-h-[95vh] overflow-hidden"
             role="document"
             on:click|stopPropagation
         >
@@ -579,19 +1241,102 @@
                 </button>
             </div>
             <div class="p-4">
-                <div class="relative max-w-full max-h-[70vh] overflow-hidden rounded-lg">
-                    <img
-                        src={previewModalImage.previewUrl}
-                        alt={previewModalImage.name}
-                        class="max-w-full max-h-full object-contain block"
-                    />
-                    <!-- Preview badge -->
-                    <div class="absolute top-2 right-2 bg-purple-600 text-white text-sm px-3 py-1 rounded-full shadow z-10">
-                        Annotated Preview
+                <!-- Control Panel -->
+                <div class="flex flex-wrap items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
+                    <div class="text-sm text-gray-600 mr-4">Controls:</div>
+
+                    <!-- Zoom Controls -->
+                    <button
+                        on:click={zoomOut}
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                        title="Zoom Out (-)"
+                    >
+                        🔍-
+                    </button>
+                    <button
+                        on:click={resetZoom}
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                        title="Reset Zoom (0)"
+                    >
+                        100%
+                    </button>
+                    <button
+                        on:click={zoomIn}
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                        title="Zoom In (=)"
+                    >
+                        🔍+
+                    </button>
+
+                    <!-- Fit to Screen -->
+                    <button
+                        on:click={fitToScreen}
+                        class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded transition-colors ml-4"
+                        title="Fit to Screen (R)"
+                    >
+                        📐 Fit
+                    </button>
+
+                    <!-- Annotation Controls -->
+                    <div class="ml-4 flex items-center gap-2">
+                        <span class="text-sm text-gray-600">Annotations:</span>
+                        <button
+                            on:click={selectAllAnnotations}
+                            class="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white text-sm rounded transition-colors"
+                            title="Select All (Ctrl+A)"
+                        >
+                            Select All
+                        </button>
+                        <button
+                            on:click={deselectAnnotation}
+                            class="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded transition-colors"
+                            title="Deselect (Esc)"
+                        >
+                            Deselect
+                        </button>
+                        <button
+                            on:click={deleteSelectedAnnotation}
+                            class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded transition-colors"
+                            title="Delete Selected (Del)"
+                        >
+                            🗑️ Delete
+                        </button>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="ml-auto text-sm text-gray-600">
+                        Zoom: {Math.round(scale * 100)}% |
+                        Annotations: {annotationGroups.length}
+                        {#if selectedAnnotation}
+                            | Selected: {Array.isArray(selectedAnnotation) ? selectedAnnotation.length : 1}
+                        {/if}
+                    </div>
+                </div>
+
+                <!-- Keyboard Shortcuts Info -->
+                <div class="text-xs text-gray-500 mb-4 bg-blue-50 p-2 rounded">
+                    <strong>Keyboard Shortcuts:</strong> Zoom (+/-), Reset (0), Fit (R), Select All (Ctrl+A), Delete (Del), Deselect (Esc), Close (Esc)
+                </div>
+
+                <div class="relative max-w-full max-h-[70vh] overflow-hidden rounded-lg bg-gray-100">
+                    <!-- KonvaJS Container -->
+                    <div
+                        bind:this={konvaContainer}
+                        class="w-full h-full min-h-[600px] border-2 border-gray-300 bg-gray-50 flex items-center justify-center"
+                        style="width: 1000px; height: 700px;"
+                    >
+                        <div class="text-gray-500">Loading advanced canvas...</div>
+                    </div>
+                    <!-- Status Indicators -->
+                    <div class="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded shadow z-10">
+                        Enhanced KonvaJS
+                    </div>
+                    <div class="absolute bottom-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow z-10">
+                        {annotationGroups.length} annotations loaded
                     </div>
                 </div>
                 <div class="mt-4 text-sm text-gray-600 text-center">
-                    This preview shows the image with annotations already drawn on it
+                    Advanced interactive annotations with zoom, pan, selection, and editing capabilities
                 </div>
             </div>
         </div>
