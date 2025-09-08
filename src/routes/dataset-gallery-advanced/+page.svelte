@@ -1,14 +1,12 @@
 <script lang="ts">
     import { onMount, tick } from "svelte";
-    import { invoke } from "@tauri-apps/api/core";
+    import { invoke, convertFileSrc } from "@tauri-apps/api/core";
     import { open } from "@tauri-apps/plugin-dialog";
-    // import { convertFileSrc } from "@tauri-apps/api/core"; // No longer needed directly here
-    import { Accordion, AccordionItem } from "flowbite-svelte";
-    import DatasetSummaryCard from "$lib/DatasetSummaryCard.svelte";
-    import CropRemapTool from "$lib/CropRemapTool.svelte";
-    import ImageGallery from "$lib/ImageGallery.svelte";
-    import ImageViewerModal from "$lib/ImageViewerModal.svelte";
-    import ExportModal from "$lib/ExportModal.svelte";
+    import DatasetSummaryCard from "./components/DatasetSummaryCard.svelte";
+    import ModalAnnotationViewer from "./components/ModalAnnotationViewer.svelte";
+    import ImageGallery from "./components/ImageGallery.svelte";
+    import ImageViewerModal from "./components/ImageViewerModal.svelte";
+    import ExportModal from "./components/ExportModal.svelte";
     import {
         fetchPaginatedImages,
         fetchImageDetails,
@@ -16,7 +14,7 @@
         performAutoAnnotation,
         performCropAndRemap,
         performDatasetExport,
-    } from "$lib/services/datasetService";
+    } from "./datasetService";
     import type {
         ProcessedImage,
         ImageDetailData,
@@ -24,7 +22,7 @@
         AutoAnnotationResult,
         AnnotatedImageInfo,
         DatasetExportParams,
-    } from "$lib/services/datasetService";
+    } from "./datasetService";
 
     // State variables
     let directoryPath = "";
@@ -34,9 +32,15 @@
     let error = "";
     let viewMode = "grid"; // 'grid' or 'column'
     let selectedImage: ProcessedImage | null = null; // Ensure selectedImage also uses ProcessedImage
-    let annotating = false; // Tracks annotation status
+    let annotating = false; // Tracks manual annotation status
+    let autoAnnotating = false; // Tracks automatic annotation loading
     let annotationType = "bounding_box"; // Default annotation type
     let datasetSummary: DatasetSummary | null = null; // Use the DatasetSummary type
+    let autoAnnotationEnabled = true; // Enable/disable automatic annotation loading
+
+    // Modal Annotation Viewer State
+    let showAnnotationModal = false;
+    let modalSelectedImage: ProcessedImage | null = null;
 
     // Unified Export Modal State
     let showActualExportModal = false; // New state for controlling ExportModal visibility
@@ -57,7 +61,7 @@
     // let cropLoading: boolean = false;
     // let cropStatusMessage: string | null = null;
     // let cropIsError: boolean = false;
-    let cropToolOpen = false; // State for Accordion (remains for parent control if needed)
+    // let cropToolOpen = false; // State for Accordion (removed with crop tool)
 
     // Container element for the gallery
     // let containerElement; // Removed: Handled by ImageGallery or no longer needed
@@ -150,6 +154,11 @@
                 generateLabelMeSummary(); // Still generate summary on first page load
             }
 
+            // Auto-load annotations if enabled and images exist
+            if (autoAnnotationEnabled && images.length > 0) {
+                await autoLoadAnnotationsForPage(page);
+            }
+
             await tick();
             // setupLazyLoading(); // This call is now in ImageGallery.svelte's afterUpdate
             // The ImageGallery component will handle its own lazy loading setup internally
@@ -208,14 +217,57 @@
             }
         }
 
-        selectedImage = currentImageInState; // Set the potentially updated image as selected
+        // Ensure the image has a previewUrl for the editor
+        if (!currentImageInState.previewUrl) {
+            console.log('Page: Image missing previewUrl, generating it...');
+            currentImageInState.previewUrl = convertFileSrc(currentImageInState.path);
+        }
 
-        // The ImageViewerModal component will handle drawing annotations
-        // using its own `afterUpdate` or `on:load` logic when `selectedImage` prop changes.
+        // Ensure annotations array exists
+        if (!currentImageInState.annotations) {
+            currentImageInState.annotations = [];
+        }
+
+        // Open modal annotation viewer
+        modalSelectedImage = currentImageInState;
+        showAnnotationModal = true;
+
+        console.log(`Page: Opening modal annotation viewer for ${currentImageInState.name}`);
+        console.log('Page: Modal image object:', {
+            name: currentImageInState.name,
+            path: currentImageInState.path,
+            previewUrl: currentImageInState.previewUrl,
+            hasPreviewUrl: !!currentImageInState.previewUrl,
+            annotations: currentImageInState.annotations?.length || 0,
+            dimensions: currentImageInState.dimensions
+        });
     }
 
     function closeImageView() {
         selectedImage = null;
+    }
+
+    // Modal Annotation Viewer Handlers
+    function handleModalSave(event: CustomEvent) {
+        const { image, annotations } = event.detail;
+        console.log('Page: Saving annotations from modal for', image.name, annotations);
+
+        // Update the image in the images array with new annotations
+        const imageIndex = images.findIndex(img => img.path === image.path);
+        if (imageIndex !== -1) {
+            images[imageIndex] = { ...images[imageIndex], annotations };
+        }
+
+        // Close modal
+        handleModalClose();
+    }
+
+    function handleModalClose() {
+        console.log('Page: Closing annotation modal');
+
+        // Close modal and reset state
+        showAnnotationModal = false;
+        modalSelectedImage = null;
     }
 
     // Handle view mode change
@@ -315,6 +367,88 @@
             }
         } finally {
             annotating = false;
+        }
+    }
+
+    // Function to automatically load annotations for the current page
+    async function autoLoadAnnotationsForPage(page: number) {
+        try {
+            autoAnnotating = true;
+            console.log(`Auto-loading ALL annotations (bounding boxes + polygons) for page ${page}`);
+
+            // Load all annotation types in a single call
+            const result = await performAutoAnnotation(directoryPath, page, pageSize);
+
+            console.log("Annotation result:", result);
+
+            // Use result directly (no merging needed)
+            const mergedAnnotatedImages = result.annotated_images;
+
+            if (mergedAnnotatedImages && mergedAnnotatedImages.length > 0) {
+                // Merge annotation data with existing images
+                images = images.map((img: ProcessedImage) => {
+                    const annotatedImgData: AnnotatedImageInfo | undefined =
+                        mergedAnnotatedImages.find(
+                            (ai) => ai.path === img.path,
+                        );
+                    if (annotatedImgData) {
+                        console.log(
+                            `Auto-updating annotations for ${img.name} (all types loaded in single call).`,
+                        );
+
+                        // Combine existing annotations with new ones (avoid duplicates)
+                        const existingAnnotations = img.annotations || [];
+                        const newAnnotations = annotatedImgData.annotations || [];
+                        const combinedAnnotations = [...existingAnnotations];
+
+                        // Add new annotations, avoiding duplicates by checking label and shape_type
+                        newAnnotations.forEach(newAnn => {
+                            const exists = combinedAnnotations.some(existing =>
+                                existing.label === newAnn.label &&
+                                existing.shape_type === newAnn.shape_type &&
+                                JSON.stringify(existing.points) === JSON.stringify(newAnn.points)
+                            );
+                            if (!exists) {
+                                combinedAnnotations.push(newAnn);
+                            }
+                        });
+
+                        return {
+                            ...img,
+                            annotations: combinedAnnotations,
+                            annotated: combinedAnnotations.length > 0,
+                            hasJson:
+                                annotatedImgData.has_json !== undefined
+                                    ? annotatedImgData.has_json
+                                    : img.hasJson,
+                        };
+                    }
+                    return img;
+                });
+
+                const imagesWithJson = mergedAnnotatedImages.filter(
+                    (img) => img.has_json,
+                ).length;
+                const imagesWithActualAnnotations =
+                    mergedAnnotatedImages.filter(
+                        (img) => img.annotations && img.annotations.length > 0,
+                    ).length;
+                const totalAnnotationsLoaded = mergedAnnotatedImages.reduce(
+                    (total, img) => total + (img.annotations?.length || 0), 0
+                );
+
+                console.log(
+                    `Auto-loaded ALL annotations: ${imagesWithJson} images have JSON, ${imagesWithActualAnnotations} have annotations, ${totalAnnotationsLoaded} total annotations loaded.`,
+                );
+            } else {
+                console.log("Auto-annotation: No annotations found for either bounding boxes or polygons.");
+            }
+        } catch (autoErr) {
+            console.warn("Auto-annotation failed (non-blocking):", autoErr);
+            // Don't set global error - auto-loading is optional enhancement
+            // Users can still manually load annotations if needed
+        } finally {
+            autoAnnotating = false;
         }
     }
 
@@ -430,36 +564,7 @@
     // --- Crop and Remap Tool Functions --- (Removed, now internal to CropRemapTool.svelte)
     // async function selectCropDirectory(type: "source" | "output") { ... }
     // async function runCropAndRemap() { ... }
-
-    async function handleCropCompleted(event: CustomEvent<{ outputDir: string }>) {
-        const { outputDir } = event.detail;
-        console.log(`Page: Crop & Remap completed. New output directory: ${outputDir}`);
-
-        // Clear any existing page-level errors or success messages
-        error = "";
-        pageExportError = "";
-        pageExportSuccess = "";
-        // The CropRemapTool will show its own status message, 
-        // so we don't need to set one on the main page for the crop operation itself.
-
-        directoryPath = outputDir;
-        currentPage = 1;
-        images = [];
-        datasetSummary = null;
-        selectedImage = null;
-
-        // Close the crop tool accordion if it's open
-        cropToolOpen = false; 
-
-        try {
-            await loadImagesPage(1); // Load images from the new directory
-        } catch (loadErr) {
-            console.error("Page: Error loading images after crop:", loadErr);
-            const errMsg =
-                loadErr?.message || String(loadErr) || "Unknown error";
-            error = `Failed to load images from cropped directory: ${errMsg}`;
-        } 
-    }
+    // async function handleCropCompleted(event: CustomEvent<{ outputDir: string }>) { ... }
 
 </script>
 
@@ -510,10 +615,23 @@
                                 <option value="polygon">Polygons</option>
                             </select>
 
+                            <!-- Auto-annotation toggle -->
+                            <div class="flex items-center gap-2 px-3 py-2 bg-white/80 backdrop-blur border border-slate-300 rounded-md">
+                                <input
+                                    type="checkbox"
+                                    id="autoAnnotate"
+                                    bind:checked={autoAnnotationEnabled}
+                                    class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                />
+                                <label for="autoAnnotate" class="text-sm text-slate-600 cursor-pointer">
+                                    Auto-load All
+                                </label>
+                            </div>
+
                             <button
                                 on:click={annotateImages}
                                 class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-                                disabled={annotating}
+                                disabled={annotating || autoAnnotating}
                             >
                                 {annotating
                                     ? "Annotating..."
@@ -533,24 +651,6 @@
                                 Export Dataset
                             </button>
 
-                            <!-- Crop & Remap Button -->
-                            <button
-                                on:click={() => {
-                                    cropToolOpen = !cropToolOpen;
-                                    if (cropToolOpen) {
-                                        // Scroll to the CropRemapTool when opening
-                                        setTimeout(() => {
-                                            const element = document.querySelector('[data-crop-tool]');
-                                            if (element) {
-                                                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                            }
-                                        }, 100);
-                                    }
-                                }}
-                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
-                            >
-                                {cropToolOpen ? '✂️ Hide' : '✂️ Show'} Crop & Remap
-                            </button>
                         </div>
                         
                         <!-- View Mode Controls -->
@@ -574,11 +674,6 @@
                 <!-- End of #if directoryPath -->
             </div>
 
-            <!-- Use the Crop and Remap Tool Component -->
-            <CropRemapTool
-                bind:cropToolOpen
-                on:cropCompleted={handleCropCompleted}
-            />
 
             {#if error}
                 <div class="bg-red-50/80 backdrop-blur text-red-800 border border-red-200 p-4 rounded-md mb-6">
@@ -586,107 +681,116 @@
                 </div>
             {/if}
 
-            <!-- Use the Dataset Summary Card Component -->
-            <DatasetSummaryCard {datasetSummary} />
+            <!-- New Layout Structure: Summary -> Annotation Editor -> Gallery -->
+            {#if directoryPath}
+                <!-- 1. Dataset Summary Card (always show when directory is loaded) -->
+                <div class="mb-8">
+                    <DatasetSummaryCard {datasetSummary} />
+                </div>
 
-            {#if totalImages > 0}
-                <div class="text-sm text-slate-600 mb-4">
-                    Showing {Math.min(images.length, totalImages)} of {totalImages}
-                    images
+                <!-- 2. Modal Annotation Viewer (opens when image is selected) -->
+                <!-- Modal is now rendered at the bottom of the page -->
+
+                <!-- 3. Image Gallery and Loading States -->
+                {#if loading && images.length === 0}
+                    <div class="flex justify-center items-center py-12">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                    </div>
+                {:else if annotating}
+                    <div class="flex flex-col justify-center items-center py-12">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>
+                        <p class="text-gray-600">
+                            Loading {annotationType} annotations, please wait...
+                        </p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            Processing existing annotations from JSON files
+                        </p>
+                    </div>
+                {:else if autoAnnotating}
+                    <div class="flex flex-col justify-center items-center py-12">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                        <p class="text-gray-600">
+                            Automatically loading ALL annotations...
+                        </p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            Loading bounding boxes and polygons • This may take a moment for large images
+                        </p>
+                    </div>
+                {:else if !loading && images.length === 0 && !error}
+                    <div class="text-center py-12">
+                        <p class="text-gray-500">No images found in this directory.</p>
+                    </div>
+                {:else if images.length > 0}
+                    <!-- Image count display -->
+                    <div class="text-sm text-slate-600 mb-4">
+                        Showing {Math.min(images.length, totalImages)} of {totalImages} images
+                    </div>
+
+                    <!-- Image Gallery Component -->
+                    <ImageGallery
+                        bind:images
+                        {totalImages}
+                        bind:currentPage
+                        {totalPages}
+                        {pageSize}
+                        {viewMode}
+                        {annotationType}
+                        {loading}
+                        {loadingMore}
+                        on:selectImage={(event) => selectImage(event.detail)}
+                        on:loadPage={(event) => loadImagesPage(event.detail)}
+                    />
+                {/if}
+            {:else if !loading && !error}
+                <!-- Enhanced Placeholder Area when no directory is selected -->
+                <div class="text-center py-16 px-6 border-2 border-dashed border-gray-300 rounded-lg mt-8">
+                    <svg
+                        class="mx-auto h-12 w-12 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        aria-hidden="true"
+                    >
+                        <path
+                            vector-effect="non-scaling-stroke"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"
+                        />
+                    </svg>
+                    <h3 class="mt-2 text-lg font-medium text-gray-900">
+                        No Directory Selected
+                    </h3>
+                    <p class="mt-1 text-sm text-gray-500">
+                        Select a directory containing your images and LabelMe (.json) annotations to begin viewing and editing your dataset.
+                    </p>
+                    <div class="mt-6">
+                        <button
+                            type="button"
+                            on:click={selectDirectory}
+                            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="-ml-1 mr-2 h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                                />
+                            </svg>
+                            Select Directory
+                        </button>
+                    </div>
                 </div>
             {/if}
         </div>
-
-        {#if loading && images.length === 0}
-            <div class="flex justify-center items-center py-12">
-                <div
-                    class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"
-                ></div>
-            </div>
-        {:else if annotating}
-            <div class="flex flex-col justify-center items-center py-12">
-                <div
-                    class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"
-                ></div>
-                <p class="text-gray-600">
-                    Loading {annotationType} annotations, please wait...
-                </p>
-            </div>
-        {:else if !loading && directoryPath && images.length === 0 && !error}
-            <div class="text-center py-12">
-                <p class="text-gray-500">No images found in this directory.</p>
-            </div>
-        {:else if !loading && !directoryPath && !error}
-            <!-- Restored Enhanced Placeholder Area -->
-            <div
-                class="text-center py-16 px-6 border-2 border-dashed border-gray-300 rounded-lg mt-8"
-            >
-                <svg
-                    class="mx-auto h-12 w-12 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                >
-                    <path
-                        vector-effect="non-scaling-stroke"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"
-                    />
-                </svg>
-                <h3 class="mt-2 text-lg font-medium text-gray-900">
-                    No Directory Selected
-                </h3>
-                <p class="mt-1 text-sm text-gray-500">
-                    Select a directory containing your images and LabelMe
-                    (.json) annotations to begin.
-                </p>
-                <div class="mt-6">
-                    <button
-                        type="button"
-                        on:click={selectDirectory}
-                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="-ml-1 mr-2 h-5 w-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            stroke-width="2"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-                            />
-                        </svg>
-                        Select Directory
-                    </button>
-                </div>
-                <p class="mt-4 text-sm text-gray-500">
-                    Alternatively, you can use the Crop & Remap tool above to
-                    process a dataset.
-                </p>
-            </div>
-        {:else if images.length > 0}
-            <!-- Integrate ImageGallery component -->
-            <ImageGallery
-                bind:images
-                {totalImages}
-                bind:currentPage
-                {totalPages}
-                {pageSize}
-                {viewMode}
-                {annotationType}
-                {loading}
-                {loadingMore}
-                on:selectImage={(event) => selectImage(event.detail)}
-                on:loadPage={(event) => loadImagesPage(event.detail)}
-            />
-        {/if}
     </div>
 </div>
 
@@ -702,6 +806,15 @@
         showActualExportModal = false;
     }}
     on:runExport={(event) => runUnifiedExport(event.detail)}
+/>
+
+<!-- Modal Annotation Viewer -->
+<ModalAnnotationViewer
+    showModal={showAnnotationModal}
+    selectedImage={modalSelectedImage}
+    {autoAnnotationEnabled}
+    on:save={handleModalSave}
+    on:close={handleModalClose}
 />
 
 <style>

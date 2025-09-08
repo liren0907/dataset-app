@@ -25,7 +25,7 @@
 					</a>
 					<a
 						href="/dataset-gallery"
-						class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:text-slate-900 hover:bg-slate-100 no-underline {$page.url.pathname.startsWith('/dataset-gallery') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-300' : 'text-slate-600'}"
+						class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:text-slate-900 hover:bg-slate-100 no-underline {$page.url.pathname === '/dataset-gallery' ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-300' : 'text-slate-600'}"
 					>
 						Dataset Gallery
 					</a>
@@ -40,6 +40,12 @@
 						class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:text-slate-900 hover:bg-slate-100 no-underline {$page.url.pathname.startsWith('/crop-remap-component') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-300' : 'text-slate-600'}"
 					>
 						Crop & Remap Component
+					</a>
+					<a
+						href="/dataset-gallery-advanced"
+						class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:text-slate-900 hover:bg-slate-100 no-underline {$page.url.pathname === '/dataset-gallery-advanced' ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-300' : 'text-slate-600'}"
+					>
+						Dataset Gallery Advanced
 					</a>
 					<a
 						href="/imageViewer3"

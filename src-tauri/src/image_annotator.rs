@@ -32,12 +32,8 @@ pub struct AnnotationResult {
 pub struct ImageAnnotator;
 
 impl ImageAnnotator {
-    pub fn auto_annotate_images(path: &str, page: usize, page_size: usize, annotationType: &str) -> Result<String, String> {
-        // Validate annotation type
-        println!("Starting annotation with type: {}", annotationType);
-        if annotationType != "bounding_box" && annotationType != "polygon" {
-            return Err(format!("Invalid annotation type: {}. Must be 'bounding_box' or 'polygon'", annotationType));
-        }
+    pub fn auto_annotate_images(path: &str, page: usize, page_size: usize) -> Result<String, String> {
+        println!("Starting annotation processing for all types");
         
         // Get images for the current page from the directory handler
         println!("Loading images from: {}, page: {}, page_size: {}", path, page, page_size);
@@ -55,14 +51,14 @@ impl ImageAnnotator {
         for image in parsed_result.images {
             println!("Processing image: {}", image.path);
             // Find corresponding JSON annotation file
-            let annotations = Self::find_annotations(&image.path, annotationType)?;
-            
+            let annotations = Self::find_annotations(&image.path)?;
+
             // Add to annotated images
             let has_json = !annotations.is_empty();
             if has_json {
                 println!("Found {} annotations for {}", annotations.len(), image.path);
             }
-            
+
             annotated_images.push(AnnotatedImage {
                 path: image.path,
                 annotations,
@@ -73,8 +69,8 @@ impl ImageAnnotator {
         // Count JSON files and annotations
         let with_json = annotated_images.iter().filter(|img| img.has_json).count();
         let with_annotations = annotated_images.iter().filter(|img| !img.annotations.is_empty()).count();
-        println!("Processed {} images: {} with JSON files, {} with {} annotations", 
-            annotated_images.len(), with_json, with_annotations, annotationType);
+        println!("Processed {} images: {} with JSON files, {} with annotations",
+            annotated_images.len(), with_json, with_annotations);
         
         // Create the result
         let result = AnnotationResult {
@@ -93,7 +89,7 @@ impl ImageAnnotator {
     }
     
     // Find and parse LabelMe JSON annotation file for an image
-    fn find_annotations(image_path: &str, annotationType: &str) -> Result<Vec<Annotation>, String> {
+    fn find_annotations(image_path: &str) -> Result<Vec<Annotation>, String> {
         let image_file_path = Path::new(image_path);
         
         // Get image filename without extension
@@ -165,17 +161,7 @@ impl ImageAnnotator {
                 None => continue, // No shape_type found
             };
             
-            // Filter by annotation type
-            let is_valid_type = match annotationType {
-                "bounding_box" => shape_type == "rectangle",
-                "polygon" => shape_type == "polygon",
-                _ => false,
-            };
-            
-            if !is_valid_type {
-                println!("Skipping shape of type {}, wanted {}", shape_type, annotationType);
-                continue;
-            }
+            // Process all annotation types (rectangle and polygon)
             
             // Get label
             let label = match shape.get("label") {
@@ -222,7 +208,7 @@ impl ImageAnnotator {
             });
         }
         
-        println!("Found {} matching annotations of type {}", annotations.len(), annotationType);
+        println!("Found {} annotations (all types)", annotations.len());
         Ok(annotations)
     }
 } 

@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod annotation_processor;
 mod bounding_box_drawer;
+mod crop_remap;
 mod data_visualizer;
 mod dialog_handler;
 mod directory_handler;
@@ -12,6 +13,7 @@ mod labelme2yolo;
 mod labelme_types;
 mod labelme_viewer;
 mod polygon_drawer;
+mod preview;
 mod video_handler;
 mod yolo_to_labelme_converter;
 
@@ -27,7 +29,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use video_handler::VideoHandler;
 use yolo_to_labelme_converter::YoloToLabelmeConverter;
-use annotation_processor::process_parent_child_annotations;
+// Removed unused import: process_parent_child_annotations
 
 fn main() {
     tauri::Builder::default()
@@ -54,7 +56,9 @@ fn main() {
             auto_annotate_images,
             get_labelme_summary,
             crop_and_remap_annotations,
-            generate_annotated_previews
+            generate_annotated_previews,
+            preview::generate_single_annotated_preview,
+            crop_remap_adapter
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -514,8 +518,8 @@ fn get_directory_images(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-fn get_paginated_images(path: String, page: usize, pageSize: usize) -> Result<String, String> {
-    DirectoryHandler::get_paginated_images(&path, page, pageSize)
+fn get_paginated_images(path: String, page: usize, page_size: usize) -> Result<String, String> {
+    DirectoryHandler::get_paginated_images(&path, page, page_size)
 }
 
 #[tauri::command]
@@ -527,10 +531,9 @@ fn get_image_details(path: String) -> Result<String, String> {
 fn auto_annotate_images(
     path: String,
     page: usize,
-    pageSize: usize,
-    annotationType: String,
+    page_size: usize,
 ) -> Result<String, String> {
-    ImageAnnotator::auto_annotate_images(&path, page, pageSize, &annotationType)
+    ImageAnnotator::auto_annotate_images(&path, page, page_size)
 }
 
 #[tauri::command]
@@ -686,11 +689,8 @@ fn generate_annotated_previews(
         }
     }
 
-    // Get annotated images using the ImageAnnotator - try both polygon and bounding_box types
-    let mut annotation_result = ImageAnnotator::auto_annotate_images(&source_dir, 1, 1000, "polygon");
-    if annotation_result.is_err() || annotation_result.as_ref().unwrap().contains("No annotated images found") {
-        annotation_result = ImageAnnotator::auto_annotate_images(&source_dir, 1, 1000, "bounding_box");
-    }
+    // Get annotated images using the ImageAnnotator - process all annotation types
+    let annotation_result = ImageAnnotator::auto_annotate_images(&source_dir, 1, 1000);
     let annotation_result = annotation_result?;
     let parsed_result: serde_json::Value = serde_json::from_str(&annotation_result)
         .map_err(|e| format!("Failed to parse annotation result: {}", e))?;
@@ -725,7 +725,7 @@ fn generate_annotated_previews(
 
     // Simple shuffle using seed
     for i in (1..annotated_images.len()).rev() {
-        let j = (seed.wrapping_mul(i) % (i + 1));
+        let j = seed.wrapping_mul(i) % (i + 1);
         annotated_images.swap(i, j);
     }
 
@@ -881,4 +881,12 @@ fn generate_annotated_previews(
     });
 
     Ok(result.to_string())
+}
+
+#[tauri::command]
+fn crop_remap_adapter(
+    source_dir: String,
+    num_previews: usize,
+) -> Result<String, String> {
+    crop_remap::crop_remap_adapter(source_dir, num_previews)
 }

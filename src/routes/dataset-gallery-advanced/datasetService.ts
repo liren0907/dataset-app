@@ -20,7 +20,7 @@ export interface ProcessedImage extends BackendImage {
     displayIndex?: number; // Optional: for certain UI logic
     annotated?: boolean; // Derived from annotations presence
     // Ensure dimensions and other details from get_image_details can be stored
-    dimensions?: { width: number; height: number }; 
+    dimensions?: { width: number; height: number };
 }
 
 // Interface for the paginated response from the backend
@@ -31,6 +31,7 @@ interface PaginatedImageResponse {
     // current_page: number; // Backend might also return this
 }
 
+// Interface for the result of fetching paginated images
 export interface FetchPaginatedImagesResult {
     processedImages: ProcessedImage[];
     totalImages: number;
@@ -86,12 +87,12 @@ export async function fetchPaginatedImages(
         }
 
         const data = JSON.parse(resultStr) as PaginatedImageResponse;
-        
+
         if (!data || !Array.isArray(data.images)) {
             console.error("Service: Invalid data structure received", data);
             throw new Error("Invalid data structure for images.");
         }
-        
+
         console.log(
             `Service: Received ${data.images.length} images, total: ${data.total}, total_pages: ${data.total_pages}`
         );
@@ -119,7 +120,7 @@ export async function fetchPaginatedImages(
 // For now, let's assume it returns fields that can be part of BackendImage.
 export interface ImageDetailData extends Partial<BackendImage> {
     // Explicitly expect dimensions, other fields are optional from BackendImage
-    dimensions: { width: number; height: number }; 
+    dimensions: { width: number; height: number };
 }
 
 /**
@@ -135,8 +136,8 @@ export async function fetchImageDetails(imagePath: string): Promise<ImageDetailD
     }
 
     try {
-        const resultStr = await invoke("get_image_details", { 
-            path: imagePath 
+        const resultStr = await invoke("get_image_details", {
+            path: imagePath
         }) as string | null;
 
         if (!resultStr) {
@@ -150,7 +151,7 @@ export async function fetchImageDetails(imagePath: string): Promise<ImageDetailD
             console.error("Service: Invalid or incomplete detail data received", detailedData);
             throw new Error("Invalid or incomplete detailed data for image (missing dimensions).");
         }
-        
+
         console.log(`Service: Received details for ${imagePath}:`, detailedData);
         return detailedData;
     } catch (err) {
@@ -184,8 +185,8 @@ export async function fetchDatasetSummary(path: string): Promise<DatasetSummary>
     }
 
     try {
-        const resultStr = await invoke("get_labelme_summary", { 
-            path: path 
+        const resultStr = await invoke("get_labelme_summary", {
+            path: path
         }) as string | null;
 
         if (!resultStr) {
@@ -200,7 +201,7 @@ export async function fetchDatasetSummary(path: string): Promise<DatasetSummary>
             console.error("Service: Invalid or incomplete summary data received", summaryData);
             throw new Error("Invalid or incomplete summary data received from service.");
         }
-        
+
         console.log(`Service: Received dataset summary for ${path}:`, summaryData);
         return summaryData;
     } catch (err) {
@@ -263,7 +264,7 @@ export async function performAutoAnnotation(
             console.error("Service: Invalid or incomplete annotation data received", annotationData);
             throw new Error("Invalid or incomplete annotation data structure received from service.");
         }
-        
+
         console.log(`Service: Received annotation results for ${path}:`, annotationData.annotated_images.length, "images affected.");
         return annotationData;
     } catch (err) {
@@ -306,7 +307,7 @@ export async function performCropAndRemap(
             outputDir: outputDir,
             parentLabel: parentLabel
         }) as string;
-        
+
         console.log(`Service: Crop and remap successful. Message: ${message}`);
         return message;
     } catch (err) {
@@ -335,13 +336,13 @@ export interface DatasetExportParams {
  * @throws Will throw an error if the backend call fails or parameters are invalid for the mode.
  */
 export async function performDatasetExport(params: DatasetExportParams): Promise<string> {
-    const { 
-        sourceDir, 
-        outputDir, 
-        mode, 
-        trainRatio, 
-        valRatio, 
-        testRatio, 
+    const {
+        sourceDir,
+        outputDir,
+        mode,
+        trainRatio,
+        valRatio,
+        testRatio,
         shapeType,
         includedLabels
     } = params;
@@ -362,7 +363,7 @@ export async function performDatasetExport(params: DatasetExportParams): Promise
             }
             // Basic validation for ratios sum (more thorough validation might be in UI or backend)
             const sum = trainRatio + valRatio + testRatio;
-            if (Math.abs(sum - 1.0) > 0.015) { 
+            if (Math.abs(sum - 1.0) > 0.015) {
                 throw new Error(`YOLO split ratios must sum to 1.0. Current sum: ${sum.toFixed(2)}`);
             }
 
@@ -388,7 +389,7 @@ export async function performDatasetExport(params: DatasetExportParams): Promise
         } else {
             throw new Error(`Unsupported export mode: ${mode}`);
         }
-        
+
         console.log(`Service: Dataset export successful. Message: ${resultMessage}`);
         return resultMessage;
 
@@ -399,8 +400,16 @@ export async function performDatasetExport(params: DatasetExportParams): Promise
     }
 }
 
-// We can add more service functions here later, e.g.:
-// export async function fetchImageDetails(imagePath: string): Promise<ProcessedImage> { ... }
-// export async function fetchDatasetSummaryService(path: string): Promise<any> { ... }
-// export async function performAnnotationService(...) { ... }
-// etc. 
+// Local datasetService functions for dataset-gallery-advanced
+// Add advanced-specific features here for rapid development
+export async function advancedDatasetAnalysis(path: string) {
+    // Placeholder for advanced dataset analysis
+    console.log(`Advanced: Analyzing dataset at ${path}`);
+    // Add your advanced analysis logic here
+}
+
+export async function advancedImageProcessing(path: string) {
+    // Placeholder for advanced image processing
+    console.log(`Advanced: Processing image at ${path}`);
+    // Add your advanced processing logic here
+}
