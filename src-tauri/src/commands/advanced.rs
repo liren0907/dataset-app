@@ -1,17 +1,75 @@
+use crate::core::annotation_processor;
 use crate::core::bounding_box_drawer;
+use crate::crop_remap;
 use crate::core::image_annotator::ImageAnnotator;
 use crate::core::polygon_drawer;
 use serde_json::json;
+use std::collections::hash_map::DefaultHasher;
 use std::fs;
+use std::hash::{Hash, Hasher};
+use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
-use base64::{Engine as _, engine::general_purpose};
 
-pub fn crop_remap_adapter(
+#[tauri::command]
+pub fn crop_and_remap_annotations(
+    source_dir: String,
+    output_dir: String,
+    parent_label: String,
+    required_child_labels_str: String,
+    padding_factor: f32,
+) -> Result<String, String> {
+    // Parse the comma-separated string into a vector of string references
+    let required_child_labels: Vec<&str> = required_child_labels_str
+        .split(',')
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .collect();
+
+    if required_child_labels.is_empty() {
+        return Err("No required child labels specified".to_string());
+    }
+
+    // Validate padding factor
+    if padding_factor <= 0.0 || padding_factor > 5.0 {
+        return Err("Padding factor must be between 0.1 and 5.0".to_string());
+    }
+
+    println!(
+        "Received crop_and_remap request: source={}, output={}, parent_label={}, required_child={:?}, padding_factor={:.2}",
+        source_dir, output_dir, parent_label, required_child_labels, padding_factor
+    );
+
+    // Call the actual processing logic, passing the new argument
+    annotation_processor::process_parent_child_annotations(
+        &source_dir,
+        &output_dir,
+        &parent_label,
+        &required_child_labels,
+        padding_factor,
+    )
+}
+
+#[tauri::command]
+pub fn generate_annotated_previews(
     source_dir: String,
     num_previews: usize,
+    temp_dir: String,
 ) -> Result<String, String> {
+    println!("Generating {} annotated preview images from: {}", num_previews, source_dir);
 
-    println!("Generating {} annotated preview images from: {} (CROP REMAP ADAPTER)", num_previews, source_dir);
+    // Create temp directory if it doesn't exist with proper permissions
+    if let Err(e) = fs::create_dir_all(&temp_dir) {
+        return Err(format!("Failed to create temp directory: {}", e));
+    }
+
+    // Set proper permissions for the temp directory (readable by all)
+    if let Ok(metadata) = fs::metadata(&temp_dir) {
+        let mut permissions = metadata.permissions();
+        permissions.set_mode(0o755); // rwxr-xr-x
+        if let Err(e) = fs::set_permissions(&temp_dir, permissions) {
+            println!("Warning: Failed to set temp directory permissions: {}", e);
+        }
+    }
 
     // Get annotated images using the ImageAnnotator - process all annotation types
     let annotation_result = ImageAnnotator::auto_annotate_images(&source_dir, 1, 1000);
@@ -40,9 +98,6 @@ pub fn crop_remap_adapter(
     }
 
     // Shuffle and take up to num_previews
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
-
     let mut hasher = DefaultHasher::new();
     annotated_images.hash(&mut hasher);
     let seed = hasher.finish() as usize;
@@ -55,9 +110,8 @@ pub fn crop_remap_adapter(
 
     let selected_images = annotated_images.into_iter().take(num_previews);
 
-    // Generate annotated preview images with detailed information
-    let mut processed_images = Vec::new();
-
+    // Generate annotated preview images
+    let mut preview_paths = Vec::new();
     for (image_path, _annotations) in selected_images {
         // Find corresponding JSON file
         let image_path_obj = Path::new(&image_path);
@@ -73,24 +127,16 @@ pub fn crop_remap_adapter(
             continue; // Skip if no JSON file
         }
 
-        // Generate unique identifier for this preview
+        // Generate preview filename
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_millis();
 
-        let preview_id = format!("preview_{}_{}", timestamp, processed_images.len());
+        let preview_filename = format!("preview_{}_{}.jpg", timestamp, preview_paths.len());
+        let preview_path = Path::new(&temp_dir).join(preview_filename);
 
-        // Read and encode original image
-        let original_image_data = match fs::read(&image_path) {
-            Ok(data) => base64::engine::general_purpose::STANDARD.encode(&data),
-            Err(e) => {
-                println!("Warning: Failed to read original image {}: {}", image_path, e);
-                continue;
-            }
-        };
-
-        // Read annotation metadata
+        // Read JSON to determine annotation types
         let json_content = match fs::read_to_string(&json_path) {
             Ok(content) => content,
             Err(e) => {
@@ -131,27 +177,23 @@ pub fn crop_remap_adapter(
 
         // Draw annotations based on detected types - prioritize polygons if both exist
         let mut drawing_success = false;
-        let mut annotation_type = "unknown";
         let json_filename = json_path.file_name()
             .and_then(|n| n.to_str())
             .ok_or("Invalid JSON filename")?;
 
         // Try polygon drawing first if polygons are present
-        let mut annotated_image_data = String::new();
         if has_polygons {
             if let Ok(_) = polygon_drawer::draw_polygons(
                 &source_dir,
                 &json_path.to_string_lossy(),
-                &source_dir, // Use source directory instead of temp
+                &temp_dir,
             ) {
-                let expected_output = Path::new(&source_dir).join(format!("{}_polygons.jpg", json_filename.replace(".json", "")));
+                let expected_output = Path::new(&temp_dir).join(format!("{}_polygons.jpg", json_filename.replace(".json", "")));
                 if expected_output.exists() {
-                    if let Ok(data) = fs::read(&expected_output) {
-                        annotated_image_data = general_purpose::STANDARD.encode(&data);
+                    if let Err(e) = fs::rename(&expected_output, &preview_path) {
+                        println!("Warning: Failed to rename polygon preview file: {}", e);
+                    } else {
                         drawing_success = true;
-                        annotation_type = "polygon";
-                        // Clean up the temporary file
-                        let _ = fs::remove_file(&expected_output);
                     }
                 }
             }
@@ -162,16 +204,14 @@ pub fn crop_remap_adapter(
             if let Ok(_) = bounding_box_drawer::draw_bounding_boxes(
                 &source_dir,
                 &json_path.to_string_lossy(),
-                &source_dir, // Use source directory instead of temp
+                &temp_dir,
             ) {
-                let expected_output = Path::new(&source_dir).join(format!("{}_boxes.jpg", json_filename.replace(".json", "")));
+                let expected_output = Path::new(&temp_dir).join(format!("{}_boxes.jpg", json_filename.replace(".json", "")));
                 if expected_output.exists() {
-                    if let Ok(data) = fs::read(&expected_output) {
-                        annotated_image_data = general_purpose::STANDARD.encode(&data);
+                    if let Err(e) = fs::rename(&expected_output, &preview_path) {
+                        println!("Warning: Failed to rename bounding box preview file: {}", e);
+                    } else {
                         drawing_success = true;
-                        annotation_type = "rectangle";
-                        // Clean up the temporary file
-                        let _ = fs::remove_file(&expected_output);
                     }
                 }
             }
@@ -182,27 +222,50 @@ pub fn crop_remap_adapter(
             continue;
         }
 
-        // Create processed image entry with all required data
-        let processed_image = json!({
-            "original_image_path": image_path,
-            "original_image": format!("data:image/jpeg;base64,{}", original_image_data),
-            "annotation_metadata": json_value,
-            "modified_annotation_metadata": json_value, // For now, same as original (no modifications in adapter)
-            "annotated_image": format!("data:image/jpeg;base64,{}", annotated_image_data),
-            "annotation_type": annotation_type,
-            "preview_id": preview_id
-        });
-
-        processed_images.push(processed_image);
+        // Add to preview paths if drawing was successful
+        if drawing_success {
+            // Set proper permissions for the generated preview file
+            if let Ok(metadata) = fs::metadata(&preview_path) {
+                let mut permissions = metadata.permissions();
+                permissions.set_mode(0o644); // rw-r--r--
+                if let Err(e) = fs::set_permissions(&preview_path, permissions) {
+                    println!("Warning: Failed to set preview file permissions: {}", e);
+                }
+            }
+            preview_paths.push(preview_path.to_string_lossy().to_string());
+        }
     }
 
-    // Return the new detailed format
+    // Use annotation data directly (no preview paths needed)
+    let mut annotated_images_result = Vec::new();
+    let empty_annotations = Vec::new();
+
+    for image in annotated_images_data {
+        let has_json = image["has_json"].as_bool().unwrap_or(false);
+        let annotations = image["annotations"].as_array().unwrap_or(&empty_annotations);
+
+        // Only include images that have annotations
+        if has_json && !annotations.is_empty() {
+            annotated_images_result.push(image.clone());
+        }
+    }
+
+    // Take only the first num_previews images
+    let annotated_images_result = annotated_images_result.into_iter().take(num_previews).collect::<Vec<_>>();
+
     let result = json!({
-        "processed_images": processed_images,
-        "total_found": annotated_images_data.len(),
-        "successfully_processed": processed_images.len(),
-        "requested_count": num_previews
+        "annotated_images": annotated_images_result,
+        "total": annotated_images_data.len(),
+        "preview_count": annotated_images_result.len()
     });
 
     Ok(result.to_string())
+}
+
+#[tauri::command]
+pub fn crop_remap_adapter(
+    source_dir: String,
+    num_previews: usize,
+) -> Result<String, String> {
+    crop_remap::crop_remap_adapter(source_dir, num_previews)
 }

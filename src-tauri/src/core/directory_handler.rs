@@ -1,11 +1,11 @@
-use std::fs;
-use std::path::Path;
-use serde::{Serialize, Deserialize};
-use walkdir::WalkDir;
 use chrono::{DateTime, Utc};
 use image::GenericImageView;
-use std::sync::{Arc, Mutex};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fs;
+use std::path::Path;
+use std::sync::{Arc, Mutex};
+use walkdir::WalkDir;
 
 // Cache for directory contents to avoid rescanning
 lazy_static::lazy_static! {
@@ -47,7 +47,9 @@ impl DirectoryHandler {
         }
 
         let mut images = Vec::new();
-        let image_extensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".tiff", ".tif"];
+        let image_extensions = [
+            ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".tiff", ".tif",
+        ];
 
         // Walk through the directory and its subdirectories
         for entry in WalkDir::new(dir_path)
@@ -56,7 +58,7 @@ impl DirectoryHandler {
             .filter_map(|e| e.ok())
         {
             let path = entry.path();
-            
+
             // Skip directories
             if path.is_dir() {
                 continue;
@@ -65,17 +67,20 @@ impl DirectoryHandler {
             // Check if the file has an image extension
             if let Some(extension) = path.extension() {
                 let ext = extension.to_string_lossy().to_lowercase();
-                if image_extensions.iter().any(|&e| e.contains(&ext) || e[1..].contains(&ext)) {
+                if image_extensions
+                    .iter()
+                    .any(|&e| e.contains(&ext) || e[1..].contains(&ext))
+                {
                     // Get file metadata
                     if let Ok(metadata) = fs::metadata(path) {
                         let size = metadata.len();
-                        
+
                         // Get creation and modification times
                         let created = metadata
                             .created()
                             .ok()
                             .and_then(|time| DateTime::<Utc>::from(time).timestamp_millis().into());
-                        
+
                         let modified = metadata
                             .modified()
                             .ok()
@@ -83,17 +88,21 @@ impl DirectoryHandler {
 
                         // Get image dimensions if possible
                         let dimensions = Self::get_image_dimensions(path);
-                        
+
                         // Create image file struct
                         let image = ImageFile {
-                            name: path.file_name().unwrap_or_default().to_string_lossy().to_string(),
+                            name: path
+                                .file_name()
+                                .unwrap_or_default()
+                                .to_string_lossy()
+                                .to_string(),
                             path: path.to_string_lossy().to_string(),
                             size,
                             dimensions,
                             created,
                             modified,
                         };
-                        
+
                         images.push(image);
                     }
                 }
@@ -111,7 +120,11 @@ impl DirectoryHandler {
     }
 
     // New optimized function for paginated results
-    pub fn get_paginated_images(path: &str, page: usize, page_size: usize) -> Result<String, String> {
+    pub fn get_paginated_images(
+        path: &str,
+        page: usize,
+        page_size: usize,
+    ) -> Result<String, String> {
         let dir_path = Path::new(path);
         if !dir_path.exists() || !dir_path.is_dir() {
             return Err(format!("Invalid directory path: {}", path));
@@ -120,14 +133,16 @@ impl DirectoryHandler {
         // Try to get images from cache first
         let path_key = path.to_string();
         let mut cache = DIRECTORY_CACHE.lock().unwrap();
-        
+
         let all_images = if let Some(cached_images) = cache.get(&path_key) {
             // Use cached results
             cached_images.clone()
         } else {
             // Not in cache, scan directory
             let mut images = Vec::new();
-            let image_extensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".tiff", ".tif"];
+            let image_extensions = [
+                ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".tiff", ".tif",
+            ];
 
             // Walk through the directory
             for entry in WalkDir::new(dir_path)
@@ -136,7 +151,7 @@ impl DirectoryHandler {
                 .filter_map(|e| e.ok())
             {
                 let path = entry.path();
-                
+
                 // Skip directories
                 if path.is_dir() {
                     continue;
@@ -145,26 +160,31 @@ impl DirectoryHandler {
                 // Check if file has an image extension
                 if let Some(extension) = path.extension() {
                     let ext = extension.to_string_lossy().to_lowercase();
-                    if image_extensions.iter().any(|&e| e.contains(&ext) || e[1..].contains(&ext)) {
+                    if image_extensions
+                        .iter()
+                        .any(|&e| e.contains(&ext) || e[1..].contains(&ext))
+                    {
                         if let Ok(metadata) = fs::metadata(path) {
                             let size = metadata.len();
-                            
+
                             // Basic metadata only - defer loading dimensions until needed
                             let image = ImageFile {
-                                name: path.file_name().unwrap_or_default().to_string_lossy().to_string(),
+                                name: path
+                                    .file_name()
+                                    .unwrap_or_default()
+                                    .to_string_lossy()
+                                    .to_string(),
                                 path: path.to_string_lossy().to_string(),
                                 size,
                                 dimensions: None, // Don't load dimensions initially
-                                created: metadata
-                                    .created()
-                                    .ok()
-                                    .and_then(|time| DateTime::<Utc>::from(time).timestamp_millis().into()),
-                                modified: metadata
-                                    .modified()
-                                    .ok()
-                                    .and_then(|time| DateTime::<Utc>::from(time).timestamp_millis().into()),
+                                created: metadata.created().ok().and_then(|time| {
+                                    DateTime::<Utc>::from(time).timestamp_millis().into()
+                                }),
+                                modified: metadata.modified().ok().and_then(|time| {
+                                    DateTime::<Utc>::from(time).timestamp_millis().into()
+                                }),
                             };
-                            
+
                             images.push(image);
                         }
                     }
@@ -173,10 +193,10 @@ impl DirectoryHandler {
 
             // Sort images by name
             images.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
-            
+
             // Store in cache
             cache.insert(path_key.clone(), images.clone());
-            
+
             images
         };
 
@@ -218,9 +238,13 @@ impl DirectoryHandler {
 
         if let Ok(metadata) = fs::metadata(file_path) {
             let dimensions = Self::get_image_dimensions(file_path);
-            
+
             let image = ImageFile {
-                name: file_path.file_name().unwrap_or_default().to_string_lossy().to_string(),
+                name: file_path
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .to_string(),
                 path: path.to_string(),
                 size: metadata.len(),
                 dimensions,
@@ -233,7 +257,7 @@ impl DirectoryHandler {
                     .ok()
                     .and_then(|time| DateTime::<Utc>::from(time).timestamp_millis().into()),
             };
-            
+
             match serde_json::to_string(&image) {
                 Ok(json) => Ok(json),
                 Err(e) => Err(format!("Failed to serialize image details: {}", e)),
@@ -251,4 +275,4 @@ impl DirectoryHandler {
             ImageDimensions { width, height }
         })
     }
-} 
+}

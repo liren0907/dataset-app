@@ -59,27 +59,10 @@ This will:
 │  ├─ Cargo.toml                # Rust dependencies
 │  └─ tauri.conf.json           # Tauri app config
 ├─ static/                      # Static assets
-└─ stored/                      # Archived iterations (not active)
 ```
 
 ## Key Commands (Rust Backend)
-Exposed via Tauri and consumed by the frontend:
-- Dataset I/O
-  - `get_directory_images`, `get_paginated_images`, `get_image_details`
-  - `get_labelme_summary`
-- Drawing & Visualization
-  - `draw_bounding_boxes`, `draw_polygons`, `visualize_dataset`
-- Conversions & Export
-  - `export_to_yolo`, `labelme2yolo::export_to_yolo_new`
-  - `convert_to_labelme`
-  - `extract_labels`
-- Maintenance
-  - `change_label_name`, `clear_image_data`
-- Media helpers
-  - `get_video_info`, `read_video_file`, `read_image_file`
-- Tools
-  - `auto_annotate_images`
-  - `crop_and_remap_annotations`
+**If you're interested in the Rust backend architecture and Tauri command details, please refer to [`docs/RUST_BACKEND.md`](docs/RUST_BACKEND.md) for comprehensive documentation including hierarchical code structure, function signatures, and implementation details.**
 
 See `src-tauri/src/main.rs` for the full list and signatures.
 

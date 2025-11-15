@@ -74,7 +74,9 @@ impl VideoHandler {
                 );
 
                 let info = format!(
-                    "Video details:\nDuration: {:.2} seconds\nTotal Frames: {}\nFPS: {:.2}\nCodec: {}\nResolution: {}x{}",
+                    "Video details:\nDuration: {:.2} seconds\nTotal Frames: {}
+FPS: {:.2}\nCodec: {}
+Resolution: {}x{}",
                     duration, frame_count, fps, codec_str, width, height
                 );
                 println!("{}", info);

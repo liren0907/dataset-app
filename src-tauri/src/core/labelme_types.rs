@@ -42,6 +42,7 @@ pub struct BoundingBox {
 
 impl BoundingBox {
     // Check if this bounding box is fully contained within another
+    #[allow(dead_code)]
     pub fn is_inside(&self, other: &BoundingBox) -> bool {
         self.x_min >= other.x_min &&
         self.y_min >= other.y_min &&
@@ -77,4 +78,4 @@ pub fn get_bounding_box(points: &[[f32; 2]]) -> Option<BoundingBox> {
         y_max = y_max.max(point[1]);
     }
     Some(BoundingBox { x_min, y_min, x_max, y_max })
-} 
+}

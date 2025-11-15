@@ -2,6 +2,7 @@ use serde_json;
 use std::fs;
 use std::path::Path;
 
+#[allow(dead_code)]
 pub fn process_directories(root_dir: &str, target_dir: &str) -> Result<usize, String> {
     let root_path = Path::new(root_dir);
 

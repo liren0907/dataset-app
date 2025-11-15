@@ -1,4 +1,4 @@
-use crate::labelme_types::{LabelMeFile, LabelMeShape, /* BoundingBox, */ get_bounding_box};
+use crate::core::labelme_types::{LabelMeFile, LabelMeShape, /* BoundingBox, */ get_bounding_box};
 use std::fs;
 use std::path::{Path, /* PathBuf */};
 // use std::collections::HashMap;
@@ -6,6 +6,7 @@ use std::path::{Path, /* PathBuf */};
 use glob::glob;
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct ChildAnnotationInfo {
     original_shape: LabelMeShape,
     remapped_shape: LabelMeShape,
@@ -41,11 +42,11 @@ pub fn process_parent_child_annotations(
         return Err(format!("Source directory not found or is not a directory: {}", source_dir_str));
     }
     fs::create_dir_all(output_dir)
-        .map_err(|e| format!("Failed to create output directory '{}': {}", output_dir_str, e))?;
+        .map_err(|e| format!("Failed to create output directory {}: {}", output_dir_str, e))?;
 
     let pattern = format!("{}/**/*.json", source_dir_str.replace("\\", "/")); // Handle windows paths for glob
     let glob_results = glob(&pattern)
-        .map_err(|e| format!("Failed to read glob pattern '{}': {}", pattern, e))?;
+        .map_err(|e| format!("Failed to read glob pattern {}: {}", pattern, e))?;
 
     let mut processed_files_count = 0;
     let mut total_processed_parents = 0;
@@ -64,7 +65,7 @@ pub fn process_parent_child_annotations(
                             total_processed_parents += count;
                             println!(" -> Successfully processed {} parent instances in this file.", count);
                          } else {
-                             println!(" -> No parent '{}' instances with required children {:?} found or processed in this file.", parent_label, required_child_labels);
+                             println!(" -> No parent {} instances with required children {:?} found or processed in this file.", parent_label, required_child_labels);
                          }
                     }
                     Err(e) => {
@@ -90,6 +91,7 @@ pub fn process_parent_child_annotations(
 }
 
 // Helper function needed by the updated process_single_file logic
+#[allow(dead_code)]
 fn required_child_label() -> &'static str {
     "safety_helmet"
 }
@@ -117,7 +119,7 @@ fn process_single_file(
             continue; // Skip if not the target parent label
         }
 
-        println!(" -> Found potential parent '{}' at index {}", parent_label, parent_index);
+        println!(" -> Found potential parent {} at index {}", parent_label, parent_index);
 
         // --- 2. Calculate Parent Bounding Box ---
         let parent_bbox = match get_bounding_box(&parent_shape.points) {
@@ -141,7 +143,7 @@ fn process_single_file(
             let new_half_height = (current_height * padding_factor) / 2.0;
 
             // Create expanded bounding box (centered)
-            crate::labelme_types::BoundingBox {
+            crate::core::labelme_types::BoundingBox {
                 x_min: center_x - new_half_width,
                 y_min: center_y - new_half_height,
                 x_max: center_x + new_half_width,
@@ -151,7 +153,7 @@ fn process_single_file(
             parent_bbox // No expansion if padding_factor is 1.0
         };
 
-        println!(" -> Parent bbox: ({:.1}, {:.1}) to ({:.1}, {:.1}), expanded to: ({:.1}, {:.1}) to ({:.1}, {:.1}) with padding factor {:.2}", 
+        println!(" -> Parent bbox: ({:.1}, {:.1}) to ({:.1}, {:.1}), expanded to: ({:.1}, {:.1}) to ({:.1}, {:.1}) with padding factor {:.2}",
                  parent_bbox.x_min, parent_bbox.y_min, parent_bbox.x_max, parent_bbox.y_max,
                  expanded_parent_bbox.x_min, expanded_parent_bbox.y_min, expanded_parent_bbox.x_max, expanded_parent_bbox.y_max,
                  padding_factor);
@@ -190,7 +192,7 @@ fn process_single_file(
         // --- Check if the required child was found for *this* parent ---
         if !found_required_child {
             println!(
-                " -> Parent '{}' at index {} found, but no required child '{}' inside its bbox. Skipping this instance.",
+                " -> Parent {} at index {} found, but no required child {} inside its bbox. Skipping this instance.",
                 parent_label, parent_index,
                 required_child_labels.join(", ")
             );
@@ -199,12 +201,12 @@ fn process_single_file(
 
         // Check if after filtering, there are actually children to remap (should be true if found_required_child is true)
         if child_annotations_to_remap.is_empty() {
-             println!(" -> Parent '{}' at index {} found required children '{}', but found no children to remap (this might indicate an issue). Skipping.", parent_label, parent_index, required_child_labels.join(", "));
+             println!(" -> Parent {} at index {} found required children {}, but found no children to remap (this might indicate an issue). Skipping.", parent_label, parent_index, required_child_labels.join(", "));
              continue; // Skip this parent instance
         }
 
         println!(
-            " -> Parent '{}' at index {} found with required children '{}'. Processing {} child annotations.",
+            " -> Parent {} at index {} found with required children {}. Processing {} child annotations.",
             parent_label, parent_index,
             required_child_labels.join(", "),
             child_annotations_to_remap.len()
@@ -228,7 +230,7 @@ fn process_single_file(
         let img = match image::open(&original_image_path) {
              Ok(img_data) => img_data,
              Err(e) => {
-                 eprintln!(" -> Error for parent at index {}: Failed to open original image '{}': {}", parent_index, original_image_path.display(), e);
+                 eprintln!(" -> Error for parent at index {}: Failed to open original image {}: {}", parent_index, original_image_path.display(), e);
                  continue; // Skip this parent instance
              }
         };
@@ -261,7 +263,7 @@ fn process_single_file(
         let cropped_image_path = output_dir.join(&cropped_image_filename);
 
         if let Err(e) = cropped_img.save(&cropped_image_path) {
-             eprintln!(" -> Error for parent at index {}: Failed to save cropped image '{}': {}", parent_index, cropped_image_path.display(), e);
+             eprintln!(" -> Error for parent at index {}: Failed to save cropped image {}: {}", parent_index, cropped_image_path.display(), e);
              continue; // Skip saving JSON if image save failed
         }
         println!(" -> Saved cropped image: {}", cropped_image_filename);
@@ -302,7 +304,7 @@ fn process_single_file(
         };
 
         if let Err(e) = fs::write(&new_json_path, new_json_content) {
-             eprintln!(" -> Error for parent at index {}: Failed to write new JSON file '{}': {}", parent_index, new_json_path.display(), e);
+             eprintln!(" -> Error for parent at index {}: Failed to write new JSON file {}: {}", parent_index, new_json_path.display(), e);
              // Don't increment count if JSON save failed
         } else {
              println!(" -> Saved new JSON: {}", new_json_filename);
@@ -312,4 +314,4 @@ fn process_single_file(
     } // End loop through shapes
 
     Ok(processed_parent_count) // Return total count of parents processed successfully in this file
-} 
+}
