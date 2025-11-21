@@ -1,12 +1,13 @@
 use crate::core::annotation_processor;
 use crate::core::bounding_box_drawer;
-use crate::crop_remap;
 use crate::core::image_annotator::ImageAnnotator;
 use crate::core::polygon_drawer;
+use crate::crop_remap;
 use serde_json::json;
 use std::collections::hash_map::DefaultHasher;
 use std::fs;
 use std::hash::{Hash, Hasher};
+#[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 
@@ -55,7 +56,10 @@ pub fn generate_annotated_previews(
     num_previews: usize,
     temp_dir: String,
 ) -> Result<String, String> {
-    println!("Generating {} annotated preview images from: {}", num_previews, source_dir);
+    println!(
+        "Generating {} annotated preview images from: {}",
+        num_previews, source_dir
+    );
 
     // Create temp directory if it doesn't exist with proper permissions
     if let Err(e) = fs::create_dir_all(&temp_dir) {
@@ -63,6 +67,7 @@ pub fn generate_annotated_previews(
     }
 
     // Set proper permissions for the temp directory (readable by all)
+    #[cfg(unix)]
     if let Ok(metadata) = fs::metadata(&temp_dir) {
         let mut permissions = metadata.permissions();
         permissions.set_mode(0o755); // rwxr-xr-x
@@ -77,7 +82,8 @@ pub fn generate_annotated_previews(
     let parsed_result: serde_json::Value = serde_json::from_str(&annotation_result)
         .map_err(|e| format!("Failed to parse annotation result: {}", e))?;
 
-    let annotated_images_data = parsed_result["annotated_images"].as_array()
+    let annotated_images_data = parsed_result["annotated_images"]
+        .as_array()
         .ok_or("No annotated images found")?;
 
     // Filter images with annotations
@@ -115,11 +121,13 @@ pub fn generate_annotated_previews(
     for (image_path, _annotations) in selected_images {
         // Find corresponding JSON file
         let image_path_obj = Path::new(&image_path);
-        let file_stem = image_path_obj.file_stem()
+        let file_stem = image_path_obj
+            .file_stem()
             .and_then(|s| s.to_str())
             .ok_or("Invalid image path")?;
 
-        let json_path = image_path_obj.parent()
+        let json_path = image_path_obj
+            .parent()
             .map(|p| p.join(format!("{}.json", file_stem)))
             .ok_or("Cannot determine JSON path")?;
 
@@ -140,7 +148,11 @@ pub fn generate_annotated_previews(
         let json_content = match fs::read_to_string(&json_path) {
             Ok(content) => content,
             Err(e) => {
-                println!("Warning: Failed to read JSON file {}: {}", json_path.display(), e);
+                println!(
+                    "Warning: Failed to read JSON file {}: {}",
+                    json_path.display(),
+                    e
+                );
                 continue;
             }
         };
@@ -148,7 +160,11 @@ pub fn generate_annotated_previews(
         let json_value: serde_json::Value = match serde_json::from_str(&json_content) {
             Ok(parsed) => parsed,
             Err(e) => {
-                println!("Warning: Failed to parse JSON file {}: {}", json_path.display(), e);
+                println!(
+                    "Warning: Failed to parse JSON file {}: {}",
+                    json_path.display(),
+                    e
+                );
                 continue;
             }
         };
@@ -157,7 +173,10 @@ pub fn generate_annotated_previews(
         let shapes = match json_value.get("shapes").and_then(|s| s.as_array()) {
             Some(shapes_array) => shapes_array,
             None => {
-                println!("Warning: No shapes found in JSON file {}", json_path.display());
+                println!(
+                    "Warning: No shapes found in JSON file {}",
+                    json_path.display()
+                );
                 continue;
             }
         };
@@ -177,18 +196,20 @@ pub fn generate_annotated_previews(
 
         // Draw annotations based on detected types - prioritize polygons if both exist
         let mut drawing_success = false;
-        let json_filename = json_path.file_name()
+        let json_filename = json_path
+            .file_name()
             .and_then(|n| n.to_str())
             .ok_or("Invalid JSON filename")?;
 
         // Try polygon drawing first if polygons are present
         if has_polygons {
-            if let Ok(_) = polygon_drawer::draw_polygons(
-                &source_dir,
-                &json_path.to_string_lossy(),
-                &temp_dir,
-            ) {
-                let expected_output = Path::new(&temp_dir).join(format!("{}_polygons.jpg", json_filename.replace(".json", "")));
+            if let Ok(_) =
+                polygon_drawer::draw_polygons(&source_dir, &json_path.to_string_lossy(), &temp_dir)
+            {
+                let expected_output = Path::new(&temp_dir).join(format!(
+                    "{}_polygons.jpg",
+                    json_filename.replace(".json", "")
+                ));
                 if expected_output.exists() {
                     if let Err(e) = fs::rename(&expected_output, &preview_path) {
                         println!("Warning: Failed to rename polygon preview file: {}", e);
@@ -206,7 +227,8 @@ pub fn generate_annotated_previews(
                 &json_path.to_string_lossy(),
                 &temp_dir,
             ) {
-                let expected_output = Path::new(&temp_dir).join(format!("{}_boxes.jpg", json_filename.replace(".json", "")));
+                let expected_output = Path::new(&temp_dir)
+                    .join(format!("{}_boxes.jpg", json_filename.replace(".json", "")));
                 if expected_output.exists() {
                     if let Err(e) = fs::rename(&expected_output, &preview_path) {
                         println!("Warning: Failed to rename bounding box preview file: {}", e);
@@ -225,6 +247,7 @@ pub fn generate_annotated_previews(
         // Add to preview paths if drawing was successful
         if drawing_success {
             // Set proper permissions for the generated preview file
+            #[cfg(unix)]
             if let Ok(metadata) = fs::metadata(&preview_path) {
                 let mut permissions = metadata.permissions();
                 permissions.set_mode(0o644); // rw-r--r--
@@ -242,7 +265,9 @@ pub fn generate_annotated_previews(
 
     for image in annotated_images_data {
         let has_json = image["has_json"].as_bool().unwrap_or(false);
-        let annotations = image["annotations"].as_array().unwrap_or(&empty_annotations);
+        let annotations = image["annotations"]
+            .as_array()
+            .unwrap_or(&empty_annotations);
 
         // Only include images that have annotations
         if has_json && !annotations.is_empty() {
@@ -251,7 +276,10 @@ pub fn generate_annotated_previews(
     }
 
     // Take only the first num_previews images
-    let annotated_images_result = annotated_images_result.into_iter().take(num_previews).collect::<Vec<_>>();
+    let annotated_images_result = annotated_images_result
+        .into_iter()
+        .take(num_previews)
+        .collect::<Vec<_>>();
 
     let result = json!({
         "annotated_images": annotated_images_result,
@@ -263,9 +291,6 @@ pub fn generate_annotated_previews(
 }
 
 #[tauri::command]
-pub fn crop_remap_adapter(
-    source_dir: String,
-    num_previews: usize,
-) -> Result<String, String> {
+pub fn crop_remap_adapter(source_dir: String, num_previews: usize) -> Result<String, String> {
     crop_remap::crop_remap_adapter(source_dir, num_previews)
 }
