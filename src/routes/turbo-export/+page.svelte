@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { open } from '@tauri-apps/plugin-dialog';
 	import { dndzone } from 'svelte-dnd-action';
 	import { flip } from 'svelte/animate';
@@ -8,6 +8,103 @@
 	// ===== 來源與輸出設定 =====
 	let sourceDir: string = '';
 	let outputDir: string = '';
+
+	// ===== Tauri 拖放狀態 =====
+	let isDraggingOver: boolean = false;
+	let sourceDropZone: HTMLElement | null = null;
+	let outputDropZone: HTMLElement | null = null;
+	let activeDropZone: 'source' | 'output' | null = null;
+	let unlistenFns: Array<() => void> = [];
+
+	// 檢查物理座標是否在元素範圍內
+	// Tauri 給的是 PhysicalPosition（考慮 DPI 縮放），需要轉換為 CSS 座標
+	function isPointInElement(physicalX: number, physicalY: number, element: HTMLElement | null): boolean {
+		if (!element) return false;
+
+		// 將物理座標轉換為 CSS 座標（除以 DPI 縮放比例）
+		const scaleFactor = window.devicePixelRatio || 1;
+		const cssX = physicalX / scaleFactor;
+		const cssY = physicalY / scaleFactor;
+
+		const rect = element.getBoundingClientRect();
+		return cssX >= rect.left && cssX <= rect.right && cssY >= rect.top && cssY <= rect.bottom;
+	}
+
+	// 設置 Tauri 拖放監聽器
+	async function setupDragDropListener() {
+		if (typeof window === 'undefined' || !(window as any).__TAURI__) return;
+
+		try {
+			const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow');
+			const appWindow = getCurrentWebviewWindow();
+
+			const unlisten = await appWindow.onDragDropEvent((event) => {
+				handleDragDropEvent(event.payload);
+			});
+
+			unlistenFns.push(unlisten);
+		} catch (error) {
+			console.error('❌ 拖放監聽器設置失敗:', error);
+		}
+	}
+
+	// 處理拖放事件
+	function handleDragDropEvent(payload: any) {
+		const eventType = payload.type;
+
+		if (eventType === 'enter' || eventType === 'over') {
+			isDraggingOver = true;
+			const position = payload.position;
+
+			// 檢查滑鼠在哪個區域
+			if (position && sourceDropZone && isPointInElement(position.x, position.y, sourceDropZone)) {
+				activeDropZone = 'source';
+			} else if (position && outputDropZone && isPointInElement(position.x, position.y, outputDropZone)) {
+				activeDropZone = 'output';
+			} else {
+				activeDropZone = null;
+			}
+		} else if (eventType === 'drop') {
+			const paths = payload.paths;
+			const dropPosition = payload.position;
+
+			// 用 drop 事件的座標計算目標區域
+			let dropZone: 'source' | 'output' | null = null;
+			if (dropPosition && sourceDropZone && outputDropZone) {
+				if (isPointInElement(dropPosition.x, dropPosition.y, sourceDropZone)) {
+					dropZone = 'source';
+				} else if (isPointInElement(dropPosition.x, dropPosition.y, outputDropZone)) {
+					dropZone = 'output';
+				}
+			} else {
+				dropZone = activeDropZone;
+			}
+
+			if (paths && paths.length > 0 && dropZone) {
+				const droppedPath = paths[0];
+				if (dropZone === 'source') {
+					sourceDir = droppedPath;
+					scanLabels();
+				} else if (dropZone === 'output') {
+					outputDir = droppedPath;
+				}
+			}
+
+			isDraggingOver = false;
+			activeDropZone = null;
+		} else if (eventType === 'leave' || eventType === 'cancel') {
+			isDraggingOver = false;
+			activeDropZone = null;
+		}
+	}
+
+	onMount(() => {
+		setupDragDropListener();
+	});
+
+	onDestroy(() => {
+		unlistenFns.forEach((fn) => fn());
+	});
 
 	// ===== 輸出格式設定 =====
 	let outputTarget: 'yolo' | 'coco' = 'yolo';
@@ -63,7 +160,7 @@
 
 	// ===== 標籤設定 =====
 	let useCustomLabels: boolean = false;
-	
+
 	// 標籤資料結構：包含 id（必須）、名稱、數量、是否選中
 	interface LabelInfo {
 		id: number;      // svelte-dnd-action 必須要有 id
@@ -79,7 +176,7 @@
 	const flipDurationMs = 200;
 
 	function toggleLabel(id: number) {
-		labelList = labelList.map(l => 
+		labelList = labelList.map(l =>
 			l.id === id ? { ...l, selected: !l.selected } : l
 		);
 	}
@@ -101,12 +198,8 @@
 		labelList = e.detail.items;
 	}
 
-	// 取得選中的標籤（按順序）
-	function getSelectedLabelsInOrder(): string[] {
-		return labelList.filter(l => l.selected).map(l => l.name);
-	}
-
 	// 取得標籤 ID 映射表（順序就是 class ID）
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	function getLabelIdMapping(): Record<string, number> {
 		const mapping: Record<string, number> = {};
 		let classId = 0;
@@ -269,14 +362,20 @@
 
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<!-- 來源資料夾 -->
-					<div>
+					<div
+						bind:this={sourceDropZone}
+						class="relative group"
+						role="button"
+						tabindex="0"
+					>
 						<label class="block text-sm font-medium text-slate-700 mb-1">來源資料夾</label>
-						<div class="flex gap-2">
+						<div class="flex gap-2 transition-all duration-200 {isDraggingOver && activeDropZone !== 'source' ? 'opacity-50' : ''}">
 							<input
 								type="text"
 								bind:value={sourceDir}
-								placeholder="選擇包含 LabelMe JSON 的資料夾"
-								class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+								placeholder="選擇或拖放包含 LabelMe JSON 的資料夾"
+								class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200
+									{activeDropZone === 'source' ? 'border-indigo-400 ring-2 ring-indigo-200' : ''}"
 								readonly
 							/>
 							<button
@@ -286,17 +385,41 @@
 								瀏覽
 							</button>
 						</div>
+						<!-- 磨砂玻璃拖放覆蓋層 -->
+						{#if activeDropZone === 'source'}
+							<div class="absolute inset-0 rounded-lg overflow-hidden z-10 animate-pulse-subtle">
+								<div class="absolute inset-0 bg-gradient-to-br from-indigo-500/30 via-indigo-400/20 to-purple-500/30 backdrop-blur-md"></div>
+								<div class="absolute inset-0 border-2 border-dashed border-indigo-400 rounded-lg"></div>
+								<div class="absolute inset-0 flex items-center justify-center">
+									<div class="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+										<svg class="w-5 h-5 text-indigo-600 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+										</svg>
+										<span class="text-indigo-700 font-semibold text-sm">放開以設定來源</span>
+									</div>
+								</div>
+							</div>
+						{:else if isDraggingOver && activeDropZone !== 'output'}
+							<!-- 拖動中但不在此區域 - 顯示提示邊框 -->
+							<div class="absolute inset-0 rounded-lg border-2 border-dashed border-slate-300 z-10 pointer-events-none"></div>
+						{/if}
 					</div>
 
 					<!-- 輸出資料夾 -->
-					<div>
+					<div
+						bind:this={outputDropZone}
+						class="relative group"
+						role="button"
+						tabindex="0"
+					>
 						<label class="block text-sm font-medium text-slate-700 mb-1">輸出資料夾 (選填)</label>
-						<div class="flex gap-2">
+						<div class="flex gap-2 transition-all duration-200 {isDraggingOver && activeDropZone !== 'output' ? 'opacity-50' : ''}">
 							<input
 								type="text"
 								bind:value={outputDir}
 								placeholder="預設為來源資料夾"
-								class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+								class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200
+									{activeDropZone === 'output' ? 'border-emerald-400 ring-2 ring-emerald-200' : ''}"
 								readonly
 							/>
 							<button
@@ -306,6 +429,24 @@
 								瀏覽
 							</button>
 						</div>
+						<!-- 磨砂玻璃拖放覆蓋層 -->
+						{#if activeDropZone === 'output'}
+							<div class="absolute inset-0 rounded-lg overflow-hidden z-10 animate-pulse-subtle">
+								<div class="absolute inset-0 bg-gradient-to-br from-emerald-500/30 via-emerald-400/20 to-teal-500/30 backdrop-blur-md"></div>
+								<div class="absolute inset-0 border-2 border-dashed border-emerald-400 rounded-lg"></div>
+								<div class="absolute inset-0 flex items-center justify-center">
+									<div class="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+										<svg class="w-5 h-5 text-emerald-600 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+										</svg>
+										<span class="text-emerald-700 font-semibold text-sm">放開以設定輸出</span>
+									</div>
+								</div>
+							</div>
+						{:else if isDraggingOver && activeDropZone !== 'source'}
+							<!-- 拖動中但不在此區域 - 顯示提示邊框 -->
+							<div class="absolute inset-0 rounded-lg border-2 border-dashed border-slate-300 z-10 pointer-events-none"></div>
+						{/if}
 					</div>
 				</div>
 			</section>
@@ -391,7 +532,15 @@
 							max="100"
 							class="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
 						/>
-						<span class="w-16 text-right text-sm font-mono text-slate-600">{trainRatio}%</span>
+						<input
+							type="number"
+							bind:value={trainRatio}
+							on:change={() => adjustRatios('train')}
+							min="0"
+							max="100"
+							class="w-20 px-3 py-1.5 text-right text-sm font-mono border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+						/>
+						<span class="text-sm text-slate-500">%</span>
 					</div>
 
 					<!-- Val -->
@@ -405,7 +554,15 @@
 							max="100"
 							class="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
 						/>
-						<span class="w-16 text-right text-sm font-mono text-slate-600">{valRatio}%</span>
+						<input
+							type="number"
+							bind:value={valRatio}
+							on:change={() => adjustRatios('val')}
+							min="0"
+							max="100"
+							class="w-20 px-3 py-1.5 text-right text-sm font-mono border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+						/>
+						<span class="text-sm text-slate-500">%</span>
 					</div>
 
 					<!-- Test -->
@@ -419,7 +576,15 @@
 							max="100"
 							class="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-rose-500"
 						/>
-						<span class="w-16 text-right text-sm font-mono text-slate-600">{testRatio}%</span>
+						<input
+							type="number"
+							bind:value={testRatio}
+							on:change={() => adjustRatios('test')}
+							min="0"
+							max="100"
+							class="w-20 px-3 py-1.5 text-right text-sm font-mono border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+						/>
+						<span class="text-sm text-slate-500">%</span>
 					</div>
 
 					<!-- 視覺化比例條 -->
@@ -500,7 +665,7 @@
 									<span>直接拖拉標籤列調整順序 = 調整輸出的 class ID</span>
 								</div>
 								<!-- 標籤列表（可拖拉排序）-->
-								<div 
+								<div
 									class="divide-y divide-slate-100"
 									use:dndzone="{{ items: labelList, flipDurationMs, dropTargetStyle: {} }}"
 									on:consider={handleDndConsider}
@@ -685,3 +850,19 @@
 		</div>
 	</div>
 </div>
+
+<style>
+	/* 微妙的脈動動畫 */
+	@keyframes pulse-subtle {
+		0%, 100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.85;
+		}
+	}
+
+	:global(.animate-pulse-subtle) {
+		animation: pulse-subtle 2s ease-in-out infinite;
+	}
+</style>

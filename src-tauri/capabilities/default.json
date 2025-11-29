@@ -7,6 +7,8 @@
   ],
   "permissions": [
     "core:default",
+    "core:webview:default",
+    "core:window:default",
     "shell:allow-open",
     "dialog:default"
   ]

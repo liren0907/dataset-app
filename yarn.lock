@@ -652,6 +652,11 @@
   resolved "https://registry.npmjs.org/@tauri-apps/api/-/api-2.0.2.tgz"
   integrity sha512-3wSwmG+1kr6WrgAFKK5ijkNFPp8TT3FLj3YHUb5EwMO+3FxX4uWlfSWkeeBy+Kc1RsKzugtYLuuya+98Flj+3w==
 
+"@tauri-apps/api@^2.8.0":
+  version "2.9.0"
+  resolved "https://registry.yarnpkg.com/@tauri-apps/api/-/api-2.9.0.tgz#047fcbfec05a719b0cec997eee244cee453fb2fc"
+  integrity sha512-qD5tMjh7utwBk9/5PrTA/aGr3i5QaJ/Mlt7p8NilQ45WgbifUNPyKWsA63iQ8YfQq6R8ajMapU+/Q8nMcPRLNw==
+
 "@tauri-apps/cli-darwin-arm64@2.0.3":
   version "2.0.3"
   resolved "https://registry.npmjs.org/@tauri-apps/cli-darwin-arm64/-/cli-darwin-arm64-2.0.3.tgz"
@@ -725,12 +730,12 @@
   dependencies:
     "@tauri-apps/api" "^2.0.0"
 
-"@tauri-apps/plugin-fs@^2.0.0":
-  version "2.0.0"
-  resolved "https://registry.npmjs.org/@tauri-apps/plugin-fs/-/plugin-fs-2.0.0.tgz"
-  integrity sha512-BNEeQQ5aH8J5SwYuWgRszVyItsmquRuzK2QRkVj8Z0sCsLnSvJFYI3JHRzzr3ltZGq1nMPtblrlZzuKqVzRawA==
+"@tauri-apps/plugin-fs@^2.4.4":
+  version "2.4.4"
+  resolved "https://registry.yarnpkg.com/@tauri-apps/plugin-fs/-/plugin-fs-2.4.4.tgz#b5111e02ca8b632588ff192bb0be6dd4eb2c9a63"
+  integrity sha512-MTorXxIRmOnOPT1jZ3w96vjSuScER38ryXY88vl5F0uiKdnvTKKTtaEjTEo8uPbl4e3gnUtfsDVwC7h77GQLvQ==
   dependencies:
-    "@tauri-apps/api" "^2.0.0"
+    "@tauri-apps/api" "^2.8.0"
 
 "@tauri-apps/plugin-global-shortcut@^2.0.0":
   version "2.0.0"
@@ -752,6 +757,13 @@
   integrity sha512-OpW2+ycgJLrEoZityWeWYk+6ZWP9VyiAfbO+N/O8VfLkqyOym8kXh7odKDfINx9RAotkSGBtQM4abyKfJDkcUg==
   dependencies:
     "@tauri-apps/api" "^2.0.0"
+
+"@tauri-apps/plugin-window-state@^2.4.1":
+  version "2.4.1"
+  resolved "https://registry.yarnpkg.com/@tauri-apps/plugin-window-state/-/plugin-window-state-2.4.1.tgz#4697003d6c87920ea059a4f69d2bddc46c6ea616"
+  integrity sha512-OuvdrzyY8Q5Dbzpj+GcrnV1iCeoZbcFdzMjanZMMcAEUNy/6PH5pxZPXpaZLOR7whlzXiuzx0L9EKZbH7zpdRw==
+  dependencies:
+    "@tauri-apps/api" "^2.8.0"
 
 "@tsconfig/svelte@^5.0.4":
   version "5.0.4"
