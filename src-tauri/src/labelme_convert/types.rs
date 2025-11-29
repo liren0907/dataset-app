@@ -82,7 +82,10 @@ pub struct ProcessingStats {
     pub skipped_files: usize,
     pub failed_files: usize,
     pub total_annotations: usize,
+    pub skipped_annotations: usize,
+    pub background_images: usize,
     pub labels_found: Vec<String>,
+    pub skipped_labels: Vec<String>,
 }
 
 impl ProcessingStats {
@@ -110,9 +113,23 @@ impl ProcessingStats {
         self.total_annotations += count;
     }
 
+    pub fn add_skipped_annotations(&mut self, count: usize) {
+        self.skipped_annotations += count;
+    }
+
+    pub fn increment_background(&mut self) {
+        self.background_images += 1;
+    }
+
     pub fn add_label(&mut self, label: String) {
         if !self.labels_found.contains(&label) {
             self.labels_found.push(label);
+        }
+    }
+
+    pub fn add_skipped_label(&mut self, label: String) {
+        if !self.skipped_labels.contains(&label) {
+            self.skipped_labels.push(label);
         }
     }
 }

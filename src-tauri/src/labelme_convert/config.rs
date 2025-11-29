@@ -5,6 +5,7 @@
 //
 // Adapted and modified for dataset-app
 
+use chrono;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
@@ -61,6 +62,10 @@ pub struct ConversionConfig {
 
     /// Output directory for converted dataset (optional, defaults to input_dir)
     pub output_dir: Option<PathBuf>,
+
+    /// Custom dataset folder name (optional, uses generated name if empty)
+    #[serde(default)]
+    pub custom_dataset_name: Option<String>,
 
     /// Output format (YOLO or COCO)
     #[serde(default)]
@@ -133,6 +138,7 @@ impl Default for ConversionConfig {
         Self {
             input_dir: PathBuf::new(),
             output_dir: None,
+            custom_dataset_name: None,
             output_format: OutputFormat::default(),
             annotation_format: AnnotationFormat::default(),
             val_size: default_val_size(),
@@ -162,6 +168,42 @@ impl ConversionConfig {
     /// Get the effective output directory
     pub fn get_output_dir(&self) -> PathBuf {
         self.output_dir.clone().unwrap_or_else(|| self.input_dir.clone())
+    }
+
+    /// Generate the dataset folder name
+    /// If custom_dataset_name is set, use it; otherwise generate from source folder + format + datetime
+    pub fn get_dataset_folder_name(&self) -> String {
+        if let Some(ref custom_name) = self.custom_dataset_name {
+            if !custom_name.trim().is_empty() {
+                return custom_name.trim().to_string();
+            }
+        }
+
+        // Generate default name: {source_folder}_{format}_{annotation}_{datetime}
+        let source_name = self.input_dir
+            .file_name()
+            .and_then(|s| s.to_str())
+            .unwrap_or("dataset");
+
+        let format_str = match self.output_format {
+            OutputFormat::Yolo => "yolo",
+            OutputFormat::Coco => "coco",
+        };
+
+        let annotation_str = match self.annotation_format {
+            AnnotationFormat::Bbox => "bbox",
+            AnnotationFormat::Polygon => "polygon",
+        };
+
+        let datetime = chrono::Local::now().format("%Y%m%d_%H%M%S");
+
+        format!("{}_{}_{}_{}", source_name, format_str, annotation_str, datetime)
+    }
+
+    /// Builder pattern: set custom dataset name
+    pub fn with_custom_name(mut self, name: Option<String>) -> Self {
+        self.custom_dataset_name = name;
+        self
     }
 
     /// Validate the configuration

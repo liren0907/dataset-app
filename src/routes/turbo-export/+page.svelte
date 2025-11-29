@@ -110,6 +110,20 @@
 	let outputTarget: 'yolo' | 'coco' = 'yolo';
 	let annotationType: 'bbox' | 'polygon' = 'bbox';
 
+	// ===== 輸出資料夾命名 =====
+	let customDatasetName: string = '';
+
+	// 生成預設資料夾名稱預覽
+	$: defaultDatasetName = generateDefaultName(sourceDir, outputTarget, annotationType);
+
+	function generateDefaultName(source: string, format: string, annotation: string): string {
+		if (!source) return '';
+		const sourceName = source.split(/[\\/]/).pop() || 'dataset';
+		const now = new Date();
+		const datetime = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+		return `${sourceName}_${format}_${annotation}_${datetime}`;
+	}
+
 	// ===== 資料集分割設定 =====
 	let trainRatio: number = 70;
 	let valRatio: number = 20;
@@ -226,12 +240,20 @@
 	let isProcessing: boolean = false;
 	let progress: number = 0;
 	let statusMessage: string = '';
+	let progressInterval: ReturnType<typeof setInterval> | null = null;
 	let stats = {
 		total: 0,
 		processed: 0,
 		success: 0,
 		skipped: 0,
 		failed: 0
+	};
+	// 詳細統計
+	let detailedStats = {
+		totalAnnotations: 0,
+		skippedAnnotations: 0,
+		backgroundImages: 0,
+		skippedLabels: [] as string[]
 	};
 
 	// ===== 選擇資料夾 =====
@@ -348,7 +370,11 @@
 		isProcessing = true;
 		progress = 0;
 		stats = { total: 0, processed: 0, success: 0, skipped: 0, failed: 0 };
+		detailedStats = { totalAnnotations: 0, skippedAnnotations: 0, backgroundImages: 0, skippedLabels: [] };
 		statusMessage = '開始處理...';
+
+		// 啟動模擬進度條（因為後端沒有即時回報進度）
+		startProgressSimulation();
 
 		try {
 			// 建立標籤列表（按順序）
@@ -370,7 +396,10 @@
 					skipped_files: number;
 					failed_files: number;
 					total_annotations: number;
+					skipped_annotations: number;
+					background_images: number;
 					labels_found: string[];
+					skipped_labels: string[];
 				};
 				errors: string[];
 			}>('convert_labelme', {
@@ -385,9 +414,13 @@
 					include_background: includeBackground,
 					label_list: labelListForConvert,
 					deterministic_labels: useCustomLabels,
-					segmentation_mode: annotationType === 'polygon' ? 'polygon' : 'bbox_only'
+					segmentation_mode: annotationType === 'polygon' ? 'polygon' : 'bbox_only',
+					custom_dataset_name: customDatasetName || null
 				}
 			});
+
+			// 停止模擬進度
+			stopProgressSimulation();
 
 			if (result.success) {
 				stats.total = result.stats.total_files;
@@ -395,16 +428,56 @@
 				stats.success = result.stats.processed_files - result.stats.failed_files;
 				stats.skipped = result.stats.skipped_files;
 				stats.failed = result.stats.failed_files;
+
+				// 詳細統計
+				detailedStats.totalAnnotations = result.stats.total_annotations;
+				detailedStats.skippedAnnotations = result.stats.skipped_annotations;
+				detailedStats.backgroundImages = result.stats.background_images;
+				detailedStats.skippedLabels = result.stats.skipped_labels || [];
+
 				progress = 100;
-				statusMessage = `✅ 轉換完成！共處理 ${result.stats.total_annotations} 個標註`;
+
+				// 構建完成訊息
+				let message = `✅ 轉換完成！共處理 ${result.stats.total_annotations.toLocaleString()} 個標註`;
+				if (detailedStats.skippedAnnotations > 0) {
+					message += `，跳過 ${detailedStats.skippedAnnotations.toLocaleString()} 個`;
+				}
+				if (detailedStats.backgroundImages > 0) {
+					message += `，背景圖片 ${detailedStats.backgroundImages} 張`;
+				}
+				statusMessage = message;
 			} else {
 				statusMessage = `❌ 轉換失敗: ${result.errors.join(', ')}`;
 			}
 		} catch (error) {
+			stopProgressSimulation();
 			console.error('轉換失敗:', error);
 			statusMessage = `❌ 轉換失敗: ${error}`;
 		} finally {
 			isProcessing = false;
+		}
+	}
+
+	// ===== 模擬進度條 =====
+	function startProgressSimulation() {
+		// 模擬進度：快速到 30%，然後慢慢到 90%
+		progress = 0;
+		progressInterval = setInterval(() => {
+			if (progress < 30) {
+				progress += 5;
+			} else if (progress < 60) {
+				progress += 2;
+			} else if (progress < 90) {
+				progress += 0.5;
+			}
+			// 最多到 90%，剩下的等實際完成
+		}, 100);
+	}
+
+	function stopProgressSimulation() {
+		if (progressInterval) {
+			clearInterval(progressInterval);
+			progressInterval = null;
 		}
 	}
 </script>
@@ -520,6 +593,25 @@
 							<!-- 拖動中但不在此區域 - 顯示提示邊框 -->
 							<div class="absolute inset-0 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 z-10 pointer-events-none"></div>
 						{/if}
+					</div>
+				</div>
+
+				<!-- 自訂資料夾名稱 -->
+				<div class="mt-4">
+					<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+						輸出資料夾名稱 (選填)
+					</label>
+					<input
+						type="text"
+						bind:value={customDatasetName}
+						placeholder="留空則自動產生"
+						class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-slate-50 dark:bg-slate-700 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+					/>
+					<div class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+						<span class="font-medium">預覽：</span>
+						<code class="bg-slate-100 dark:bg-slate-600 px-2 py-0.5 rounded text-indigo-600 dark:text-indigo-300">
+							{customDatasetName || defaultDatasetName || '請先選擇來源資料夾'}
+						</code>
 					</div>
 				</div>
 			</section>
@@ -888,7 +980,7 @@
 					<div class="space-y-4">
 						<div class="flex items-center justify-between">
 							<span class="text-sm font-medium text-slate-700 dark:text-slate-300">處理進度</span>
-							<span class="text-sm text-slate-500 dark:text-slate-400">{progress}%</span>
+							<span class="text-sm text-slate-500 dark:text-slate-400">{Math.round(progress)}%</span>
 						</div>
 						<div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
 							<div
@@ -896,23 +988,12 @@
 								style="width: {progress}%"
 							></div>
 						</div>
-						<div class="grid grid-cols-4 gap-4 text-center text-sm">
-							<div>
-								<div class="text-2xl font-bold text-slate-800 dark:text-slate-100">{stats.processed}</div>
-								<div class="text-slate-500 dark:text-slate-400">已處理</div>
-							</div>
-							<div>
-								<div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.success}</div>
-								<div class="text-slate-500 dark:text-slate-400">成功</div>
-							</div>
-							<div>
-								<div class="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.skipped}</div>
-								<div class="text-slate-500 dark:text-slate-400">跳過</div>
-							</div>
-							<div>
-								<div class="text-2xl font-bold text-rose-600 dark:text-rose-400">{stats.failed}</div>
-								<div class="text-slate-500 dark:text-slate-400">失敗</div>
-							</div>
+						<div class="flex items-center justify-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+							<svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+								<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+								<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+							</svg>
+							<span>正在轉換中，請稍候...</span>
 						</div>
 					</div>
 				{:else}
@@ -929,6 +1010,57 @@
 				{#if statusMessage}
 					<div class="mt-4 text-center text-sm {statusMessage.includes('✅') ? 'text-emerald-600 dark:text-emerald-400' : statusMessage.includes('❌') ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-400'}">
 						{statusMessage}
+					</div>
+				{/if}
+
+				<!-- 詳細統計（轉換完成後顯示） -->
+				{#if progress === 100 && stats.processed > 0}
+					<div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+						<div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm">
+							<div>
+								<div class="text-2xl font-bold text-slate-800 dark:text-slate-100">{stats.processed}</div>
+								<div class="text-slate-500 dark:text-slate-400">檔案處理</div>
+							</div>
+							<div>
+								<div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{detailedStats.totalAnnotations.toLocaleString()}</div>
+								<div class="text-slate-500 dark:text-slate-400">標註匯出</div>
+							</div>
+							<div>
+								<div class="text-2xl font-bold text-amber-600 dark:text-amber-400">{detailedStats.skippedAnnotations.toLocaleString()}</div>
+								<div class="text-slate-500 dark:text-slate-400">標註跳過</div>
+							</div>
+							<div>
+								<div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{detailedStats.backgroundImages}</div>
+								<div class="text-slate-500 dark:text-slate-400">背景圖片</div>
+							</div>
+						</div>
+
+						<!-- 跳過的標籤提示 -->
+						{#if detailedStats.skippedLabels.length > 0}
+							<div class="mt-4 p-3 bg-amber-50 dark:bg-amber-900/30 rounded-lg border border-amber-200 dark:border-amber-800">
+								<div class="flex items-start gap-2">
+									<span class="text-amber-500">⚠️</span>
+									<div class="text-sm">
+										<div class="font-medium text-amber-700 dark:text-amber-300">以下標籤未被匯出（不在選擇列表中）：</div>
+										<div class="text-amber-600 dark:text-amber-400 mt-1">
+											{detailedStats.skippedLabels.join(', ')}
+										</div>
+									</div>
+								</div>
+							</div>
+						{/if}
+
+						<!-- 失敗提示 -->
+						{#if stats.failed > 0}
+							<div class="mt-4 p-3 bg-rose-50 dark:bg-rose-900/30 rounded-lg border border-rose-200 dark:border-rose-800">
+								<div class="flex items-start gap-2">
+									<span class="text-rose-500">❌</span>
+									<div class="text-sm text-rose-600 dark:text-rose-400">
+										有 {stats.failed} 個檔案處理失敗，請檢查來源檔案是否完整。
+									</div>
+								</div>
+							</div>
+						{/if}
 					</div>
 				{/if}
 			</section>

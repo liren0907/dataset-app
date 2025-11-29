@@ -16,7 +16,8 @@ use walkdir::WalkDir;
 
 /// Set up output directories for YOLO dataset
 pub fn setup_yolo_directories(config: &ConversionConfig) -> std::io::Result<YoloOutputDirs> {
-    let base_dir = config.get_output_dir().join("YOLODataset");
+    let dataset_name = config.get_dataset_folder_name();
+    let base_dir = config.get_output_dir().join(&dataset_name);
 
     let labels_dir = base_dir.join("labels");
     let images_dir = base_dir.join("images");
@@ -55,7 +56,8 @@ pub fn setup_yolo_directories(config: &ConversionConfig) -> std::io::Result<Yolo
 
 /// Set up output directories for COCO dataset
 pub fn setup_coco_directories(config: &ConversionConfig) -> std::io::Result<CocoOutputDirs> {
-    let base_dir = config.get_output_dir().join("COCODataset");
+    let dataset_name = config.get_dataset_folder_name();
+    let base_dir = config.get_output_dir().join(&dataset_name);
 
     let annotations_dir = base_dir.join("annotations");
     let images_dir = base_dir.join("images");

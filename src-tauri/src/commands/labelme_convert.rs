@@ -21,6 +21,10 @@ pub struct ConvertLabelMeRequest {
     #[serde(default)]
     pub output_dir: Option<String>,
 
+    /// Custom dataset folder name (optional, uses generated name if empty)
+    #[serde(default)]
+    pub custom_dataset_name: Option<String>,
+
     /// Output format: "yolo" or "coco"
     #[serde(default = "default_output_format")]
     pub output_format: String,
@@ -106,7 +110,8 @@ impl ConvertLabelMeRequest {
             .with_test_size(self.test_size)
             .with_seed(self.seed)
             .with_background(self.include_background)
-            .with_labels(self.label_list.clone());
+            .with_labels(self.label_list.clone())
+            .with_custom_name(self.custom_dataset_name.clone());
 
         config.deterministic_labels = self.deterministic_labels;
         config.segmentation_mode = segmentation_mode;

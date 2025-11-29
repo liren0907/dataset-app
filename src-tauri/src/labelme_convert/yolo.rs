@@ -37,6 +37,7 @@ pub fn convert_to_yolo(config: &ConversionConfig) -> ConversionResult {
     let mut errors = Vec::new();
     let mut label_map: HashMap<String, usize> = HashMap::new();
     let mut processed_images: HashSet<String> = HashSet::new();
+    let mut skipped_labels: HashSet<String> = HashSet::new();
 
     // Initialize label map from config if provided
     for (id, label) in config.label_list.iter().enumerate() {
@@ -60,10 +61,12 @@ pub fn convert_to_yolo(config: &ConversionConfig) -> ConversionResult {
             &output_dirs,
             &mut label_map,
             &mut processed_images,
+            &mut skipped_labels,
         ) {
-            Ok(annotation_count) => {
+            Ok((annotation_count, skipped_count)) => {
                 stats.increment_processed();
                 stats.add_annotations(annotation_count);
+                stats.add_skipped_annotations(skipped_count);
             }
             Err(e) => {
                 stats.increment_failed();
@@ -74,12 +77,18 @@ pub fn convert_to_yolo(config: &ConversionConfig) -> ConversionResult {
 
     // Process background images if enabled
     if config.include_background {
-        process_background_images(config, &output_dirs, &processed_images, &mut stats);
+        let bg_count = process_background_images(config, &output_dirs, &processed_images);
+        stats.background_images = bg_count;
     }
 
     // Update stats with labels
     for label in label_map.keys() {
         stats.add_label(label.clone());
+    }
+
+    // Add skipped labels to stats
+    for label in skipped_labels {
+        stats.add_skipped_label(label);
     }
 
     // Create dataset.yaml
@@ -126,7 +135,8 @@ fn process_single_file(
     output_dirs: &YoloOutputDirs,
     label_map: &mut HashMap<String, usize>,
     processed_images: &mut HashSet<String>,
-) -> Result<usize, String> {
+    skipped_labels: &mut HashSet<String>,
+) -> Result<(usize, usize), String> {
     // Read and parse JSON
     let annotation = read_labelme_json(json_path)?;
 
@@ -179,6 +189,7 @@ fn process_single_file(
     // Generate YOLO label file
     let mut yolo_lines = Vec::new();
     let mut annotation_count = 0;
+    let mut skipped_count = 0;
 
     for shape in &annotation.shapes {
         if let Some(class_id) = label_map.get(&shape.label) {
@@ -192,6 +203,10 @@ fn process_single_file(
                 yolo_lines.push(line);
                 annotation_count += 1;
             }
+        } else {
+            // Label not in the predefined list, skip it
+            skipped_labels.insert(shape.label.clone());
+            skipped_count += 1;
         }
     }
 
@@ -200,7 +215,7 @@ fn process_single_file(
     let content = yolo_lines.join("\n");
     write_file(&label_path, &content).map_err(|e| format!("Failed to write label file: {}", e))?;
 
-    Ok(annotation_count)
+    Ok((annotation_count, skipped_count))
 }
 
 /// Get the correct directories for a given split
@@ -230,15 +245,16 @@ fn get_split_dirs(output_dirs: &YoloOutputDirs, split: Split) -> (&Path, &Path) 
 }
 
 /// Process background images (images without annotations)
+/// Returns the number of background images processed
 fn process_background_images(
     config: &ConversionConfig,
     output_dirs: &YoloOutputDirs,
     processed_images: &HashSet<String>,
-    stats: &mut ProcessingStats,
-) {
+) -> usize {
     use crate::labelme_convert::io::find_image_files;
 
     let image_files = find_image_files(&config.input_dir);
+    let mut bg_count = 0;
 
     for image_path in image_files {
         let image_key = image_path.to_string_lossy().to_string();
@@ -273,8 +289,10 @@ fn process_background_images(
             continue;
         }
 
-        stats.increment_processed();
+        bg_count += 1;
     }
+
+    bg_count
 }
 
 #[cfg(test)]
