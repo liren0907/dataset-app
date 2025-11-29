@@ -21,6 +21,18 @@
 	color: var(--color-text);
 }
 
+/* Dark Mode Variables */
+.dark {
+	--color-bg-0: #0f172a;
+	--color-bg-1: #1e293b;
+	--color-bg-2: #334155;
+	--color-theme-1: #60a5fa;
+	--color-theme-2: #3b82f6;
+	--color-accent: #a78bfa;
+	--color-text: #f1f5f9;
+	--color-text-light: #94a3b8;
+}
+
 body {
 	min-height: 100vh;
 	margin: 0;
@@ -31,6 +43,18 @@ body {
 			50% 50% at 50% 50%,
 			rgba(255, 255, 255, 0.75) 0%,
 			rgba(255, 255, 255, 0) 100%
+		),
+		linear-gradient(180deg, var(--color-bg-0) 0%, var(--color-bg-1) 15%, var(--color-bg-2) 50%);
+	transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Dark mode body background */
+.dark body,
+:root.dark body {
+	background-image: radial-gradient(
+			50% 50% at 50% 50%,
+			rgba(30, 41, 59, 0.75) 0%,
+			rgba(15, 23, 42, 0) 100%
 		),
 		linear-gradient(180deg, var(--color-bg-0) 0%, var(--color-bg-1) 15%, var(--color-bg-2) 50%);
 }

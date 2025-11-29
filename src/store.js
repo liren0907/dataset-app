@@ -1,7 +1,46 @@
 import { writable } from "svelte/store";
+import { browser } from '$app/environment';
 
+// ========== Dark Mode Store ==========
+// 從 localStorage 讀取，預設為 false（淺色模式）
+const storedDarkMode = browser ? localStorage.getItem('darkMode') === 'true' : false;
+export const darkMode = writable(storedDarkMode);
 
+// 初始化時套用 dark class
+if (browser && storedDarkMode) {
+    document.documentElement.classList.add('dark');
+}
 
+export const toggleDarkMode = () => {
+    darkMode.update(val => {
+        const newVal = !val;
+        if (browser) {
+            localStorage.setItem('darkMode', String(newVal));
+            if (newVal) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+        return newVal;
+    });
+};
+
+// ========== Sidebar Store ==========
+const storedSidebarOpen = browser ? localStorage.getItem('sidebarOpen') !== 'false' : true;
+export const sidebarOpen = writable(storedSidebarOpen);
+
+export const toggleSidebar = () => {
+    sidebarOpen.update(val => {
+        const newVal = !val;
+        if (browser) {
+            localStorage.setItem('sidebarOpen', String(newVal));
+        }
+        return newVal;
+    });
+};
+
+// ========== GUI Store ==========
 export const guiStore=writable({locale:"en-US",os:"Windows_NT",modalShow:false,modalComponent:undefined})
 export const showModal=(component)=>{
     guiStore.update(val=>{
