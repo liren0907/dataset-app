@@ -59,6 +59,12 @@
 		<section class="mb-4">
 			<h2 class="text-2xl font-semibold text-slate-800 mb-6 text-center">Tools</h2>
 			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+				<a href="/turbo-export" class="group no-underline">
+					<div class="h-full rounded-xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-white backdrop-blur p-6 shadow-sm transition-all duration-200 group-hover:shadow-md group-hover:-translate-y-0.5 group-hover:border-indigo-300">
+						<h3 class="text-lg font-semibold text-indigo-600 mb-1">⚡ Turbo Export</h3>
+						<p class="text-sm text-slate-600">高效能 LabelMe → YOLO/COCO 轉換，快 100 倍。</p>
+					</div>
+				</a>
 				<a href="/smart-tools" class="group no-underline">
 					<div class="h-full rounded-xl border border-slate-200/60 bg-white/70 backdrop-blur p-6 shadow-sm transition-all duration-200 group-hover:shadow-md group-hover:-translate-y-0.5">
 						<h3 class="text-lg font-semibold text-indigo-600 mb-1">Smart Tools</h3>

@@ -268,11 +268,13 @@ impl DirectoryHandler {
     }
 
     fn get_image_dimensions(path: &Path) -> Option<ImageDimensions> {
-        // Open the image
-        image::open(path).ok().map(|img| {
-            // Use GenericImageView to get dimensions
-            let (width, height) = img.dimensions();
-            ImageDimensions { width, height }
+        // Use imagesize to read dimensions from header only (much faster!)
+        // This avoids decoding the entire image just to get width/height
+        imagesize::size(path).ok().map(|size| {
+            ImageDimensions {
+                width: size.width as u32,
+                height: size.height as u32,
+            }
         })
     }
 }

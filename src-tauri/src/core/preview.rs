@@ -73,6 +73,7 @@ pub fn generate_annotated_previews(
     temp_dir: String,
 ) -> Result<String, String> {
     use serde_json::json;
+    #[cfg(unix)]
     use std::os::unix::fs::PermissionsExt;
 
     println!(
@@ -86,6 +87,7 @@ pub fn generate_annotated_previews(
     }
 
     // Set proper permissions for the temp directory (readable by all)
+    #[cfg(unix)]
     if let Ok(metadata) = fs::metadata(&temp_dir) {
         let mut permissions = metadata.permissions();
         permissions.set_mode(0o755); // rwxr-xr-x
@@ -268,6 +270,7 @@ pub fn generate_annotated_previews(
         // Add to preview paths if drawing was successful
         if drawing_success {
             // Set proper permissions for the generated preview file
+            #[cfg(unix)]
             if let Ok(metadata) = fs::metadata(&preview_path) {
                 let mut permissions = metadata.permissions();
                 permissions.set_mode(0o644); // rw-r--r--
