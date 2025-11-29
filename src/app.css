@@ -165,3 +165,15 @@ button:focus:not(:focus-visible) {
 	width: 1px;
 	white-space: nowrap;
 }
+
+/* 隱藏全域滾動條 */
+::-webkit-scrollbar {
+	width: 0;
+	height: 0;
+	background: transparent;
+}
+
+* {
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
