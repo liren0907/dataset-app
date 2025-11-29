@@ -15,15 +15,25 @@
 	];
 
 	function isActive(href) {
-		if (href === '/') return $page.url.pathname === '/';
-		return $page.url.pathname.startsWith(href);
+		const pathname = $page.url.pathname;
+		// Home 只在精確匹配 '/' 時高亮
+		if (href === '/') return pathname === '/';
+		// 其他頁面：精確匹配或是子路由（後面接 '/' 或結束）
+		return pathname === href || pathname.startsWith(href + '/');
+	}
+
+	// 點擊導航連結後關閉側邊欄
+	function handleNavClick() {
+		if ($sidebarOpen) {
+			toggleSidebar();
+		}
 	}
 </script>
 
-<!-- 遮罩層 - 點擊關閉側邊欄 -->
+<!-- 遮罩層 - 點擊關閉側邊欄（半透明背景） -->
 {#if $sidebarOpen}
 	<div
-		class="fixed inset-0 bg-black/20 dark:bg-black/40 z-40 lg:hidden backdrop-blur-sm"
+		class="fixed inset-0 bg-black/30 dark:bg-black/50 z-40 backdrop-blur-sm transition-opacity duration-300"
 		on:click={toggleSidebar}
 		on:keydown={(e) => e.key === 'Escape' && toggleSidebar()}
 		role="button"
@@ -32,10 +42,28 @@
 	></div>
 {/if}
 
+<!-- 漢堡選單按鈕 - 側邊欄收起時顯示 -->
+{#if !$sidebarOpen}
+	<button
+		on:click={toggleSidebar}
+		class="fixed top-4 left-4 z-50 p-2.5 rounded-lg transition-all duration-200
+			bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm
+			border border-slate-200/60 dark:border-slate-700/60
+			text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100
+			hover:bg-slate-100 dark:hover:bg-slate-700
+			shadow-md hover:shadow-lg"
+		aria-label="Open sidebar"
+	>
+		<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+		</svg>
+	</button>
+{/if}
+
 <!-- 側邊欄 -->
 <aside
 	class="fixed top-0 left-0 z-50 h-full transition-all duration-300 ease-in-out
-		{$sidebarOpen ? 'w-64' : 'w-16'}
+		{$sidebarOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full'}
 		bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg
 		border-r border-slate-200/60 dark:border-slate-700/60
 		shadow-lg dark:shadow-slate-900/50"
@@ -47,10 +75,10 @@
 				on:click={toggleSidebar}
 				class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200
 					text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-				aria-label={$sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+				aria-label="Close sidebar"
 			>
-				<svg class="w-5 h-5 transition-transform duration-300 {$sidebarOpen ? '' : 'rotate-180'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
 				</svg>
 			</button>
 			{#if $sidebarOpen}
@@ -66,6 +94,7 @@
 				{#each tools as tool}
 					<a
 						href={tool.href}
+						on:click={handleNavClick}
 						class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 no-underline group
 							{isActive(tool.href)
 								? 'bg-indigo-600 text-white shadow-md shadow-indigo-300/50 dark:shadow-indigo-900/50'
@@ -131,9 +160,6 @@
 		</div>
 	</div>
 </aside>
-
-<!-- 主內容區域的左邊距佔位 -->
-<div class="transition-all duration-300 {$sidebarOpen ? 'w-64' : 'w-16'} flex-shrink-0"></div>
 
 <style>
 	aside {
