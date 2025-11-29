@@ -3,7 +3,7 @@
 	import { open } from '@tauri-apps/plugin-dialog';
 	import { dndzone } from 'svelte-dnd-action';
 	import { flip } from 'svelte/animate';
-	// import { invoke } from '@tauri-apps/api/core';
+	import { invoke } from '@tauri-apps/api/core';
 
 	// ===== 來源與輸出設定 =====
 	let sourceDir: string = '';
@@ -172,6 +172,10 @@
 	let isScanning: boolean = false;
 	let labelScanMessage: string = '';
 
+	// 背景統計狀態
+	let isCalculatingCounts: boolean = false;
+	let countCalculationPromise: Promise<void> | null = null;
+
 	// 拖拉動畫時間
 	const flipDurationMs = 200;
 
@@ -263,31 +267,75 @@
 		statusMessage = '正在掃描標籤...';
 
 		try {
-			// TODO: 呼叫 Rust 後端掃描標籤
-			// const labels = await invoke('scan_labels', { sourceDir });
+			// 呼叫 Rust 後端掃描標籤（回傳 string[] 而非 Record）
+			const result = await invoke<string[]>('scan_labelme_labels', {
+				inputDir: sourceDir
+			});
 
-			// 暫時用模擬資料
-			await new Promise(resolve => setTimeout(resolve, 500));
-			const mockLabels = [
-				{ name: 'person', count: 1234 },
-				{ name: 'car', count: 567 },
-				{ name: 'dog', count: 89 },
-				{ name: 'cat', count: 156 },
-				{ name: 'bicycle', count: 42 },
-				{ name: 'truck', count: 203 },
-				{ name: 'bus', count: 78 },
-				{ name: 'motorcycle', count: 31 }
-			];
-			// 加入 id（svelte-dnd-action 必須要有）
-			labelList = mockLabels.map((l, i) => ({ id: i + 1, ...l, selected: true }));
+			// DEBUG: 輸出原始結果
+			console.log('🔍 scan_labelme_labels 原始回傳:', result);
+			console.log('🔍 結果類型:', typeof result);
+			console.log('🔍 是否為陣列:', Array.isArray(result));
+			if (result && result.length > 0) {
+				console.log('🔍 第一個元素:', result[0], '類型:', typeof result[0]);
+			}
+
+			// 轉換為 labelList 格式，並加入 id
+			// 先設定 count 為 0，背景計算後再更新
+			labelList = result.map((name, i) => ({
+				id: i + 1,
+				name,
+				count: 0,
+				selected: true
+			}));
+
+			// DEBUG: 輸出轉換後結果
+			console.log('🔍 轉換後 labelList:', labelList);
 
 			labelScanMessage = `找到 ${labelList.length} 個標籤`;
 			statusMessage = '';
+
+			// 背景計算標籤數量
+			startCountCalculation();
 		} catch (error) {
+			console.error('掃描標籤失敗:', error);
 			statusMessage = `掃描失敗: ${error}`;
 		} finally {
 			isScanning = false;
 		}
+	}
+
+	// ===== 背景計算標籤數量 =====
+	async function startCountCalculation() {
+		if (!sourceDir || isCalculatingCounts) return;
+
+		isCalculatingCounts = true;
+		console.log('📊 開始背景計算標籤數量...');
+
+		countCalculationPromise = (async () => {
+			try {
+				const counts = await invoke<Record<string, number>>('scan_labelme_labels_with_counts', {
+					inputDir: sourceDir
+				});
+
+				console.log('📊 標籤數量統計完成:', counts);
+
+				// 更新 labelList 中的 count
+				labelList = labelList.map(label => ({
+					...label,
+					count: counts[label.name] ?? 0
+				}));
+
+				// 計算總數
+				const totalCount = Object.values(counts).reduce((sum, c) => sum + c, 0);
+				labelScanMessage = `找到 ${labelList.length} 個標籤，共 ${totalCount.toLocaleString()} 個標註`;
+			} catch (error) {
+				console.error('📊 標籤數量計算失敗:', error);
+			} finally {
+				isCalculatingCounts = false;
+				countCalculationPromise = null;
+			}
+		})();
 	}
 
 	// ===== 開始轉換 =====
@@ -303,32 +351,57 @@
 		statusMessage = '開始處理...';
 
 		try {
-			// TODO: 呼叫 Rust 後端
-			// const result = await invoke('turbo_export', {
-			// 	sourceDir,
-			// 	outputDir: outputDir || sourceDir,
-			// 	outputTarget,
-			// 	annotationType,
-			// 	trainRatio: trainRatio / 100,
-			// 	valRatio: valRatio / 100,
-			// 	testRatio: testRatio / 100,
-			// 	labelMapping: useCustomLabels ? getLabelIdMapping() : null,
-			// 	includeBackground,
-			// 	workerCount,
-			// 	randomSeed
-			// });
-
-			// 模擬進度
-			for (let i = 0; i <= 100; i += 5) {
-				await new Promise(resolve => setTimeout(resolve, 100));
-				progress = i;
-				stats.processed = Math.floor(i * 1.5);
-				stats.success = Math.floor(i * 1.4);
+			// 建立標籤列表（按順序）
+			let labelListForConvert: string[] = [];
+			if (useCustomLabels && labelList.length > 0) {
+				labelListForConvert = labelList
+					.filter(l => l.selected)
+					.map(l => l.name);
 			}
 
-			stats.total = 150;
-			statusMessage = '✅ 轉換完成！';
+			// 呼叫 Rust 後端進行轉換
+			// 注意：後端期望一個 request 物件
+			const result = await invoke<{
+				success: boolean;
+				output_dir: string;
+				stats: {
+					total_files: number;
+					processed_files: number;
+					skipped_files: number;
+					failed_files: number;
+					total_annotations: number;
+					labels_found: string[];
+				};
+				errors: string[];
+			}>('convert_labelme', {
+				request: {
+					input_dir: sourceDir,
+					output_dir: outputDir || null,
+					output_format: outputTarget,
+					annotation_format: annotationType,
+					val_size: valRatio / 100,
+					test_size: testRatio / 100,
+					seed: randomSeed,
+					include_background: includeBackground,
+					label_list: labelListForConvert,
+					deterministic_labels: useCustomLabels,
+					segmentation_mode: annotationType === 'polygon' ? 'polygon' : 'bbox_only'
+				}
+			});
+
+			if (result.success) {
+				stats.total = result.stats.total_files;
+				stats.processed = result.stats.processed_files;
+				stats.success = result.stats.processed_files - result.stats.failed_files;
+				stats.skipped = result.stats.skipped_files;
+				stats.failed = result.stats.failed_files;
+				progress = 100;
+				statusMessage = `✅ 轉換完成！共處理 ${result.stats.total_annotations} 個標註`;
+			} else {
+				statusMessage = `❌ 轉換失敗: ${result.errors.join(', ')}`;
+			}
 		} catch (error) {
+			console.error('轉換失敗:', error);
 			statusMessage = `❌ 轉換失敗: ${error}`;
 		} finally {
 			isProcessing = false;
@@ -602,7 +675,17 @@
 			</section>
 
 			<!-- 標籤選擇 -->
-			<section class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+			<section class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm relative">
+				<!-- 背景計算 Spinner -->
+				{#if isCalculatingCounts}
+					<div class="absolute top-4 right-4 flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+						<svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+							<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+						</svg>
+						<span class="text-xs font-medium">計算數量中...</span>
+					</div>
+				{/if}
 				<div class="flex items-center justify-between mb-4">
 					<h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
 						🏷️ 標籤選擇
@@ -687,7 +770,16 @@
 												<span class="text-sm font-medium text-slate-800 dark:text-slate-200">{label.name}</span>
 											</div>
 											<!-- 數量 -->
-											<span class="text-right text-sm text-slate-500 dark:text-slate-400">{label.count.toLocaleString()}</span>
+											<span class="text-right text-sm text-slate-500 dark:text-slate-400">
+												{#if isCalculatingCounts && label.count === 0}
+													<svg class="animate-spin h-4 w-4 inline text-slate-400" viewBox="0 0 24 24">
+														<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+														<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+													</svg>
+												{:else}
+													{label.count.toLocaleString()}
+												{/if}
+											</span>
 											<!-- 選取 checkbox -->
 											<div class="flex justify-center" on:mousedown|stopPropagation on:touchstart|stopPropagation>
 												<input

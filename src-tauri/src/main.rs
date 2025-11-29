@@ -4,6 +4,7 @@
 mod commands;
 mod core;
 mod crop_remap;
+mod labelme_convert;
 
 use commands::*;
 
@@ -41,6 +42,13 @@ fn main() {
             advanced::crop_and_remap_annotations,
             advanced::generate_annotated_previews,
             advanced::crop_remap_adapter,
+            // LabelMe conversion commands
+            commands::labelme_convert::convert_labelme,
+            commands::labelme_convert::quick_convert_to_yolo,
+            commands::labelme_convert::quick_convert_to_coco,
+            commands::labelme_convert::scan_labelme_labels,
+            commands::labelme_convert::scan_labelme_labels_with_counts,
+            commands::labelme_convert::count_labelme_files,
             // External module functions
             core::labelme2yolo::export_to_yolo_new,
             core::preview::generate_single_annotated_preview
