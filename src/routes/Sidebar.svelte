@@ -15,14 +15,6 @@
 		{ href: '/imageViewer3', label: 'Image Viewer', icon: '👁️', description: '圖片檢視器' },
 	];
 
-	function isActive(href: string): boolean {
-		const pathname = $page.url.pathname;
-		// Home 只在精確匹配 '/' 時高亮
-		if (href === '/') return pathname === '/';
-		// 其他頁面：精確匹配或是子路由（後面接 '/' 或結束）
-		return pathname === href || pathname.startsWith(href + '/');
-	}
-
 	// 點擊導航連結後關閉側邊欄
 	function handleNavClick() {
 		if ($sidebarOpen) {
@@ -92,23 +84,26 @@
 		<!-- 導航區域 -->
 		<nav class="flex-1 overflow-y-auto py-4 px-2">
 			<div class="space-y-1">
-				{#each tools as tool}
+				{#each tools as tool (tool.href)}
+					{@const isActive = tool.href === '/'
+						? $page.url.pathname === '/'
+						: $page.url.pathname === tool.href || $page.url.pathname.startsWith(tool.href + '/')}
 					<a
 						href={tool.href}
 						on:click={handleNavClick}
 						class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 no-underline group
-							{isActive(tool.href)
+							{isActive
 								? 'bg-indigo-600 text-white shadow-md shadow-indigo-300/50 dark:shadow-indigo-900/50'
 								: 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'}"
 						title={$sidebarOpen ? '' : tool.label}
 					>
-						<span class="text-lg flex-shrink-0 {isActive(tool.href) ? '' : 'group-hover:scale-110'} transition-transform">
+						<span class="text-lg flex-shrink-0 {isActive ? '' : 'group-hover:scale-110'} transition-transform">
 							{tool.icon}
 						</span>
 						{#if $sidebarOpen}
 							<div class="overflow-hidden whitespace-nowrap">
 								<div class="font-medium text-sm">{tool.label}</div>
-								<div class="text-xs {isActive(tool.href) ? 'text-indigo-200' : 'text-slate-400 dark:text-slate-500'}">
+								<div class="text-xs {isActive ? 'text-indigo-200' : 'text-slate-400 dark:text-slate-500'}">
 									{tool.description}
 								</div>
 							</div>
