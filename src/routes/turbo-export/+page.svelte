@@ -340,14 +340,14 @@
 	<title>Turbo Export - Dataset App</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 px-4 py-8">
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 px-4 py-8">
 	<div class="max-w-4xl mx-auto">
 		<!-- 標題 -->
 		<div class="text-center mb-8">
-			<h1 class="text-4xl font-bold text-slate-800 mb-2">
+			<h1 class="text-4xl font-bold text-slate-800 dark:text-slate-100 mb-2">
 				⚡ Turbo Export
 			</h1>
-			<p class="text-slate-600">
+			<p class="text-slate-600 dark:text-slate-400">
 				高效能 LabelMe 轉換工具 — 比 Python 快 100 倍
 			</p>
 		</div>
@@ -355,8 +355,8 @@
 		<!-- 主要設定區塊 -->
 		<div class="space-y-6">
 			<!-- 來源與輸出 -->
-			<section class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-				<h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+			<section class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+				<h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
 					📁 來源與輸出
 				</h2>
 
@@ -368,13 +368,13 @@
 						role="button"
 						tabindex="0"
 					>
-						<label class="block text-sm font-medium text-slate-700 mb-1">來源資料夾</label>
+						<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">來源資料夾</label>
 						<div class="flex gap-2 transition-all duration-200 {isDraggingOver && activeDropZone !== 'source' ? 'opacity-50' : ''}">
 							<input
 								type="text"
 								bind:value={sourceDir}
 								placeholder="選擇或拖放包含 LabelMe JSON 的資料夾"
-								class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200
+								class="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-slate-50 dark:bg-slate-700 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200
 									{activeDropZone === 'source' ? 'border-indigo-400 ring-2 ring-indigo-200' : ''}"
 								readonly
 							/>
@@ -391,17 +391,17 @@
 								<div class="absolute inset-0 bg-gradient-to-br from-indigo-500/30 via-indigo-400/20 to-purple-500/30 backdrop-blur-md"></div>
 								<div class="absolute inset-0 border-2 border-dashed border-indigo-400 rounded-lg"></div>
 								<div class="absolute inset-0 flex items-center justify-center">
-									<div class="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+									<div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
 										<svg class="w-5 h-5 text-indigo-600 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
 										</svg>
-										<span class="text-indigo-700 font-semibold text-sm">放開以設定來源</span>
+										<span class="text-indigo-700 dark:text-indigo-300 font-semibold text-sm">放開以設定來源</span>
 									</div>
 								</div>
 							</div>
 						{:else if isDraggingOver && activeDropZone !== 'output'}
 							<!-- 拖動中但不在此區域 - 顯示提示邊框 -->
-							<div class="absolute inset-0 rounded-lg border-2 border-dashed border-slate-300 z-10 pointer-events-none"></div>
+							<div class="absolute inset-0 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 z-10 pointer-events-none"></div>
 						{/if}
 					</div>
 
@@ -412,13 +412,13 @@
 						role="button"
 						tabindex="0"
 					>
-						<label class="block text-sm font-medium text-slate-700 mb-1">輸出資料夾 (選填)</label>
+						<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">輸出資料夾 (選填)</label>
 						<div class="flex gap-2 transition-all duration-200 {isDraggingOver && activeDropZone !== 'output' ? 'opacity-50' : ''}">
 							<input
 								type="text"
 								bind:value={outputDir}
 								placeholder="預設為來源資料夾"
-								class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200
+								class="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-slate-50 dark:bg-slate-700 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200
 									{activeDropZone === 'output' ? 'border-emerald-400 ring-2 ring-emerald-200' : ''}"
 								readonly
 							/>
@@ -435,39 +435,39 @@
 								<div class="absolute inset-0 bg-gradient-to-br from-emerald-500/30 via-emerald-400/20 to-teal-500/30 backdrop-blur-md"></div>
 								<div class="absolute inset-0 border-2 border-dashed border-emerald-400 rounded-lg"></div>
 								<div class="absolute inset-0 flex items-center justify-center">
-									<div class="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+									<div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
 										<svg class="w-5 h-5 text-emerald-600 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
 										</svg>
-										<span class="text-emerald-700 font-semibold text-sm">放開以設定輸出</span>
+										<span class="text-emerald-700 dark:text-emerald-300 font-semibold text-sm">放開以設定輸出</span>
 									</div>
 								</div>
 							</div>
 						{:else if isDraggingOver && activeDropZone !== 'source'}
 							<!-- 拖動中但不在此區域 - 顯示提示邊框 -->
-							<div class="absolute inset-0 rounded-lg border-2 border-dashed border-slate-300 z-10 pointer-events-none"></div>
+							<div class="absolute inset-0 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 z-10 pointer-events-none"></div>
 						{/if}
 					</div>
 				</div>
 			</section>
 
 			<!-- 輸出格式 -->
-			<section class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-				<h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+			<section class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+				<h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
 					🎯 輸出格式
 				</h2>
 
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 					<!-- 目標格式 -->
 					<div>
-						<label class="block text-sm font-medium text-slate-700 mb-2">目標格式</label>
+						<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">目標格式</label>
 						<div class="flex gap-2">
 							<button
 								on:click={() => outputTarget = 'yolo'}
 								class="flex-1 px-4 py-3 rounded-lg border-2 transition-all text-sm font-medium
 									{outputTarget === 'yolo'
-										? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-										: 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}"
+										? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300'
+										: 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500'}"
 							>
 								<div class="font-bold">YOLO</div>
 								<div class="text-xs opacity-75">YOLOv5 / v8 / v11</div>
@@ -476,8 +476,8 @@
 								on:click={() => outputTarget = 'coco'}
 								class="flex-1 px-4 py-3 rounded-lg border-2 transition-all text-sm font-medium
 									{outputTarget === 'coco'
-										? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-										: 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}"
+										? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300'
+										: 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500'}"
 							>
 								<div class="font-bold">COCO</div>
 								<div class="text-xs opacity-75">instances.json</div>
@@ -487,14 +487,14 @@
 
 					<!-- 標註類型 -->
 					<div>
-						<label class="block text-sm font-medium text-slate-700 mb-2">標註類型</label>
+						<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">標註類型</label>
 						<div class="flex gap-2">
 							<button
 								on:click={() => annotationType = 'bbox'}
 								class="flex-1 px-4 py-3 rounded-lg border-2 transition-all text-sm font-medium
 									{annotationType === 'bbox'
-										? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-										: 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}"
+										? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
+										: 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500'}"
 							>
 								<div class="font-bold">Bounding Box</div>
 								<div class="text-xs opacity-75">物件偵測</div>
@@ -503,8 +503,8 @@
 								on:click={() => annotationType = 'polygon'}
 								class="flex-1 px-4 py-3 rounded-lg border-2 transition-all text-sm font-medium
 									{annotationType === 'polygon'
-										? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-										: 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}"
+										? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
+										: 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500'}"
 							>
 								<div class="font-bold">Polygon</div>
 								<div class="text-xs opacity-75">實例分割</div>
@@ -515,22 +515,22 @@
 			</section>
 
 			<!-- 資料集分割 -->
-			<section class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-				<h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+			<section class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+				<h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
 					📊 資料集分割
 				</h2>
 
 				<div class="space-y-4">
 					<!-- Train -->
 					<div class="flex items-center gap-4">
-						<label class="w-20 text-sm font-medium text-slate-700">Train</label>
+						<label class="w-20 text-sm font-medium text-slate-700 dark:text-slate-300">Train</label>
 						<input
 							type="range"
 							bind:value={trainRatio}
 							on:change={() => adjustRatios('train')}
 							min="0"
 							max="100"
-							class="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+							class="flex-1 h-2 bg-slate-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600"
 						/>
 						<input
 							type="number"
@@ -538,21 +538,21 @@
 							on:change={() => adjustRatios('train')}
 							min="0"
 							max="100"
-							class="w-20 px-3 py-1.5 text-right text-sm font-mono border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+							class="w-20 px-3 py-1.5 text-right text-sm font-mono border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
 						/>
-						<span class="text-sm text-slate-500">%</span>
+						<span class="text-sm text-slate-500 dark:text-slate-400">%</span>
 					</div>
 
 					<!-- Val -->
 					<div class="flex items-center gap-4">
-						<label class="w-20 text-sm font-medium text-slate-700">Val</label>
+						<label class="w-20 text-sm font-medium text-slate-700 dark:text-slate-300">Val</label>
 						<input
 							type="range"
 							bind:value={valRatio}
 							on:change={() => adjustRatios('val')}
 							min="0"
 							max="100"
-							class="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+							class="flex-1 h-2 bg-slate-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-amber-500"
 						/>
 						<input
 							type="number"
@@ -560,21 +560,21 @@
 							on:change={() => adjustRatios('val')}
 							min="0"
 							max="100"
-							class="w-20 px-3 py-1.5 text-right text-sm font-mono border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+							class="w-20 px-3 py-1.5 text-right text-sm font-mono border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
 						/>
-						<span class="text-sm text-slate-500">%</span>
+						<span class="text-sm text-slate-500 dark:text-slate-400">%</span>
 					</div>
 
 					<!-- Test -->
 					<div class="flex items-center gap-4">
-						<label class="w-20 text-sm font-medium text-slate-700">Test</label>
+						<label class="w-20 text-sm font-medium text-slate-700 dark:text-slate-300">Test</label>
 						<input
 							type="range"
 							bind:value={testRatio}
 							on:change={() => adjustRatios('test')}
 							min="0"
 							max="100"
-							class="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-rose-500"
+							class="flex-1 h-2 bg-slate-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-rose-500"
 						/>
 						<input
 							type="number"
@@ -582,9 +582,9 @@
 							on:change={() => adjustRatios('test')}
 							min="0"
 							max="100"
-							class="w-20 px-3 py-1.5 text-right text-sm font-mono border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+							class="w-20 px-3 py-1.5 text-right text-sm font-mono border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
 						/>
-						<span class="text-sm text-slate-500">%</span>
+						<span class="text-sm text-slate-500 dark:text-slate-400">%</span>
 					</div>
 
 					<!-- 視覺化比例條 -->
@@ -593,7 +593,7 @@
 						<div class="bg-amber-500" style="width: {valRatio}%"></div>
 						<div class="bg-rose-500" style="width: {testRatio}%"></div>
 					</div>
-					<div class="flex text-xs text-slate-500">
+					<div class="flex text-xs text-slate-500 dark:text-slate-400">
 						<span class="flex-1">🔵 Train {trainRatio}%</span>
 						<span class="flex-1 text-center">🟡 Val {valRatio}%</span>
 						<span class="flex-1 text-right">🔴 Test {testRatio}%</span>
@@ -602,13 +602,13 @@
 			</section>
 
 			<!-- 標籤選擇 -->
-			<section class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+			<section class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
 				<div class="flex items-center justify-between mb-4">
-					<h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+					<h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
 						🏷️ 標籤選擇
 					</h2>
 					{#if labelScanMessage}
-						<span class="text-sm text-emerald-600 font-medium">{labelScanMessage}</span>
+						<span class="text-sm text-emerald-600 dark:text-emerald-400 font-medium">{labelScanMessage}</span>
 					{/if}
 				</div>
 
@@ -616,9 +616,9 @@
 				<div class="flex items-center gap-3 mb-4">
 					<label class="relative inline-flex items-center cursor-pointer">
 						<input type="checkbox" bind:checked={useCustomLabels} class="sr-only peer" />
-						<div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+						<div class="w-11 h-6 bg-slate-200 dark:bg-slate-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
 					</label>
-					<span class="text-sm text-slate-700">只匯出選定的類別</span>
+					<span class="text-sm text-slate-700 dark:text-slate-300">只匯出選定的類別</span>
 				</div>
 
 				{#if useCustomLabels}
@@ -627,46 +627,46 @@
 						<div class="flex gap-2 flex-wrap">
 							<button
 								on:click={selectAllLabels}
-								class="px-3 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition-colors"
+								class="px-3 py-1 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-md transition-colors"
 							>
 								全選
 							</button>
 							<button
 								on:click={deselectAllLabels}
-								class="px-3 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition-colors"
+								class="px-3 py-1 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-md transition-colors"
 							>
 								全不選
 							</button>
 							<button
 								on:click={scanLabels}
 								disabled={isScanning || !sourceDir}
-								class="px-3 py-1 text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-md transition-colors disabled:opacity-50"
+								class="px-3 py-1 text-xs bg-indigo-100 dark:bg-indigo-900/50 hover:bg-indigo-200 dark:hover:bg-indigo-800/50 text-indigo-700 dark:text-indigo-300 rounded-md transition-colors disabled:opacity-50"
 							>
 								{isScanning ? '掃描中...' : '重新掃描'}
 							</button>
-							<span class="ml-auto text-xs text-slate-500">
+							<span class="ml-auto text-xs text-slate-500 dark:text-slate-400">
 								已選 {labelList.filter(l => l.selected).length} / {labelList.length}
 							</span>
 						</div>
 
 						<!-- 可拖拉排序的標籤表格 -->
 						{#if labelList.length > 0}
-							<div class="border border-slate-200 rounded-lg overflow-hidden">
+							<div class="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
 								<!-- 表頭 -->
-								<div class="grid grid-cols-[50px_1fr_80px_50px] gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200 text-xs font-medium text-slate-600">
+								<div class="grid grid-cols-[50px_1fr_80px_50px] gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-400">
 									<span class="text-center">ID</span>
 									<span>標籤名稱</span>
 									<span class="text-right">數量</span>
 									<span class="text-center">選取</span>
 								</div>
 								<!-- 拖拉提示 -->
-								<div class="px-3 py-1.5 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-1">
+								<div class="px-3 py-1.5 bg-amber-50 dark:bg-amber-900/30 border-b border-amber-100 dark:border-amber-800/50 text-xs text-amber-700 dark:text-amber-300 flex items-center gap-1">
 									<span>💡</span>
 									<span>直接拖拉標籤列調整順序 = 調整輸出的 class ID</span>
 								</div>
 								<!-- 標籤列表（可拖拉排序）-->
 								<div
-									class="divide-y divide-slate-100"
+									class="divide-y divide-slate-100 dark:divide-slate-700"
 									use:dndzone="{{ items: labelList, flipDurationMs, dropTargetStyle: {} }}"
 									on:consider={handleDndConsider}
 									on:finalize={handleDndFinalize}
@@ -674,20 +674,20 @@
 									{#each labelList as label, index (label.id)}
 										<div
 											animate:flip="{{ duration: flipDurationMs }}"
-											class="grid grid-cols-[50px_1fr_80px_50px] gap-2 px-3 py-2 items-center bg-white cursor-grab active:cursor-grabbing hover:bg-slate-50
-												{label.selected ? '' : 'text-slate-400 bg-slate-50'}"
+											class="grid grid-cols-[50px_1fr_80px_50px] gap-2 px-3 py-2 items-center bg-white dark:bg-slate-800 cursor-grab active:cursor-grabbing hover:bg-slate-50 dark:hover:bg-slate-700/50
+												{label.selected ? '' : 'text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800/50'}"
 										>
 											<!-- ID -->
-											<span class="text-center font-mono text-sm {label.selected ? 'text-indigo-600 font-bold' : ''}">
+											<span class="text-center font-mono text-sm {label.selected ? 'text-indigo-600 dark:text-indigo-400 font-bold' : ''}">
 												{label.selected ? labelList.slice(0, index + 1).filter(l => l.selected).length - 1 : '-'}
 											</span>
 											<!-- 拖拉手把 + 標籤名稱 -->
 											<div class="flex items-center gap-2 select-none">
-												<span class="text-slate-400">⋮⋮</span>
-												<span class="text-sm font-medium">{label.name}</span>
+												<span class="text-slate-400 dark:text-slate-500">⋮⋮</span>
+												<span class="text-sm font-medium text-slate-800 dark:text-slate-200">{label.name}</span>
 											</div>
 											<!-- 數量 -->
-											<span class="text-right text-sm text-slate-500">{label.count.toLocaleString()}</span>
+											<span class="text-right text-sm text-slate-500 dark:text-slate-400">{label.count.toLocaleString()}</span>
 											<!-- 選取 checkbox -->
 											<div class="flex justify-center" on:mousedown|stopPropagation on:touchstart|stopPropagation>
 												<input
@@ -702,7 +702,7 @@
 								</div>
 							</div>
 						{:else}
-							<div class="text-center py-8 text-slate-500">
+							<div class="text-center py-8 text-slate-500 dark:text-slate-400">
 								{#if !sourceDir}
 									請先選擇來源資料夾以掃描可用標籤
 								{:else if isScanning}
@@ -720,19 +720,19 @@
 						{/if}
 					</div>
 				{:else}
-					<p class="text-sm text-slate-500">
+					<p class="text-sm text-slate-500 dark:text-slate-400">
 						將自動匯出所有標籤，ID 按照首次出現順序分配
 					</p>
 				{/if}
 			</section>
 
 			<!-- 進階選項 -->
-			<section class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+			<section class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
 				<button
 					on:click={() => showAdvanced = !showAdvanced}
-					class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-slate-50 transition-colors"
+					class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
 				>
-					<h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+					<h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
 						⚙️ 進階選項
 					</h2>
 					<svg
@@ -746,28 +746,28 @@
 				</button>
 
 				{#if showAdvanced}
-					<div class="px-6 pb-6 space-y-4 border-t border-slate-100 pt-4">
+					<div class="px-6 pb-6 space-y-4 border-t border-slate-100 dark:border-slate-700 pt-4">
 						<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<!-- 包含背景圖 -->
 							<label class="flex items-center gap-3 cursor-pointer">
 								<input type="checkbox" bind:checked={includeBackground} class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500" />
 								<div>
-									<div class="text-sm font-medium text-slate-700">包含背景圖片</div>
-									<div class="text-xs text-slate-500">將無標註的圖片也複製到輸出</div>
+									<div class="text-sm font-medium text-slate-700 dark:text-slate-300">包含背景圖片</div>
+									<div class="text-xs text-slate-500 dark:text-slate-400">將無標註的圖片也複製到輸出</div>
 								</div>
 							</label>
 
 							<!-- Worker 數量 -->
 							<div>
-								<label class="block text-sm font-medium text-slate-700 mb-1">Worker 線程數</label>
+								<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Worker 線程數</label>
 								<input
 									type="number"
 									bind:value={workerCount}
 									min="0"
 									max="32"
-									class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+									class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
 								/>
-								<p class="text-xs text-slate-500 mt-1">0 = 自動 (CPU 核心數)</p>
+								<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">0 = 自動 (CPU 核心數)</p>
 							</div>
 						</div>
 
@@ -775,14 +775,14 @@
 
 							<!-- 隨機種子 -->
 							<div>
-								<label class="block text-sm font-medium text-slate-700 mb-1">隨機種子</label>
+								<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">隨機種子</label>
 								<input
 									type="number"
 									bind:value={randomSeed}
 									min="0"
-									class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+									class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
 								/>
-								<p class="text-xs text-slate-500 mt-1">用於資料集分割的隨機性</p>
+								<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">用於資料集分割的隨機性</p>
 							</div>
 						</div>
 					</div>
@@ -790,15 +790,15 @@
 			</section>
 
 			<!-- 執行區塊 -->
-			<section class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+			<section class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
 				{#if isProcessing}
 					<!-- 進度顯示 -->
 					<div class="space-y-4">
 						<div class="flex items-center justify-between">
-							<span class="text-sm font-medium text-slate-700">處理進度</span>
-							<span class="text-sm text-slate-500">{progress}%</span>
+							<span class="text-sm font-medium text-slate-700 dark:text-slate-300">處理進度</span>
+							<span class="text-sm text-slate-500 dark:text-slate-400">{progress}%</span>
 						</div>
-						<div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+						<div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
 							<div
 								class="bg-gradient-to-r from-indigo-500 to-indigo-600 h-3 rounded-full transition-all duration-300"
 								style="width: {progress}%"
@@ -806,20 +806,20 @@
 						</div>
 						<div class="grid grid-cols-4 gap-4 text-center text-sm">
 							<div>
-								<div class="text-2xl font-bold text-slate-800">{stats.processed}</div>
-								<div class="text-slate-500">已處理</div>
+								<div class="text-2xl font-bold text-slate-800 dark:text-slate-100">{stats.processed}</div>
+								<div class="text-slate-500 dark:text-slate-400">已處理</div>
 							</div>
 							<div>
-								<div class="text-2xl font-bold text-emerald-600">{stats.success}</div>
-								<div class="text-slate-500">成功</div>
+								<div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.success}</div>
+								<div class="text-slate-500 dark:text-slate-400">成功</div>
 							</div>
 							<div>
-								<div class="text-2xl font-bold text-amber-600">{stats.skipped}</div>
-								<div class="text-slate-500">跳過</div>
+								<div class="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.skipped}</div>
+								<div class="text-slate-500 dark:text-slate-400">跳過</div>
 							</div>
 							<div>
-								<div class="text-2xl font-bold text-rose-600">{stats.failed}</div>
-								<div class="text-slate-500">失敗</div>
+								<div class="text-2xl font-bold text-rose-600 dark:text-rose-400">{stats.failed}</div>
+								<div class="text-slate-500 dark:text-slate-400">失敗</div>
 							</div>
 						</div>
 					</div>
@@ -835,7 +835,7 @@
 				{/if}
 
 				{#if statusMessage}
-					<div class="mt-4 text-center text-sm {statusMessage.includes('✅') ? 'text-emerald-600' : statusMessage.includes('❌') ? 'text-rose-600' : 'text-slate-600'}">
+					<div class="mt-4 text-center text-sm {statusMessage.includes('✅') ? 'text-emerald-600 dark:text-emerald-400' : statusMessage.includes('❌') ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-400'}">
 						{statusMessage}
 					</div>
 				{/if}
@@ -844,7 +844,7 @@
 
 		<!-- 返回按鈕 -->
 		<div class="mt-8 text-center">
-			<a href="/" class="text-sm text-slate-500 hover:text-slate-700 transition-colors">
+			<a href="/" class="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors">
 				← 返回首頁
 			</a>
 		</div>
