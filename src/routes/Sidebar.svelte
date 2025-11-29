@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+	// @ts-ignore - SvelteKit 內建模組，運行時正常
 	import { page } from '$app/stores';
 	import { darkMode, toggleDarkMode, sidebarOpen, toggleSidebar } from '../store.js';
 
@@ -14,7 +15,7 @@
 		{ href: '/imageViewer3', label: 'Image Viewer', icon: '👁️', description: '圖片檢視器' },
 	];
 
-	function isActive(href) {
+	function isActive(href: string): boolean {
 		const pathname = $page.url.pathname;
 		// Home 只在精確匹配 '/' 時高亮
 		if (href === '/') return pathname === '/';
