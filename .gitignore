@@ -17,4 +17,5 @@ stored/
 references/
 reference/
 
-
+# temp files
+tmp/
