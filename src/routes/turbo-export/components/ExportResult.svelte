@@ -5,6 +5,10 @@
 		showInvalidDetails,
 		invalidReasonGroups
 	} from '../stores/exportStore';
+	import { writable } from 'svelte/store';
+
+	// 本地狀態：是否展開背景圖片列表
+	const showBackgroundFiles = writable(false);
 </script>
 
 <!-- 詳細統計（轉換完成後顯示） -->
@@ -113,6 +117,52 @@
 								</div>
 							</div>
 						{/each}
+					</div>
+				</div>
+			{/if}
+		</div>
+	{/if}
+
+	<!-- 背景圖片清單（點擊展開） -->
+	{#if $detailedStats.backgroundImages > 0}
+		<div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-800">
+			<button
+				on:click={() => showBackgroundFiles.update(v => !v)}
+				class="w-full flex items-center justify-between text-left"
+			>
+				<div class="flex items-start gap-2">
+					<span class="text-blue-500">🖼️</span>
+					<div class="text-sm">
+						<div class="font-medium text-blue-700 dark:text-blue-300">
+							{$detailedStats.backgroundImages} 張背景圖片（無標註）
+							{#if $detailedStats.backgroundFiles.length >= 100}
+								<span class="text-blue-500">（僅顯示前 100 筆）</span>
+							{/if}
+						</div>
+						<div class="text-blue-600 dark:text-blue-400 mt-0.5">
+							點擊查看這些圖片的檔名
+						</div>
+					</div>
+				</div>
+				<span class="text-blue-500 transition-transform {$showBackgroundFiles ? 'rotate-180' : ''}">
+					▼
+				</span>
+			</button>
+
+			{#if $showBackgroundFiles}
+				<div class="mt-3 pt-3 border-t border-blue-200 dark:border-blue-700">
+					<div class="max-h-40 overflow-y-auto text-xs space-y-1">
+						{#each $detailedStats.backgroundFiles.slice(0, 100) as fileName}
+							<div class="flex items-center gap-2 text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/50 rounded px-2 py-1">
+								<span class="text-slate-400 dark:text-slate-500">🖼️</span>
+								<span class="font-mono truncate flex-1" title={fileName}>{fileName}</span>
+							</div>
+						{/each}
+						{#if $detailedStats.backgroundImages > 100}
+							<div class="text-center text-slate-400 dark:text-slate-500 py-1">
+								...還有 {$detailedStats.backgroundImages - 100} 個
+							</div>
+						{/if}
 					</div>
 				</div>
 			{/if}

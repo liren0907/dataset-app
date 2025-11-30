@@ -38,6 +38,8 @@ export interface ConversionStats {
 	total_annotations: number;
 	skipped_annotations: number;
 	background_images: number;
+	/** 背景圖片檔名列表（限制前 100 筆） */
+	background_files: string[];
 	labels_found: string[];
 	skipped_labels: string[];
 	invalid_annotations: InvalidAnnotation[];

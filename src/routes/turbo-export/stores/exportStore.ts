@@ -45,6 +45,8 @@ export interface DetailedStats {
 	totalAnnotations: number;
 	skippedAnnotations: number;
 	backgroundImages: number;
+	/** 背景圖片檔名列表 */
+	backgroundFiles: string[];
 	skippedLabels: string[];
 	invalidAnnotations: InvalidAnnotation[];
 }
@@ -136,6 +138,7 @@ export const detailedStats = writable<DetailedStats>({
 	totalAnnotations: 0,
 	skippedAnnotations: 0,
 	backgroundImages: 0,
+	backgroundFiles: [],
 	skippedLabels: [],
 	invalidAnnotations: []
 });
@@ -252,6 +255,7 @@ export function resetExportState() {
 		totalAnnotations: 0,
 		skippedAnnotations: 0,
 		backgroundImages: 0,
+		backgroundFiles: [],
 		skippedLabels: [],
 		invalidAnnotations: []
 	});

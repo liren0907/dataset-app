@@ -12,7 +12,7 @@ use crate::labelme_convert::io::{
     resolve_image_path, setup_yolo_directories, write_file,
 };
 use crate::labelme_convert::types::{
-    ConversionResult, InvalidAnnotation, InvalidReason, ProcessingStats, YoloOutputDirs,
+    ConversionResult, InvalidAnnotation, ProcessingStats, YoloOutputDirs,
 };
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
@@ -83,8 +83,10 @@ pub fn convert_to_yolo(config: &ConversionConfig) -> ConversionResult {
 
     // Process background images if enabled
     if config.include_background {
-        let bg_count = process_background_images(config, &output_dirs, &processed_images);
-        stats.background_images = bg_count;
+        let bg_files = process_background_images(config, &output_dirs, &processed_images);
+        for file_name in bg_files {
+            stats.add_background_file(file_name);
+        }
     }
 
     // Update stats with labels
@@ -232,14 +234,9 @@ fn process_single_file(
             }
         } else {
             // Label not in the predefined list, skip it
+            // Only record to skipped_labels, NOT to invalid_annotations
+            // (because the UI already shows skipped labels separately)
             skipped_labels.insert(shape.label.clone());
-            invalid_annotations.push(InvalidAnnotation {
-                file: file_name.clone(),
-                label: shape.label.clone(),
-                reason: InvalidReason::LabelNotInList.as_str().to_string(),
-                shape_type: shape.shape_type.clone(),
-                points_count: shape.points.len(),
-            });
             skipped_count += 1;
         }
     }
@@ -279,16 +276,16 @@ fn get_split_dirs(output_dirs: &YoloOutputDirs, split: Split) -> (&Path, &Path) 
 }
 
 /// Process background images (images without annotations)
-/// Returns the number of background images processed
+/// Returns the list of background image file names
 fn process_background_images(
     config: &ConversionConfig,
     output_dirs: &YoloOutputDirs,
     processed_images: &HashSet<String>,
-) -> usize {
+) -> Vec<String> {
     use crate::labelme_convert::io::find_image_files;
 
     let image_files = find_image_files(&config.input_dir);
-    let mut bg_count = 0;
+    let mut bg_files = Vec::new();
 
     for image_path in image_files {
         let image_key = image_path.to_string_lossy().to_string();
@@ -323,10 +320,15 @@ fn process_background_images(
             continue;
         }
 
-        bg_count += 1;
+        // Get file name for reporting
+        let file_name = image_path
+            .file_name()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_else(|| "unknown".to_string());
+        bg_files.push(file_name);
     }
 
-    bg_count
+    bg_files
 }
 
 #[cfg(test)]

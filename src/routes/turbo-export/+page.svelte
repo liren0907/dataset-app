@@ -94,6 +94,7 @@
 
 	// 背景統計狀態（本地使用）
 	let countCalculationPromise: Promise<void> | null = null;
+	let labelScanAbortController: AbortController | null = null;
 
 	// ===== 進階選項（已移至 store）=====
 	// showAdvanced, includeBackground, workerCount, randomSeed 已移至 store
@@ -103,16 +104,31 @@
 	// invalidReasonGroups 由 store 的 derived store 計算
 	let progressInterval: ReturnType<typeof setInterval> | null = null;
 
-	// ===== 掃描標籤 =====
+	// ===== 掃描標籤（完全非阻塞版本）=====
 	async function scanLabels() {
 		if (!$sourceDir) return;
+
+		// 取消之前的計算（如果有）
+		if (labelScanAbortController) {
+			labelScanAbortController.abort();
+		}
+		labelScanAbortController = new AbortController();
+		const signal = labelScanAbortController.signal;
 
 		isScanning.set(true);
 		statusMessage.set('正在掃描標籤...');
 
+		// 立即開始後端呼叫，但不等待
+		const scanPromise = scanLabelsService($sourceDir);
+
+		// 同時在背景啟動數量計算（核彈級別：完全並行）
+		scheduleBackgroundCountCalculation($sourceDir, signal);
+
 		try {
-			// 呼叫後端掃描標籤（回傳 string[]）
-			const result = await scanLabelsService($sourceDir);
+			// 等待標籤掃描完成
+			const result = await scanPromise;
+
+			if (signal.aborted) return;
 
 			// DEBUG: 輸出原始結果
 			console.log('🔍 scan_labelme_labels 原始回傳:', result);
@@ -131,27 +147,54 @@
 
 			labelScanMessage.set(`找到 ${$labelList.length} 個標籤`);
 			statusMessage.set('');
-
-			// 背景計算標籤數量
-			startCountCalculation();
 		} catch (error) {
+			if (signal.aborted) return;
 			console.error('掃描標籤失敗:', error);
 			statusMessage.set(`掃描失敗: ${error}`);
 		} finally {
-			isScanning.set(false);
+			if (!signal.aborted) {
+				isScanning.set(false);
+			}
 		}
 	}
 
-	// ===== 背景計算標籤數量 =====
-	async function startCountCalculation() {
-		if (!$sourceDir || $isCalculatingCounts) return;
+	// ===== 核彈級別：完全非阻塞的背景計算 =====
+	// 使用多重調度確保 UI 完全不受影響
+	function scheduleBackgroundCountCalculation(sourceDir: string, signal: AbortSignal) {
+		if ($isCalculatingCounts) return;
+
+		// 第一層：使用 requestAnimationFrame 確保當前渲染幀完成
+		requestAnimationFrame(() => {
+			if (signal.aborted) return;
+
+			// 第二層：使用 setTimeout 跳出當前事件循環
+			setTimeout(() => {
+				if (signal.aborted) return;
+
+				// 第三層：使用 requestIdleCallback（如果支援）在瀏覽器空閒時執行
+				// 這是最重要的一層，確保只在瀏覽器「真正空閒」時才執行
+				const scheduleTask = window.requestIdleCallback || ((cb: () => void) => setTimeout(cb, 1));
+
+				scheduleTask(() => {
+					if (signal.aborted) return;
+					executeBackgroundCountCalculation(sourceDir, signal);
+				});
+			}, 50); // 給 UI 50ms 的喘息空間
+		});
+	}
+
+	// ===== 實際執行背景計算 =====
+	function executeBackgroundCountCalculation(sourceDir: string, signal: AbortSignal) {
+		if (signal.aborted || $isCalculatingCounts) return;
 
 		isCalculatingCounts.set(true);
 		console.log('📊 開始背景計算標籤數量...');
 
 		countCalculationPromise = (async () => {
 			try {
-				const counts = await scanLabelsWithCounts($sourceDir);
+				const counts = await scanLabelsWithCounts(sourceDir);
+
+				if (signal.aborted) return;
 
 				console.log('📊 標籤數量統計完成:', counts);
 
@@ -165,10 +208,13 @@
 				const totalCount = getTotalAnnotationCount(counts);
 				labelScanMessage.set(`找到 ${$labelList.length} 個標籤，共 ${totalCount.toLocaleString()} 個標註`);
 			} catch (error) {
+				if (signal.aborted) return;
 				console.error('📊 標籤數量計算失敗:', error);
 			} finally {
-				isCalculatingCounts.set(false);
-				countCalculationPromise = null;
+				if (!signal.aborted) {
+					isCalculatingCounts.set(false);
+					countCalculationPromise = null;
+				}
 			}
 		})();
 	}
@@ -183,7 +229,7 @@
 		isProcessing.set(true);
 		progress.set(0);
 		stats.set({ total: 0, processed: 0, success: 0, skipped: 0, failed: 0 });
-		detailedStats.set({ totalAnnotations: 0, skippedAnnotations: 0, backgroundImages: 0, skippedLabels: [], invalidAnnotations: [] });
+		detailedStats.set({ totalAnnotations: 0, skippedAnnotations: 0, backgroundImages: 0, backgroundFiles: [], skippedLabels: [], invalidAnnotations: [] });
 		showInvalidDetails.set(false);
 		statusMessage.set('開始處理...');
 
@@ -236,6 +282,7 @@
 					totalAnnotations: result.stats.total_annotations,
 					skippedAnnotations: result.stats.skipped_annotations,
 					backgroundImages: result.stats.background_images,
+					backgroundFiles: result.stats.background_files || [],
 					skippedLabels: result.stats.skipped_labels || [],
 					invalidAnnotations: result.stats.invalid_annotations || []
 				});

@@ -122,6 +122,8 @@ pub struct ProcessingStats {
     pub total_annotations: usize,
     pub skipped_annotations: usize,
     pub background_images: usize,
+    /// Background image file names (limited to first 100)
+    pub background_files: Vec<String>,
     pub labels_found: Vec<String>,
     pub skipped_labels: Vec<String>,
     /// Detailed invalid annotation records (limited to first 100)
@@ -161,6 +163,14 @@ impl ProcessingStats {
         self.background_images += 1;
     }
 
+    /// Add a background file name (limited to first 100 to avoid memory issues)
+    pub fn add_background_file(&mut self, file_name: String) {
+        self.background_images += 1;
+        if self.background_files.len() < 100 {
+            self.background_files.push(file_name);
+        }
+    }
+
     pub fn add_label(&mut self, label: String) {
         if !self.labels_found.contains(&label) {
             self.labels_found.push(label);
@@ -174,6 +184,7 @@ impl ProcessingStats {
     }
 
     /// Add an invalid annotation record (limited to first 100 to avoid memory issues)
+    /// Note: Only real errors should be added here, not label filtering skips
     pub fn add_invalid_annotation(&mut self, annotation: InvalidAnnotation) {
         if self.invalid_annotations.len() < 100 {
             self.invalid_annotations.push(annotation);
