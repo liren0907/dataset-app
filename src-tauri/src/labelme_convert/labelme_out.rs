@@ -5,23 +5,26 @@
 //! - Reordering labels (according to a predefined list)
 //! - Removing embedded imageData to reduce file size
 //! - Copying only annotated images to a new location
+//! - Validating annotation format consistency
+//! - Including background images (images without annotations)
 //!
 //! Unlike YOLO/COCO conversion, this does NOT split the dataset into
 //! train/val/test sets.
 
 use crate::labelme_convert::config::ConversionConfig;
+use crate::labelme_convert::detection::validate_shape_points;
 use crate::labelme_convert::io::{
-    copy_image, find_json_files, read_labelme_json, resolve_image_path,
+    copy_image, find_background_images, find_json_files, read_labelme_json, resolve_image_path,
     setup_labelme_directories, write_labelme_json,
 };
 use crate::labelme_convert::pipeline::{
     ConversionPipeline, FileType, OutputDirectories, ProcessedFileResult, ProcessingContext, Split,
 };
 use crate::labelme_convert::types::{
-    ConversionResult, LabelMeAnnotation, LabelMeOutputDirs, ProcessingStats, Shape,
+    ConversionResult, InputAnnotationFormat, InvalidAnnotation, Shape,
 };
 use std::collections::HashSet;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /// LabelMe to LabelMe conversion pipeline
 pub struct LabelMePipeline;
@@ -60,10 +63,23 @@ impl ConversionPipeline for LabelMePipeline {
         }
         context.mark_image_processed(image_key);
 
-        // Filter shapes based on label list
-        let (filtered_shapes, skipped_count) = filter_shapes(
+        // Get JSON filename for error reporting
+        let json_filename = json_path
+            .file_name()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_else(|| "unknown.json".to_string());
+
+        // Get input format from config
+        let input_format = config
+            .detected_input_format
+            .unwrap_or(InputAnnotationFormat::Unknown);
+
+        // Filter and validate shapes based on label list and format
+        let (filtered_shapes, skipped_count, invalid_annotations) = filter_and_validate_shapes(
             &annotation.shapes,
             &config.label_list,
+            input_format,
+            &json_filename,
             context,
         );
 
@@ -77,12 +93,6 @@ impl ConversionPipeline for LabelMePipeline {
 
         // Get output directory (no split for LabelMe)
         let output_dir = output_dirs.get_output_dir(Split::None, FileType::Annotation);
-
-        // Get the JSON filename
-        let json_filename = json_path
-            .file_name()
-            .map(|s| s.to_string_lossy().to_string())
-            .unwrap_or_else(|| "unknown.json".to_string());
 
         // Write the new LabelMe JSON
         let output_json_path = output_dir.join(&json_filename);
@@ -99,7 +109,7 @@ impl ConversionPipeline for LabelMePipeline {
         Ok(ProcessedFileResult {
             annotations_processed,
             annotations_skipped: skipped_count,
-            invalid_annotations: Vec::new(), // LabelMe doesn't have "invalid" annotations
+            invalid_annotations,
         })
     }
 
@@ -151,40 +161,59 @@ impl ConversionPipeline for LabelMePipeline {
     }
 }
 
-/// Filter shapes based on label list
+/// Filter and validate shapes based on label list and input format
 ///
-/// Returns (filtered_shapes, skipped_count)
-fn filter_shapes(
+/// Returns (filtered_shapes, skipped_count, invalid_annotations)
+fn filter_and_validate_shapes(
     shapes: &[Shape],
     label_list: &[String],
+    input_format: InputAnnotationFormat,
+    file_name: &str,
     context: &mut ProcessingContext,
-) -> (Vec<Shape>, usize) {
-    // If label list is empty, keep all shapes
-    if label_list.is_empty() {
-        // Still need to add labels to context
-        for shape in shapes {
-            context.ensure_label(&shape.label);
-        }
-        return (shapes.to_vec(), 0);
-    }
-
-    // Create a set for fast lookup
-    let allowed_labels: HashSet<&str> = label_list.iter().map(|s| s.as_str()).collect();
-
+) -> (Vec<Shape>, usize, Vec<InvalidAnnotation>) {
     let mut filtered = Vec::new();
     let mut skipped = 0;
+    let mut invalid_annotations = Vec::new();
+
+    // Create a set for fast lookup if label_list is provided
+    let allowed_labels: Option<HashSet<&str>> = if label_list.is_empty() {
+        None
+    } else {
+        Some(label_list.iter().map(|s| s.as_str()).collect())
+    };
 
     for shape in shapes {
-        if allowed_labels.contains(shape.label.as_str()) {
-            context.ensure_label(&shape.label);
-            filtered.push(shape.clone());
-        } else {
+        // Check label filter first
+        let label_allowed = match &allowed_labels {
+            Some(allowed) => allowed.contains(shape.label.as_str()),
+            None => true, // No filter, allow all labels
+        };
+
+        if !label_allowed {
             context.add_skipped_label(&shape.label);
             skipped += 1;
+            continue;
         }
+
+        // Validate points count based on detected input format
+        if let Err(reason) = validate_shape_points(shape, input_format) {
+            invalid_annotations.push(InvalidAnnotation {
+                file: file_name.to_string(),
+                label: shape.label.clone(),
+                reason: reason.as_str(),
+                shape_type: shape.shape_type.clone(),
+                points_count: shape.points.len(),
+            });
+            skipped += 1;
+            continue;
+        }
+
+        // Shape passed all checks, add it
+        context.ensure_label(&shape.label);
+        filtered.push(shape.clone());
     }
 
-    (filtered, skipped)
+    (filtered, skipped, invalid_annotations)
 }
 
 /// Main conversion function for LabelMe → LabelMe
@@ -220,11 +249,23 @@ pub fn convert_to_labelme(config: &ConversionConfig) -> ConversionResult {
                 context.stats.increment_processed();
                 context.stats.add_annotations(result.annotations_processed);
                 context.stats.add_skipped_annotations(result.annotations_skipped);
+                // Add invalid annotations to stats
+                for invalid in result.invalid_annotations {
+                    context.stats.add_invalid_annotation(invalid);
+                }
             }
             Err(e) => {
                 context.stats.increment_failed();
                 context.add_error(format!("{}: {}", json_path.display(), e));
             }
+        }
+    }
+
+    // Process background images if enabled
+    if config.include_background {
+        let bg_files = process_background_images(config, output_dirs.as_ref(), &context.processed_images);
+        for file_name in bg_files {
+            context.stats.add_background_file(file_name);
         }
     }
 
@@ -258,75 +299,128 @@ pub fn convert_to_labelme(config: &ConversionConfig) -> ConversionResult {
     }
 }
 
+/// Process background images (images without annotations)
+/// Returns the list of background image file names
+fn process_background_images(
+    config: &ConversionConfig,
+    output_dirs: &dyn OutputDirectories,
+    processed_images: &HashSet<String>,
+) -> Vec<String> {
+    let bg_images = find_background_images(&config.input_dir, processed_images);
+    let mut bg_files = Vec::new();
+
+    let output_dir = output_dirs.get_output_dir(Split::None, FileType::Image);
+
+    for image_path in bg_images {
+        // Copy image
+        if let Err(e) = copy_image(&image_path, output_dir) {
+            eprintln!(
+                "Failed to copy background image {}: {}",
+                image_path.display(),
+                e
+            );
+            continue;
+        }
+
+        // Get file name for reporting
+        let file_name = image_path
+            .file_name()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_else(|| "unknown".to_string());
+        bg_files.push(file_name);
+    }
+
+    bg_files
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::labelme_convert::types::InputAnnotationFormat;
+
+    fn create_test_shape(label: &str, points_count: usize) -> Shape {
+        Shape {
+            label: label.to_string(),
+            points: (0..points_count).map(|i| (i as f64, i as f64)).collect(),
+            group_id: None,
+            shape_type: "polygon".to_string(),
+            description: None,
+            mask: None,
+            flags: None,
+        }
+    }
 
     #[test]
-    fn test_filter_shapes_empty_list() {
+    fn test_filter_and_validate_shapes_empty_list() {
         let shapes = vec![
-            Shape {
-                label: "cat".to_string(),
-                points: vec![(0.0, 0.0), (10.0, 10.0)],
-                group_id: None,
-                shape_type: "rectangle".to_string(),
-                description: None,
-                mask: None,
-                flags: None,
-            },
-            Shape {
-                label: "dog".to_string(),
-                points: vec![(0.0, 0.0), (10.0, 10.0)],
-                group_id: None,
-                shape_type: "rectangle".to_string(),
-                description: None,
-                mask: None,
-                flags: None,
-            },
+            create_test_shape("cat", 4),
+            create_test_shape("dog", 4),
         ];
 
         let mut context = ProcessingContext::new();
-        let (filtered, skipped) = filter_shapes(&shapes, &[], &mut context);
+        let (filtered, skipped, invalid) = filter_and_validate_shapes(
+            &shapes,
+            &[],
+            InputAnnotationFormat::Bbox4Point,
+            "test.json",
+            &mut context,
+        );
 
         assert_eq!(filtered.len(), 2);
         assert_eq!(skipped, 0);
+        assert_eq!(invalid.len(), 0);
         assert!(context.label_map.contains_key("cat"));
         assert!(context.label_map.contains_key("dog"));
     }
 
     #[test]
-    fn test_filter_shapes_with_list() {
+    fn test_filter_and_validate_shapes_with_label_filter() {
         let shapes = vec![
-            Shape {
-                label: "cat".to_string(),
-                points: vec![(0.0, 0.0), (10.0, 10.0)],
-                group_id: None,
-                shape_type: "rectangle".to_string(),
-                description: None,
-                mask: None,
-                flags: None,
-            },
-            Shape {
-                label: "dog".to_string(),
-                points: vec![(0.0, 0.0), (10.0, 10.0)],
-                group_id: None,
-                shape_type: "rectangle".to_string(),
-                description: None,
-                mask: None,
-                flags: None,
-            },
+            create_test_shape("cat", 4),
+            create_test_shape("dog", 4),
         ];
 
         let label_list = vec!["cat".to_string()];
         let mut context = ProcessingContext::new();
-        let (filtered, skipped) = filter_shapes(&shapes, &label_list, &mut context);
+        let (filtered, skipped, invalid) = filter_and_validate_shapes(
+            &shapes,
+            &label_list,
+            InputAnnotationFormat::Bbox4Point,
+            "test.json",
+            &mut context,
+        );
 
         assert_eq!(filtered.len(), 1);
         assert_eq!(filtered[0].label, "cat");
         assert_eq!(skipped, 1);
+        assert_eq!(invalid.len(), 0);
         assert!(context.label_map.contains_key("cat"));
         assert!(!context.label_map.contains_key("dog"));
         assert!(context.skipped_labels.contains("dog"));
+    }
+
+    #[test]
+    fn test_filter_and_validate_shapes_with_invalid_points() {
+        let shapes = vec![
+            create_test_shape("cat", 4),  // Valid for Bbox4Point
+            create_test_shape("dog", 2),  // Invalid for Bbox4Point (should be 4)
+        ];
+
+        let mut context = ProcessingContext::new();
+        let (filtered, skipped, invalid) = filter_and_validate_shapes(
+            &shapes,
+            &[],
+            InputAnnotationFormat::Bbox4Point,
+            "test.json",
+            &mut context,
+        );
+
+        assert_eq!(filtered.len(), 1);
+        assert_eq!(filtered[0].label, "cat");
+        assert_eq!(skipped, 1);
+        assert_eq!(invalid.len(), 1);
+        assert_eq!(invalid[0].label, "dog");
+        assert_eq!(invalid[0].points_count, 2);
     }
 
     #[test]

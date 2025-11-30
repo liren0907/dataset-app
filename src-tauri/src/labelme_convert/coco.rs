@@ -7,17 +7,20 @@
 
 use crate::labelme_convert::config::ConversionConfig;
 use crate::labelme_convert::conversion::{
-    calculate_coco_bbox, calculate_polygon_area, determine_split, flatten_polygon, hash_string,
-    rectangle_to_polygon, Split,
+    calculate_coco_bbox, calculate_polygon_area, flatten_polygon, rectangle_to_polygon,
 };
 use crate::labelme_convert::detection::validate_shape_points;
 use crate::labelme_convert::io::{
     copy_image, extract_embedded_image, find_background_images, find_json_files, read_labelme_json,
     resolve_image_path, setup_coco_directories, write_file,
 };
+use crate::labelme_convert::pipeline::{
+    determine_split, hash_string, ConversionPipeline, FileType, OutputDirectories,
+    ProcessedFileResult, ProcessingContext, Split,
+};
 use crate::labelme_convert::types::{
-    CocoOutputDirs, ConversionResult, InputAnnotationFormat, InvalidAnnotation,
-    ProcessingStats, Shape,
+    CocoOutputDirs, ConversionResult, InputAnnotationFormat, InvalidAnnotation, ProcessingStats,
+    Shape,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -129,7 +132,135 @@ impl Default for CocoDataset {
 }
 
 // ============================================================================
-// COCO Conversion
+// CocoPipeline: ConversionPipeline trait implementation
+// ============================================================================
+
+/// COCO format conversion pipeline
+pub struct CocoPipeline;
+
+impl ConversionPipeline for CocoPipeline {
+    fn needs_split(&self) -> bool {
+        true
+    }
+
+    fn setup_output_dirs(
+        &self,
+        config: &ConversionConfig,
+    ) -> Result<Box<dyn OutputDirectories>, String> {
+        let dirs = setup_coco_directories(config)
+            .map_err(|e| format!("Failed to create output directories: {}", e))?;
+        Ok(Box::new(dirs))
+    }
+
+    fn process_file(
+        &self,
+        json_path: &Path,
+        config: &ConversionConfig,
+        output_dirs: &dyn OutputDirectories,
+        context: &mut ProcessingContext,
+    ) -> Result<ProcessedFileResult, String> {
+        // Note: COCO conversion requires maintaining datasets state,
+        // so we use the legacy implementation through convert_to_coco().
+        // This method is provided for trait compliance but delegates to the main function.
+        // The actual file processing happens in process_single_file_coco().
+
+        // For pipeline usage, we just validate the file exists
+        let annotation = read_labelme_json(json_path)?;
+        let image_path = resolve_image_path(json_path, &annotation.image_path);
+        let image_key = image_path.to_string_lossy().to_string();
+
+        if context.is_image_processed(&image_key) {
+            return Ok(ProcessedFileResult::default());
+        }
+        context.mark_image_processed(image_key.clone());
+
+        // Determine split
+        let path_hash = hash_string(&image_key);
+        let split = determine_split(path_hash, config.val_size, config.test_size);
+
+        // Get output directory for this split
+        let images_dir = output_dirs.get_output_dir(split, FileType::Image);
+
+        // Add labels to map if needed
+        if config.label_list.is_empty() && !config.deterministic_labels {
+            for shape in &annotation.shapes {
+                context.ensure_label(&shape.label);
+            }
+        }
+
+        // Get image filename
+        let file_name = image_path
+            .file_name()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_else(|| "unknown.jpg".to_string());
+
+        // Get JSON filename for error reporting
+        let json_file_name = json_path
+            .file_name()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_else(|| "unknown.json".to_string());
+
+        // Copy or extract image
+        if let Some(image_data) = &annotation.image_data {
+            let dest_path = images_dir.join(&file_name);
+            extract_embedded_image(image_data, &dest_path)?;
+        } else if image_path.exists() {
+            copy_image(&image_path, images_dir)
+                .map_err(|e| format!("Failed to copy image: {}", e))?;
+        } else {
+            return Err(format!("Image file not found: {}", image_path.display()));
+        }
+
+        // Process annotations
+        let input_format = config
+            .detected_input_format
+            .unwrap_or(InputAnnotationFormat::Unknown);
+
+        let mut annotation_count = 0;
+        let mut skipped_count = 0;
+        let mut invalid_annotations = Vec::new();
+
+        for shape in &annotation.shapes {
+            if context.label_map.contains_key(&shape.label) {
+                // Validate points count based on detected input format
+                if let Err(reason) = validate_shape_points(shape, input_format) {
+                    invalid_annotations.push(InvalidAnnotation {
+                        file: json_file_name.clone(),
+                        label: shape.label.clone(),
+                        reason: reason.as_str(),
+                        shape_type: shape.shape_type.clone(),
+                        points_count: shape.points.len(),
+                    });
+                    skipped_count += 1;
+                } else {
+                    annotation_count += 1;
+                }
+            } else {
+                context.add_skipped_label(&shape.label);
+                skipped_count += 1;
+            }
+        }
+
+        Ok(ProcessedFileResult {
+            annotations_processed: annotation_count,
+            annotations_skipped: skipped_count,
+            invalid_annotations,
+        })
+    }
+
+    fn finalize(
+        &self,
+        _config: &ConversionConfig,
+        _output_dirs: &dyn OutputDirectories,
+        _context: &ProcessingContext,
+    ) -> Result<(), String> {
+        // COCO JSON files are written in convert_to_coco() after all processing
+        Ok(())
+    }
+}
+
+// ============================================================================
+// COCO Conversion (Public entry point)
 // ============================================================================
 
 /// Main COCO dataset conversion function
@@ -412,7 +543,7 @@ fn process_single_file_coco(
 
     // Add to appropriate dataset
     let dataset = match split {
-        Split::Train => train_dataset,
+        Split::Train | Split::None => train_dataset,
         Split::Val => val_dataset,
         Split::Test => test_dataset,
     };
@@ -493,7 +624,7 @@ fn shape_to_coco_annotation(
 /// Get the images directory for a given split
 fn get_split_images_dir(output_dirs: &CocoOutputDirs, split: Split) -> &Path {
     match split {
-        Split::Train => output_dirs.train_images_dir.as_path(),
+        Split::Train | Split::None => output_dirs.train_images_dir.as_path(),
         Split::Val => output_dirs.val_images_dir.as_path(),
         Split::Test => output_dirs
             .test_images_dir
@@ -584,7 +715,7 @@ fn process_background_images_coco(
 
         // Add to appropriate dataset
         match split {
-            Split::Train => train_dataset.images.push(coco_image),
+            Split::Train | Split::None => train_dataset.images.push(coco_image),
             Split::Val => val_dataset.images.push(coco_image),
             Split::Test => test_dataset.images.push(coco_image),
         };

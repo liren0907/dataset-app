@@ -6,7 +6,11 @@
 // Adapted and modified for dataset-app
 
 use crate::labelme_convert::config::AnnotationFormat;
+use crate::labelme_convert::detection::validate_shape_points;
 use crate::labelme_convert::types::{InputAnnotationFormat, InvalidReason, Shape};
+
+// Re-export Split, determine_split, hash_string from pipeline for backward compatibility
+pub use crate::labelme_convert::pipeline::{determine_split, hash_string, Split};
 
 /// Calculate bounding box from shape points
 /// Returns (x_center, y_center, width, height) normalized to [0, 1]
@@ -97,44 +101,8 @@ pub fn shape_to_yolo_line(
     format: AnnotationFormat,
     input_format: InputAnnotationFormat,
 ) -> Result<String, InvalidReason> {
-    // First, validate points count based on detected input format
-    let points_count = shape.points.len();
-
-    match input_format {
-        InputAnnotationFormat::Bbox2Point => {
-            // 2-point bbox: must have exactly 2 points
-            if points_count != 2 {
-                return Err(InvalidReason::PointsCountMismatch {
-                    expected_format: input_format,
-                    actual_points: points_count,
-                });
-            }
-        }
-        InputAnnotationFormat::Bbox4Point => {
-            // 4-point bbox: must have exactly 4 points
-            if points_count != 4 {
-                return Err(InvalidReason::PointsCountMismatch {
-                    expected_format: input_format,
-                    actual_points: points_count,
-                });
-            }
-        }
-        InputAnnotationFormat::Polygon => {
-            // Polygon: must have at least 3 points
-            if points_count < 3 {
-                return Err(InvalidReason::PointsCountMismatch {
-                    expected_format: input_format,
-                    actual_points: points_count,
-                });
-            }
-        }
-        InputAnnotationFormat::Unknown => {
-            // Unknown format: use legacy validation
-            if points_count == 0 {
-                return Err(InvalidReason::EmptyPoints);
-            }
-        }
-    }
+    // Use the shared validation function from detection.rs
+    validate_shape_points(shape, input_format)?;
 
     // Now proceed with conversion based on output format
     match format {
@@ -245,48 +213,7 @@ pub fn flatten_polygon(points: &[(f64, f64)]) -> Vec<f64> {
     points.iter().flat_map(|(x, y)| vec![*x, *y]).collect()
 }
 
-/// Determine split (train/val/test) based on hash
-/// This provides deterministic splitting based on file path
-pub fn determine_split(path_hash: u64, val_size: f32, test_size: f32) -> Split {
-    let ratio = (path_hash % 1000) as f32 / 1000.0;
-
-    if ratio < val_size {
-        Split::Val
-    } else if ratio < val_size + test_size {
-        Split::Test
-    } else {
-        Split::Train
-    }
-}
-
-/// Dataset split type
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Split {
-    Train,
-    Val,
-    Test,
-}
-
-impl Split {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Split::Train => "train",
-            Split::Val => "val",
-            Split::Test => "test",
-        }
-    }
-}
-
-/// Calculate hash for a string (for deterministic splitting)
-pub fn hash_string(s: &str) -> u64 {
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
-
-    let mut hasher = DefaultHasher::new();
-    s.hash(&mut hasher);
-    hasher.finish()
-}
-
+// Note: Split, determine_split, hash_string are re-exported from pipeline.rs
 // Note: detect_input_format and detect_input_format_from_annotations
 // have been moved to detection.rs for better modularity.
 // Use crate::labelme_convert::detection::detect_input_format instead.

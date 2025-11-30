@@ -36,11 +36,15 @@ pub mod types;
 pub mod yolo;
 
 // Re-export commonly used types for convenience
-pub use config::{
-    AnnotationFormat, ConversionConfig, OutputFormat, SegmentationMode,
-};
-pub use detection::{analyze_dataset, validate_shape_points, DatasetAnalysis};
+pub use config::{AnnotationFormat, ConversionConfig, OutputFormat, SegmentationMode};
+pub use detection::{analyze_dataset, DatasetAnalysis};
+pub use pipeline::{ConversionPipeline, ProcessingContext, Split};
 pub use types::{ConversionResult, InputAnnotationFormat};
+
+// Re-export pipeline implementations
+pub use coco::CocoPipeline;
+pub use labelme_out::LabelMePipeline;
+pub use yolo::YoloPipeline;
 
 /// Main conversion function that dispatches to the appropriate converter
 /// based on the output format specified in the configuration.
