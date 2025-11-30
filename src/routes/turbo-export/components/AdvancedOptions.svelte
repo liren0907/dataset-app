@@ -3,8 +3,13 @@
 		showAdvanced,
 		includeBackground,
 		workerCount,
-		randomSeed
+		randomSeed,
+		removeImageData,
+		outputTarget
 	} from '../stores/exportStore';
+
+	// 是否為 LabelMe 輸出格式
+	$: isLabelMeOutput = $outputTarget === 'labelme';
 </script>
 
 <section class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -60,20 +65,38 @@
 			</div>
 
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<!-- 隨機種子 -->
-				<div>
-					<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-						隨機種子
+				<!-- 隨機種子（非 LabelMe 格式時顯示）-->
+				{#if !isLabelMeOutput}
+					<div>
+						<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+							隨機種子
+						</label>
+						<input
+							type="number"
+							value={$randomSeed}
+							on:input={(e) => randomSeed.set(parseInt(e.currentTarget.value) || 0)}
+							min="0"
+							class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+						/>
+						<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">用於資料集分割的隨機性</p>
+					</div>
+				{/if}
+
+				<!-- 移除 base64 圖片資料（LabelMe 格式專用）-->
+				{#if isLabelMeOutput}
+					<label class="flex items-center gap-3 cursor-pointer md:col-span-2">
+						<input
+							type="checkbox"
+							checked={$removeImageData}
+							on:change={() => removeImageData.update(v => !v)}
+							class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+						/>
+						<div>
+							<div class="text-sm font-medium text-slate-700 dark:text-slate-300">移除內嵌圖片資料</div>
+							<div class="text-xs text-slate-500 dark:text-slate-400">將 imageData 設為 null，大幅減少 JSON 檔案大小</div>
+						</div>
 					</label>
-					<input
-						type="number"
-						value={$randomSeed}
-						on:input={(e) => randomSeed.set(parseInt(e.currentTarget.value) || 0)}
-						min="0"
-						class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-					/>
-					<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">用於資料集分割的隨機性</p>
-				</div>
+				{/if}
 			</div>
 		</div>
 	{/if}

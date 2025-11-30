@@ -60,6 +60,11 @@ pub struct ConvertLabelMeRequest {
     /// Segmentation mode for COCO: "polygon" or "bbox_only"
     #[serde(default = "default_segmentation_mode")]
     pub segmentation_mode: String,
+
+    // LabelMe-specific options
+    /// Remove imageData from output JSON (for LabelMe output)
+    #[serde(default)]
+    pub remove_image_data: bool,
 }
 
 fn default_output_format() -> String {
@@ -88,6 +93,7 @@ impl ConvertLabelMeRequest {
         let output_format = match self.output_format.to_lowercase().as_str() {
             "yolo" => OutputFormat::Yolo,
             "coco" => OutputFormat::Coco,
+            "labelme" => OutputFormat::LabelMe,
             other => return Err(format!("Unknown output format: {}", other)),
         };
 
@@ -115,6 +121,12 @@ impl ConvertLabelMeRequest {
 
         config.deterministic_labels = self.deterministic_labels;
         config.segmentation_mode = segmentation_mode;
+
+        // LabelMe-specific options
+        if output_format == OutputFormat::LabelMe {
+            config.skip_split = true; // LabelMe output never uses splits
+            config.remove_image_data = self.remove_image_data;
+        }
 
         if let Some(output_dir) = &self.output_dir {
             config = config.with_output_dir(PathBuf::from(output_dir));

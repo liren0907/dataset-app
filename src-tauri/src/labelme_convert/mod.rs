@@ -29,6 +29,8 @@ pub mod coco;
 pub mod config;
 pub mod conversion;
 pub mod io;
+pub mod labelme_out;
+pub mod pipeline;
 pub mod types;
 pub mod yolo;
 
@@ -74,6 +76,7 @@ pub fn convert(config: &ConversionConfig) -> ConversionResult {
     match config.output_format {
         OutputFormat::Yolo => yolo::convert_to_yolo(config),
         OutputFormat::Coco => coco::convert_to_coco(config),
+        OutputFormat::LabelMe => labelme_out::convert_to_labelme(config),
     }
 }
 

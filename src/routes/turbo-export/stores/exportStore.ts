@@ -109,6 +109,7 @@ export const showAdvanced = writable<boolean>(false);
 export const includeBackground = writable<boolean>(false);
 export const workerCount = writable<number>(0);
 export const randomSeed = writable<number>(42);
+export const removeImageData = writable<boolean>(true); // LabelMe 輸出專用：移除 base64 圖片資料
 
 // 合併的 advancedOptions（保持向後相容）
 export const advancedOptions = derived(

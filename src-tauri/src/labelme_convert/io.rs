@@ -87,6 +87,23 @@ pub fn setup_coco_directories(config: &ConversionConfig) -> std::io::Result<Coco
     })
 }
 
+/// Set up output directories for LabelMe dataset (no split)
+pub fn setup_labelme_directories(config: &ConversionConfig) -> std::io::Result<crate::labelme_convert::types::LabelMeOutputDirs> {
+    let dataset_name = config.get_dataset_folder_name();
+    let base_dir = config.get_output_dir().join(&dataset_name);
+
+    // LabelMe output uses a single directory - no train/val/test split
+    let output_dir = base_dir.clone();
+
+    // Create the output directory
+    fs::create_dir_all(&output_dir)?;
+
+    Ok(crate::labelme_convert::types::LabelMeOutputDirs {
+        base_dir,
+        output_dir,
+    })
+}
+
 /// Read and parse a LabelMe JSON file
 pub fn read_labelme_json(path: &Path) -> Result<LabelMeAnnotation, String> {
     let file = File::open(path).map_err(|e| format!("Failed to open {}: {}", path.display(), e))?;
@@ -178,6 +195,16 @@ pub fn write_file(path: &Path, content: &str) -> std::io::Result<()> {
     let file = File::create(path)?;
     let mut writer = BufWriter::new(file);
     writer.write_all(content.as_bytes())?;
+    Ok(())
+}
+
+/// Write a LabelMe annotation to a JSON file
+pub fn write_labelme_json(path: &Path, annotation: &LabelMeAnnotation) -> Result<(), String> {
+    let json = serde_json::to_string_pretty(annotation)
+        .map_err(|e| format!("Failed to serialize LabelMe JSON: {}", e))?;
+
+    write_file(path, &json).map_err(|e| format!("Failed to write file: {}", e))?;
+
     Ok(())
 }
 

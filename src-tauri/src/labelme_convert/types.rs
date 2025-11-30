@@ -66,6 +66,14 @@ pub struct CocoOutputDirs {
     pub test_images_dir: Option<PathBuf>,
 }
 
+/// Output directories for LabelMe dataset (no split)
+#[derive(Debug, Clone)]
+pub struct LabelMeOutputDirs {
+    pub base_dir: PathBuf,
+    /// Single output directory for all files
+    pub output_dir: PathBuf,
+}
+
 /// Split data containers
 #[derive(Debug, Default)]
 pub struct SplitData {
@@ -208,6 +216,82 @@ impl ConversionResult {
 /// Check if a file extension is a supported image format
 pub fn is_image_extension(ext: &str) -> bool {
     IMG_FORMATS.contains(&ext.to_lowercase().as_str())
+}
+
+// ============================================================================
+// OutputDirectories trait implementations
+// ============================================================================
+
+use crate::labelme_convert::pipeline::{FileType, OutputDirectories, Split};
+
+impl OutputDirectories for YoloOutputDirs {
+    fn base_dir(&self) -> &std::path::Path {
+        &self.base_dir
+    }
+
+    fn get_output_dir(&self, split: Split, file_type: FileType) -> &std::path::Path {
+        match (split, file_type) {
+            (Split::Train, FileType::Image) => &self.train_images_dir,
+            (Split::Train, FileType::Label) => &self.train_labels_dir,
+            (Split::Val, FileType::Image) => &self.val_images_dir,
+            (Split::Val, FileType::Label) => &self.val_labels_dir,
+            (Split::Test, FileType::Image) => {
+                self.test_images_dir.as_ref().unwrap_or(&self.train_images_dir)
+            }
+            (Split::Test, FileType::Label) => {
+                self.test_labels_dir.as_ref().unwrap_or(&self.train_labels_dir)
+            }
+            // YOLO doesn't have separate annotation files
+            (_, FileType::Annotation) => &self.base_dir,
+            // Default to train for Split::None
+            (Split::None, FileType::Image) => &self.train_images_dir,
+            (Split::None, FileType::Label) => &self.train_labels_dir,
+        }
+    }
+
+    fn uses_splits(&self) -> bool {
+        true
+    }
+}
+
+impl OutputDirectories for CocoOutputDirs {
+    fn base_dir(&self) -> &std::path::Path {
+        &self.base_dir
+    }
+
+    fn get_output_dir(&self, split: Split, file_type: FileType) -> &std::path::Path {
+        match (split, file_type) {
+            (Split::Train, FileType::Image) => &self.train_images_dir,
+            (Split::Val, FileType::Image) => &self.val_images_dir,
+            (Split::Test, FileType::Image) => {
+                self.test_images_dir.as_ref().unwrap_or(&self.train_images_dir)
+            }
+            (_, FileType::Annotation) => &self.annotations_dir,
+            // COCO doesn't have separate label files (annotations are in JSON)
+            (_, FileType::Label) => &self.annotations_dir,
+            // Default to train for Split::None
+            (Split::None, FileType::Image) => &self.train_images_dir,
+        }
+    }
+
+    fn uses_splits(&self) -> bool {
+        true
+    }
+}
+
+impl OutputDirectories for LabelMeOutputDirs {
+    fn base_dir(&self) -> &std::path::Path {
+        &self.base_dir
+    }
+
+    fn get_output_dir(&self, _split: Split, _file_type: FileType) -> &std::path::Path {
+        // LabelMe output doesn't use splits - everything goes to one directory
+        &self.output_dir
+    }
+
+    fn uses_splits(&self) -> bool {
+        false
+    }
 }
 
 #[cfg(test)]

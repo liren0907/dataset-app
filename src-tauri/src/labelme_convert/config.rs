@@ -16,6 +16,8 @@ pub enum OutputFormat {
     #[default]
     Yolo,
     Coco,
+    /// LabelMe to LabelMe (filter/reorder labels, no train/val/test split)
+    LabelMe,
 }
 
 /// Annotation format for YOLO export
@@ -119,6 +121,15 @@ pub struct ConversionConfig {
     /// Categories source for COCO export
     #[serde(default)]
     pub categories_source: CategoriesSource,
+
+    // LabelMe-specific options
+    /// Skip train/val/test split (for LabelMe output)
+    #[serde(default)]
+    pub skip_split: bool,
+
+    /// Remove imageData from output JSON (for LabelMe output)
+    #[serde(default)]
+    pub remove_image_data: bool,
 }
 
 fn default_val_size() -> f32 {
@@ -152,6 +163,9 @@ impl Default for ConversionConfig {
             start_image_id: default_start_id(),
             start_annotation_id: default_start_id(),
             categories_source: CategoriesSource::default(),
+            // LabelMe-specific
+            skip_split: false,
+            remove_image_data: false,
         }
     }
 }
@@ -188,6 +202,7 @@ impl ConversionConfig {
         let format_str = match self.output_format {
             OutputFormat::Yolo => "yolo",
             OutputFormat::Coco => "coco",
+            OutputFormat::LabelMe => "labelme",
         };
 
         let annotation_str = match self.annotation_format {
