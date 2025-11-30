@@ -110,7 +110,7 @@
 	let outputTarget: 'yolo' | 'coco' = 'yolo';
 	let annotationType: 'bbox' | 'polygon' = 'bbox';
 
-	// ===== 輸出資料夾命名 =====
+	// ===== 輸出路徑命名 =====
 	let customDatasetName: string = '';
 
 	// 生成預設資料夾名稱預覽
@@ -295,7 +295,7 @@
 		const selected = await open({
 			directory: true,
 			multiple: false,
-			title: '選擇輸出資料夾'
+			title: '選擇輸出路徑'
 		});
 		if (selected && typeof selected === 'string') {
 			outputDir = selected;
@@ -384,7 +384,7 @@
 	// ===== 開始轉換 =====
 	async function startExport() {
 		if (!sourceDir) {
-			statusMessage = '請先選擇來源資料夾！';
+			statusMessage = '請先選擇來源路徑！';
 			return;
 		}
 
@@ -531,14 +531,14 @@
 				</h2>
 
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-					<!-- 來源資料夾 -->
+					<!-- 來源路徑 -->
 					<div
 						bind:this={sourceDropZone}
 						class="relative group"
 						role="button"
 						tabindex="0"
 					>
-						<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">來源資料夾</label>
+						<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">來源路徑</label>
 						<div class="flex gap-2 transition-all duration-200 {isDraggingOver && activeDropZone !== 'source' ? 'opacity-50' : ''}">
 							<input
 								type="text"
@@ -575,19 +575,19 @@
 						{/if}
 					</div>
 
-					<!-- 輸出資料夾 -->
+					<!-- 輸出路徑 -->
 					<div
 						bind:this={outputDropZone}
 						class="relative group"
 						role="button"
 						tabindex="0"
 					>
-						<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">輸出資料夾 (選填)</label>
+						<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">輸出路徑 (選填)</label>
 						<div class="flex gap-2 transition-all duration-200 {isDraggingOver && activeDropZone !== 'output' ? 'opacity-50' : ''}">
 							<input
 								type="text"
 								bind:value={outputDir}
-								placeholder="預設為來源資料夾"
+								placeholder="預設為來源路徑"
 								class="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-slate-50 dark:bg-slate-700 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200
 									{activeDropZone === 'output' ? 'border-emerald-400 ring-2 ring-emerald-200' : ''}"
 								readonly
@@ -634,7 +634,7 @@
 					<div class="mt-2 text-xs text-slate-500 dark:text-slate-400">
 						<span class="font-medium">預覽：</span>
 						<code class="bg-slate-100 dark:bg-slate-600 px-2 py-0.5 rounded text-indigo-600 dark:text-indigo-300">
-							{customDatasetName || defaultDatasetName || '請先選擇來源資料夾'}
+							{customDatasetName || defaultDatasetName || '請先選擇來源路徑'}
 						</code>
 					</div>
 				</div>
@@ -659,7 +659,7 @@
 										: 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500'}"
 							>
 								<div class="font-bold">YOLO</div>
-								<div class="text-xs opacity-75">YOLOv5 / v8 / v11</div>
+								<div class="text-xs opacity-75">YOLOv5 / v8 ~ v12</div>
 							</button>
 							<button
 								on:click={() => outputTarget = 'coco'}
@@ -912,7 +912,7 @@
 						{:else}
 							<div class="text-center py-8 text-slate-500 dark:text-slate-400">
 								{#if !sourceDir}
-									請先選擇來源資料夾以掃描可用標籤
+									請先選擇來源路徑以掃描可用標籤
 								{:else if isScanning}
 									<div class="flex items-center justify-center gap-2">
 										<svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
