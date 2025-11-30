@@ -52,58 +52,62 @@
 		<h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
 			🏷️ 標籤選擇
 		</h2>
-		{#if $labelScanMessage}
-			<span class="text-sm text-emerald-600 dark:text-emerald-400 font-medium">{$labelScanMessage}</span>
-		{/if}
+		<div class="flex items-center gap-2">
+			{#if $labelScanMessage}
+				<span class="text-sm text-emerald-600 dark:text-emerald-400 font-medium">{$labelScanMessage}</span>
+			{/if}
+			<button
+				on:click={handleRescan}
+				disabled={$isScanning || !$sourceDir}
+				class="px-3 py-1.5 text-xs bg-indigo-100 dark:bg-indigo-900/50 hover:bg-indigo-200 dark:hover:bg-indigo-800/50 text-indigo-700 dark:text-indigo-300 rounded-md transition-colors disabled:opacity-50"
+				title="重新掃描標籤列表"
+			>
+				{$isScanning ? '掃描中...' : '🔄 重新掃描'}
+			</button>
+		</div>
 	</div>
 
 	<!-- 切換開關 -->
 	<div class="flex items-center gap-3 mb-4">
-		<label class="relative inline-flex items-center cursor-pointer">
-			<input type="checkbox" checked={$useCustomLabels} on:change={() => useCustomLabels.update(v => !v)} class="sr-only peer" />
-			<div class="w-11 h-6 bg-slate-200 dark:bg-slate-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-		</label>
-		<span class="text-sm text-slate-700 dark:text-slate-300">只匯出選定的類別</span>
+		<div class="flex items-center gap-3">
+			<label class="relative inline-flex items-center cursor-pointer">
+				<input type="checkbox" checked={$useCustomLabels} on:change={() => useCustomLabels.update(v => !v)} class="sr-only peer" />
+				<div class="w-11 h-6 bg-slate-200 dark:bg-slate-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+			</label>
+			<span class="text-sm text-slate-700 dark:text-slate-300">只匯出選定的類別</span>
+		</div>
+		{#if $useCustomLabels && $labelList.length > 0}
+			<span class="text-xs text-slate-500 dark:text-slate-400 ml-auto pr-3">
+				已選 {$labelList.filter(l => l.selected).length} / {$labelList.length}
+			</span>
+		{/if}
 	</div>
 
 	{#if $useCustomLabels}
-		<div class="space-y-3">
-			<!-- 快速操作 -->
-			<div class="flex gap-2 flex-wrap">
-				<button
-					on:click={selectAllLabels}
-					class="px-3 py-1 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-md transition-colors"
-				>
-					全選
-				</button>
-				<button
-					on:click={deselectAllLabels}
-					class="px-3 py-1 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-md transition-colors"
-				>
-					全不選
-				</button>
-				<button
-					on:click={handleRescan}
-					disabled={$isScanning || !$sourceDir}
-					class="px-3 py-1 text-xs bg-indigo-100 dark:bg-indigo-900/50 hover:bg-indigo-200 dark:hover:bg-indigo-800/50 text-indigo-700 dark:text-indigo-300 rounded-md transition-colors disabled:opacity-50"
-				>
-					{$isScanning ? '掃描中...' : '重新掃描'}
-				</button>
-				<span class="ml-auto text-xs text-slate-500 dark:text-slate-400">
-					已選 {$labelList.filter(l => l.selected).length} / {$labelList.length}
-				</span>
-			</div>
-
+		<div class="space-y-2">
 			<!-- 可拖拉排序的標籤表格 -->
 			{#if $labelList.length > 0}
 				<div class="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
 					<!-- 表頭 -->
-					<div class="grid grid-cols-[50px_1fr_80px_50px] gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-400">
-						<span class="text-center">ID</span>
-						<span>標籤名稱</span>
-						<span class="text-right">數量</span>
-						<span class="text-center">選取</span>
+				<div class="grid grid-cols-[50px_1fr_80px_50px] gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-400">
+					<span class="text-center">ID</span>
+					<span>標籤名稱</span>
+					<span class="text-right">數量</span>
+					<div class="flex items-center justify-center gap-1.5">
+						<input
+							type="checkbox"
+							checked={$labelList.every(l => l.selected)}
+							indeterminate={$labelList.some(l => l.selected) && !$labelList.every(l => l.selected)}
+							on:change={(e) => {
+								if (e.currentTarget.checked) selectAllLabels();
+								else deselectAllLabels();
+							}}
+							class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 cursor-pointer"
+							title="全選/取消全選"
+						/>
+						<span class="text-xs" title="全選/取消全選"></span>
 					</div>
+				</div>
 					<!-- 拖拉提示 -->
 					<div class="px-3 py-1.5 bg-amber-50 dark:bg-amber-900/30 border-b border-amber-100 dark:border-amber-800/50 text-xs text-amber-700 dark:text-amber-300 flex items-center gap-1">
 						<span>💡</span>
