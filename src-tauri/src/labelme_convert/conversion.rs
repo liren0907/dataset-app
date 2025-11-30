@@ -6,7 +6,7 @@
 // Adapted and modified for dataset-app
 
 use crate::labelme_convert::config::AnnotationFormat;
-use crate::labelme_convert::types::Shape;
+use crate::labelme_convert::types::{InvalidReason, Shape};
 
 /// Calculate bounding box from shape points
 /// Returns (x_center, y_center, width, height) normalized to [0, 1]
@@ -88,20 +88,27 @@ pub fn normalize_polygon(
 }
 
 /// Convert shape to YOLO format string
-/// Returns None if the shape cannot be converted
+/// Returns Err with reason if the shape cannot be converted
 pub fn shape_to_yolo_line(
     shape: &Shape,
     class_id: usize,
     image_width: u32,
     image_height: u32,
     format: AnnotationFormat,
-) -> Option<String> {
+) -> Result<String, InvalidReason> {
     match format {
         AnnotationFormat::Bbox => {
             let (x_center, y_center, width, height) =
-                calculate_bbox(shape, image_width, image_height)?;
+                calculate_bbox(shape, image_width, image_height)
+                    .ok_or_else(|| {
+                        if shape.points.is_empty() {
+                            InvalidReason::EmptyPoints
+                        } else {
+                            InvalidReason::ZeroArea
+                        }
+                    })?;
 
-            Some(format!(
+            Ok(format!(
                 "{} {:.6} {:.6} {:.6} {:.6}",
                 class_id, x_center, y_center, width, height
             ))
@@ -112,13 +119,14 @@ pub fn shape_to_yolo_line(
                 // Fall back to bbox for rectangles with 2 points
                 if shape.shape_type == "rectangle" && shape.points.len() == 2 {
                     let (x_center, y_center, width, height) =
-                        calculate_bbox(shape, image_width, image_height)?;
-                    return Some(format!(
+                        calculate_bbox(shape, image_width, image_height)
+                            .ok_or(InvalidReason::ZeroArea)?;
+                    return Ok(format!(
                         "{} {:.6} {:.6} {:.6} {:.6}",
                         class_id, x_center, y_center, width, height
                     ));
                 }
-                return None;
+                return Err(InvalidReason::InsufficientPoints);
             }
 
             let normalized = normalize_polygon(&shape.points, image_width, image_height);
@@ -128,7 +136,7 @@ pub fn shape_to_yolo_line(
                 line.push_str(&format!(" {:.6} {:.6}", x, y));
             }
 
-            Some(line)
+            Ok(line)
         }
     }
 }

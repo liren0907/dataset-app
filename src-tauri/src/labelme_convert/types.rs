@@ -74,6 +74,36 @@ pub struct SplitData {
     pub test_files: Vec<PathBuf>,
 }
 
+/// Invalid annotation record with reason
+#[derive(Debug, Clone, Serialize)]
+pub struct InvalidAnnotation {
+    pub file: String,
+    pub label: String,
+    pub reason: String,
+    pub shape_type: String,
+    pub points_count: usize,
+}
+
+/// Invalid annotation reason types
+#[derive(Debug, Clone, Copy)]
+pub enum InvalidReason {
+    EmptyPoints,
+    ZeroArea,
+    InsufficientPoints,
+    LabelNotInList,
+}
+
+impl InvalidReason {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            InvalidReason::EmptyPoints => "標註點為空",
+            InvalidReason::ZeroArea => "標註面積為零（width 或 height <= 0）",
+            InvalidReason::InsufficientPoints => "多邊形點數不足（需要至少 3 個點）",
+            InvalidReason::LabelNotInList => "標籤不在選定列表中",
+        }
+    }
+}
+
 /// Processing statistics
 #[derive(Debug, Default, Clone, Serialize)]
 pub struct ProcessingStats {
@@ -86,6 +116,8 @@ pub struct ProcessingStats {
     pub background_images: usize,
     pub labels_found: Vec<String>,
     pub skipped_labels: Vec<String>,
+    /// Detailed invalid annotation records (limited to first 100)
+    pub invalid_annotations: Vec<InvalidAnnotation>,
 }
 
 impl ProcessingStats {
@@ -130,6 +162,13 @@ impl ProcessingStats {
     pub fn add_skipped_label(&mut self, label: String) {
         if !self.skipped_labels.contains(&label) {
             self.skipped_labels.push(label);
+        }
+    }
+
+    /// Add an invalid annotation record (limited to first 100 to avoid memory issues)
+    pub fn add_invalid_annotation(&mut self, annotation: InvalidAnnotation) {
+        if self.invalid_annotations.len() < 100 {
+            self.invalid_annotations.push(annotation);
         }
     }
 }

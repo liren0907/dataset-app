@@ -11,7 +11,9 @@ use crate::labelme_convert::io::{
     copy_image, create_dataset_yaml, extract_embedded_image, find_json_files, read_labelme_json,
     resolve_image_path, setup_yolo_directories, write_file,
 };
-use crate::labelme_convert::types::{ConversionResult, ProcessingStats, YoloOutputDirs};
+use crate::labelme_convert::types::{
+    ConversionResult, InvalidAnnotation, InvalidReason, ProcessingStats, YoloOutputDirs,
+};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
@@ -63,10 +65,14 @@ pub fn convert_to_yolo(config: &ConversionConfig) -> ConversionResult {
             &mut processed_images,
             &mut skipped_labels,
         ) {
-            Ok((annotation_count, skipped_count)) => {
+            Ok((annotation_count, skipped_count, invalid_list)) => {
                 stats.increment_processed();
                 stats.add_annotations(annotation_count);
                 stats.add_skipped_annotations(skipped_count);
+                // Add invalid annotations to stats
+                for invalid in invalid_list {
+                    stats.add_invalid_annotation(invalid);
+                }
             }
             Err(e) => {
                 stats.increment_failed();
@@ -129,6 +135,7 @@ fn gather_labels(json_files: &[std::path::PathBuf], label_map: &mut HashMap<Stri
 }
 
 /// Process a single LabelMe JSON file
+/// Returns (annotation_count, skipped_count, invalid_annotations)
 fn process_single_file(
     json_path: &Path,
     config: &ConversionConfig,
@@ -136,7 +143,7 @@ fn process_single_file(
     label_map: &mut HashMap<String, usize>,
     processed_images: &mut HashSet<String>,
     skipped_labels: &mut HashSet<String>,
-) -> Result<(usize, usize), String> {
+) -> Result<(usize, usize, Vec<InvalidAnnotation>), String> {
     // Read and parse JSON
     let annotation = read_labelme_json(json_path)?;
 
@@ -190,22 +197,49 @@ fn process_single_file(
     let mut yolo_lines = Vec::new();
     let mut annotation_count = 0;
     let mut skipped_count = 0;
+    let mut invalid_annotations = Vec::new();
+
+    // Get filename for error reporting
+    let file_name = json_path
+        .file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| "unknown".to_string());
 
     for shape in &annotation.shapes {
         if let Some(class_id) = label_map.get(&shape.label) {
-            if let Some(line) = shape_to_yolo_line(
+            match shape_to_yolo_line(
                 shape,
                 *class_id,
                 annotation.image_width,
                 annotation.image_height,
                 config.annotation_format,
             ) {
-                yolo_lines.push(line);
-                annotation_count += 1;
+                Ok(line) => {
+                    yolo_lines.push(line);
+                    annotation_count += 1;
+                }
+                Err(reason) => {
+                    // Record invalid annotation with reason
+                    invalid_annotations.push(InvalidAnnotation {
+                        file: file_name.clone(),
+                        label: shape.label.clone(),
+                        reason: reason.as_str().to_string(),
+                        shape_type: shape.shape_type.clone(),
+                        points_count: shape.points.len(),
+                    });
+                    skipped_count += 1;
+                }
             }
         } else {
             // Label not in the predefined list, skip it
             skipped_labels.insert(shape.label.clone());
+            invalid_annotations.push(InvalidAnnotation {
+                file: file_name.clone(),
+                label: shape.label.clone(),
+                reason: InvalidReason::LabelNotInList.as_str().to_string(),
+                shape_type: shape.shape_type.clone(),
+                points_count: shape.points.len(),
+            });
             skipped_count += 1;
         }
     }
@@ -215,7 +249,7 @@ fn process_single_file(
     let content = yolo_lines.join("\n");
     write_file(&label_path, &content).map_err(|e| format!("Failed to write label file: {}", e))?;
 
-    Ok((annotation_count, skipped_count))
+    Ok((annotation_count, skipped_count, invalid_annotations))
 }
 
 /// Get the correct directories for a given split

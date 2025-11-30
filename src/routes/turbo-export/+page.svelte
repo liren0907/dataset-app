@@ -248,13 +248,34 @@
 		skipped: 0,
 		failed: 0
 	};
+
+	// 無效標註記錄
+	interface InvalidAnnotation {
+		file: string;
+		label: string;
+		reason: string;
+		shape_type: string;
+		points_count: number;
+	}
+
 	// 詳細統計
 	let detailedStats = {
 		totalAnnotations: 0,
 		skippedAnnotations: 0,
 		backgroundImages: 0,
-		skippedLabels: [] as string[]
+		skippedLabels: [] as string[],
+		invalidAnnotations: [] as InvalidAnnotation[]
 	};
+
+	// 是否展開無效標註詳情
+	let showInvalidDetails: boolean = false;
+
+	// 計算無效標註按原因分組
+	$: invalidReasonGroups = detailedStats.invalidAnnotations.reduce((acc, item) => {
+		if (!acc[item.reason]) acc[item.reason] = [];
+		acc[item.reason].push(item);
+		return acc;
+	}, {} as Record<string, InvalidAnnotation[]>);
 
 	// ===== 選擇資料夾 =====
 	async function selectSourceDir() {
@@ -370,7 +391,8 @@
 		isProcessing = true;
 		progress = 0;
 		stats = { total: 0, processed: 0, success: 0, skipped: 0, failed: 0 };
-		detailedStats = { totalAnnotations: 0, skippedAnnotations: 0, backgroundImages: 0, skippedLabels: [] };
+		detailedStats = { totalAnnotations: 0, skippedAnnotations: 0, backgroundImages: 0, skippedLabels: [], invalidAnnotations: [] };
+		showInvalidDetails = false;
 		statusMessage = '開始處理...';
 
 		// 啟動模擬進度條（因為後端沒有即時回報進度）
@@ -400,6 +422,7 @@
 					background_images: number;
 					labels_found: string[];
 					skipped_labels: string[];
+					invalid_annotations: InvalidAnnotation[];
 				};
 				errors: string[];
 			}>('convert_labelme', {
@@ -434,6 +457,7 @@
 				detailedStats.skippedAnnotations = result.stats.skipped_annotations;
 				detailedStats.backgroundImages = result.stats.background_images;
 				detailedStats.skippedLabels = result.stats.skipped_labels || [];
+				detailedStats.invalidAnnotations = result.stats.invalid_annotations || [];
 
 				progress = 100;
 
@@ -1047,6 +1071,73 @@
 										</div>
 									</div>
 								</div>
+							</div>
+						{/if}
+
+						<!-- 無效標註詳情（點擊展開） -->
+						{#if detailedStats.invalidAnnotations.length > 0}
+							<div class="mt-4 p-3 bg-orange-50 dark:bg-orange-900/30 rounded-lg border border-orange-200 dark:border-orange-800">
+								<button
+									on:click={() => showInvalidDetails = !showInvalidDetails}
+									class="w-full flex items-center justify-between text-left"
+								>
+									<div class="flex items-start gap-2">
+										<span class="text-orange-500">🔍</span>
+										<div class="text-sm">
+											<div class="font-medium text-orange-700 dark:text-orange-300">
+												發現 {detailedStats.invalidAnnotations.length} 個無效標註
+												{#if detailedStats.invalidAnnotations.length >= 100}
+													<span class="text-orange-500">（僅顯示前 100 筆）</span>
+												{/if}
+											</div>
+											<div class="text-orange-600 dark:text-orange-400 mt-0.5">
+												點擊查看詳情，了解為何這些標註無法轉換
+											</div>
+										</div>
+									</div>
+									<span class="text-orange-500 transition-transform {showInvalidDetails ? 'rotate-180' : ''}">
+										▼
+									</span>
+								</button>
+
+								{#if showInvalidDetails}
+									<div class="mt-3 pt-3 border-t border-orange-200 dark:border-orange-700">
+										<!-- 按原因分組統計 -->
+										<div class="space-y-3">
+											{#each Object.entries(invalidReasonGroups) as [reason, items]}
+												<div class="bg-white dark:bg-slate-800 rounded-lg p-3 border border-orange-100 dark:border-orange-800/50">
+													<div class="flex items-center justify-between mb-2">
+														<span class="font-medium text-orange-700 dark:text-orange-300 text-sm">
+															{reason}
+														</span>
+														<span class="text-xs bg-orange-100 dark:bg-orange-800 text-orange-700 dark:text-orange-300 px-2 py-0.5 rounded-full">
+															{items.length} 個
+														</span>
+													</div>
+													<div class="max-h-32 overflow-y-auto text-xs space-y-1">
+														{#each items.slice(0, 20) as item}
+															<div class="flex items-center gap-2 text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/50 rounded px-2 py-1">
+																<span class="text-slate-400 dark:text-slate-500">📄</span>
+																<span class="font-mono truncate flex-1" title={item.file}>{item.file}</span>
+																<span class="text-orange-600 dark:text-orange-400 whitespace-nowrap">
+																	{item.label}
+																</span>
+																<span class="text-slate-400 dark:text-slate-500 whitespace-nowrap">
+																	({item.shape_type}, {item.points_count}點)
+																</span>
+															</div>
+														{/each}
+														{#if items.length > 20}
+															<div class="text-center text-slate-400 dark:text-slate-500 py-1">
+																...還有 {items.length - 20} 個
+															</div>
+														{/if}
+													</div>
+												</div>
+											{/each}
+										</div>
+									</div>
+								{/if}
 							</div>
 						{/if}
 
