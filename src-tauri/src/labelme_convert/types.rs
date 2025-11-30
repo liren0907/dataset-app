@@ -92,6 +92,30 @@ pub struct InvalidAnnotation {
     pub points_count: usize,
 }
 
+/// Detected input annotation format based on sampling
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum InputAnnotationFormat {
+    /// 2-point bounding box (rectangle with 2 corner points)
+    Bbox2Point,
+    /// 4-point bounding box (rectangle with 4 corner points)
+    Bbox4Point,
+    /// Polygon with variable points (>= 3)
+    Polygon,
+    /// Mixed or unknown format
+    Unknown,
+}
+
+impl InputAnnotationFormat {
+    pub fn expected_points_description(&self) -> &'static str {
+        match self {
+            InputAnnotationFormat::Bbox2Point => "需要 2 個點",
+            InputAnnotationFormat::Bbox4Point => "需要 4 個點",
+            InputAnnotationFormat::Polygon => "需要至少 3 個點",
+            InputAnnotationFormat::Unknown => "格式未知",
+        }
+    }
+}
+
 /// Invalid annotation reason types
 #[derive(Debug, Clone, Copy)]
 pub enum InvalidReason {
@@ -99,15 +123,27 @@ pub enum InvalidReason {
     ZeroArea,
     InsufficientPoints,
     LabelNotInList,
+    /// Points count doesn't match expected format (e.g., polygon with only 2 points)
+    PointsCountMismatch {
+        expected_format: InputAnnotationFormat,
+        actual_points: usize,
+    },
 }
 
 impl InvalidReason {
-    pub fn as_str(&self) -> &'static str {
+    pub fn as_str(&self) -> String {
         match self {
-            InvalidReason::EmptyPoints => "標註點為空",
-            InvalidReason::ZeroArea => "標註面積為零（width 或 height <= 0）",
-            InvalidReason::InsufficientPoints => "多邊形點數不足（需要至少 3 個點）",
-            InvalidReason::LabelNotInList => "標籤不在選定列表中",
+            InvalidReason::EmptyPoints => "標註點為空".to_string(),
+            InvalidReason::ZeroArea => "標註面積為零（width 或 height <= 0）".to_string(),
+            InvalidReason::InsufficientPoints => "多邊形點數不足（需要至少 3 個點）".to_string(),
+            InvalidReason::LabelNotInList => "標籤不在選定列表中".to_string(),
+            InvalidReason::PointsCountMismatch { expected_format, actual_points } => {
+                format!(
+                    "點數不符合資料集格式（{}，實際 {} 個點）",
+                    expected_format.expected_points_description(),
+                    actual_points
+                )
+            }
         }
     }
 }

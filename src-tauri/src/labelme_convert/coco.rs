@@ -15,7 +15,8 @@ use crate::labelme_convert::io::{
     setup_coco_directories, write_file,
 };
 use crate::labelme_convert::types::{
-    CocoOutputDirs, ConversionResult, ProcessingStats, Shape,
+    CocoOutputDirs, ConversionResult, InputAnnotationFormat, InvalidAnnotation, InvalidReason,
+    ProcessingStats, Shape,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -174,6 +175,10 @@ pub fn convert_to_coco(config: &ConversionConfig) -> ConversionResult {
 
     let mut image_id_counter = config.start_image_id;
     let mut annotation_id_counter = config.start_annotation_id;
+    let mut skipped_labels: HashSet<String> = HashSet::new();
+
+    // Get the pre-detected input format from config
+    let input_format = config.detected_input_format.unwrap_or(InputAnnotationFormat::Unknown);
 
     // Process each JSON file
     for json_path in &json_files {
@@ -183,15 +188,21 @@ pub fn convert_to_coco(config: &ConversionConfig) -> ConversionResult {
             &output_dirs,
             &mut label_map,
             &mut processed_images,
+            &mut skipped_labels,
             &mut train_dataset,
             &mut val_dataset,
             &mut test_dataset,
             &mut image_id_counter,
             &mut annotation_id_counter,
+            input_format,
         ) {
-            Ok(annotation_count) => {
+            Ok((annotation_count, skipped_count, invalid_list)) => {
                 stats.increment_processed();
                 stats.add_annotations(annotation_count);
+                stats.add_skipped_annotations(skipped_count);
+                for invalid in invalid_list {
+                    stats.add_invalid_annotation(invalid);
+                }
             }
             Err(e) => {
                 stats.increment_failed();
@@ -209,6 +220,11 @@ pub fn convert_to_coco(config: &ConversionConfig) -> ConversionResult {
     // Update stats with labels
     for label in label_map.keys() {
         stats.add_label(label.clone());
+    }
+
+    // Add skipped labels to stats
+    for label in skipped_labels {
+        stats.add_skipped_label(label);
     }
 
     // Write COCO JSON files
@@ -257,6 +273,7 @@ fn gather_labels_coco(json_files: &[std::path::PathBuf], label_map: &mut HashMap
 }
 
 /// Process a single LabelMe JSON file for COCO
+/// Returns (annotation_count, skipped_count, invalid_annotations)
 #[allow(clippy::too_many_arguments)]
 fn process_single_file_coco(
     json_path: &Path,
@@ -264,12 +281,14 @@ fn process_single_file_coco(
     output_dirs: &CocoOutputDirs,
     label_map: &mut HashMap<String, usize>,
     processed_images: &mut HashSet<String>,
+    skipped_labels: &mut HashSet<String>,
     train_dataset: &mut CocoDataset,
     val_dataset: &mut CocoDataset,
     test_dataset: &mut CocoDataset,
     image_id_counter: &mut u32,
     annotation_id_counter: &mut u32,
-) -> Result<usize, String> {
+    input_format: InputAnnotationFormat,
+) -> Result<(usize, usize, Vec<InvalidAnnotation>), String> {
     // Read and parse JSON
     let annotation = read_labelme_json(json_path)?;
 
@@ -303,6 +322,12 @@ fn process_single_file_coco(
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|| "unknown.jpg".to_string());
 
+    // Get JSON filename for error reporting
+    let json_file_name = json_path
+        .file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| "unknown.json".to_string());
+
     // Copy or extract image
     if let Some(image_data) = &annotation.image_data {
         let dest_path = images_dir.join(&file_name);
@@ -331,9 +356,24 @@ fn process_single_file_coco(
 
     // Create COCO annotations
     let mut coco_annotations = Vec::new();
+    let mut skipped_count = 0;
+    let mut invalid_annotations = Vec::new();
 
     for shape in &annotation.shapes {
         if let Some(class_id) = label_map.get(&shape.label) {
+            // Validate points count based on detected input format
+            if let Err(reason) = validate_shape_points(shape, input_format) {
+                invalid_annotations.push(InvalidAnnotation {
+                    file: json_file_name.clone(),
+                    label: shape.label.clone(),
+                    reason: reason.as_str(),
+                    shape_type: shape.shape_type.clone(),
+                    points_count: shape.points.len(),
+                });
+                skipped_count += 1;
+                continue;
+            }
+
             if let Some(coco_ann) = shape_to_coco_annotation(
                 shape,
                 image_id,
@@ -344,6 +384,10 @@ fn process_single_file_coco(
                 coco_annotations.push(coco_ann);
                 *annotation_id_counter += 1;
             }
+        } else {
+            // Label not in the predefined list
+            skipped_labels.insert(shape.label.clone());
+            skipped_count += 1;
         }
     }
 
@@ -359,7 +403,53 @@ fn process_single_file_coco(
     dataset.images.push(coco_image);
     dataset.annotations.extend(coco_annotations);
 
-    Ok(annotation_count)
+    Ok((annotation_count, skipped_count, invalid_annotations))
+}
+
+/// Validate shape points count based on detected input format
+fn validate_shape_points(shape: &Shape, input_format: InputAnnotationFormat) -> Result<(), InvalidReason> {
+    let points_count = shape.points.len();
+
+    // Empty points is always invalid
+    if points_count == 0 {
+        return Err(InvalidReason::EmptyPoints);
+    }
+
+    // Validate based on detected input format
+    match input_format {
+        InputAnnotationFormat::Bbox2Point => {
+            if points_count != 2 {
+                return Err(InvalidReason::PointsCountMismatch {
+                    expected_format: input_format,
+                    actual_points: points_count,
+                });
+            }
+        }
+        InputAnnotationFormat::Bbox4Point => {
+            if points_count != 4 {
+                return Err(InvalidReason::PointsCountMismatch {
+                    expected_format: input_format,
+                    actual_points: points_count,
+                });
+            }
+        }
+        InputAnnotationFormat::Polygon => {
+            if points_count < 3 {
+                return Err(InvalidReason::PointsCountMismatch {
+                    expected_format: input_format,
+                    actual_points: points_count,
+                });
+            }
+        }
+        InputAnnotationFormat::Unknown => {
+            // For unknown format, just require at least 2 points
+            if points_count < 2 {
+                return Err(InvalidReason::InsufficientPoints);
+            }
+        }
+    }
+
+    Ok(())
 }
 
 /// Convert a LabelMe shape to COCO annotation

@@ -268,3 +268,57 @@ pub fn scan_labelme_labels_with_counts(
 
     Ok(label_counts)
 }
+
+/// Analyze a LabelMe dataset to detect input annotation format
+///
+/// This command analyzes the dataset to determine:
+/// - Detected input format (2-point bbox, 4-point bbox, or polygon)
+/// - Confidence score for the detection
+/// - Points distribution statistics
+/// - Human-readable format description
+///
+/// Useful for displaying dataset analysis in the UI before conversion.
+#[tauri::command]
+pub fn analyze_labelme_dataset(input_dir: String) -> Result<DatasetAnalysisResponse, String> {
+    use crate::labelme_convert::detection::analyze_dataset;
+
+    let input_path = PathBuf::from(&input_dir);
+
+    if !input_path.exists() {
+        return Err(format!("Directory does not exist: {}", input_dir));
+    }
+
+    let analysis = analyze_dataset(&input_path);
+
+    Ok(DatasetAnalysisResponse {
+        input_format: format!("{:?}", analysis.input_format),
+        total_files: analysis.total_files,
+        sample_files: analysis.sample_files,
+        sample_annotations: analysis.sample_annotations,
+        confidence: analysis.confidence,
+        confidence_percent: format!("{:.1}%", analysis.confidence * 100.0),
+        points_distribution: analysis.points_distribution,
+        format_description: analysis.format_description,
+    })
+}
+
+/// Response structure for dataset analysis
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DatasetAnalysisResponse {
+    /// Detected input format as string: "Bbox2Point", "Bbox4Point", "Polygon", "Unknown"
+    pub input_format: String,
+    /// Total number of JSON files in the dataset
+    pub total_files: usize,
+    /// Number of files sampled for analysis
+    pub sample_files: usize,
+    /// Total number of annotations sampled
+    pub sample_annotations: usize,
+    /// Confidence score (0.0 - 1.0)
+    pub confidence: f64,
+    /// Confidence as percentage string (e.g., "87.5%")
+    pub confidence_percent: String,
+    /// Distribution of point counts
+    pub points_distribution: std::collections::HashMap<usize, usize>,
+    /// Human-readable description of the detected format
+    pub format_description: String,
+}

@@ -5,6 +5,7 @@
 //
 // Adapted and modified for dataset-app
 
+use crate::labelme_convert::types::InputAnnotationFormat;
 use chrono;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -130,6 +131,11 @@ pub struct ConversionConfig {
     /// Remove imageData from output JSON (for LabelMe output)
     #[serde(default)]
     pub remove_image_data: bool,
+
+    /// Detected input annotation format (auto-detected before conversion)
+    /// This is set by the conversion pipeline and can be manually overridden
+    #[serde(default)]
+    pub detected_input_format: Option<InputAnnotationFormat>,
 }
 
 fn default_val_size() -> f32 {
@@ -166,6 +172,8 @@ impl Default for ConversionConfig {
             // LabelMe-specific
             skip_split: false,
             remove_image_data: false,
+            // Auto-detection
+            detected_input_format: None,
         }
     }
 }

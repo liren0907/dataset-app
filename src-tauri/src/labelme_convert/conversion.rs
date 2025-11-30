@@ -6,7 +6,7 @@
 // Adapted and modified for dataset-app
 
 use crate::labelme_convert::config::AnnotationFormat;
-use crate::labelme_convert::types::{InvalidReason, Shape};
+use crate::labelme_convert::types::{InputAnnotationFormat, InvalidReason, Shape};
 
 /// Calculate bounding box from shape points
 /// Returns (x_center, y_center, width, height) normalized to [0, 1]
@@ -87,7 +87,7 @@ pub fn normalize_polygon(
         .collect()
 }
 
-/// Convert shape to YOLO format string
+/// Convert shape to YOLO format string with strict validation based on detected input format
 /// Returns Err with reason if the shape cannot be converted
 pub fn shape_to_yolo_line(
     shape: &Shape,
@@ -95,9 +95,51 @@ pub fn shape_to_yolo_line(
     image_width: u32,
     image_height: u32,
     format: AnnotationFormat,
+    input_format: InputAnnotationFormat,
 ) -> Result<String, InvalidReason> {
+    // First, validate points count based on detected input format
+    let points_count = shape.points.len();
+
+    match input_format {
+        InputAnnotationFormat::Bbox2Point => {
+            // 2-point bbox: must have exactly 2 points
+            if points_count != 2 {
+                return Err(InvalidReason::PointsCountMismatch {
+                    expected_format: input_format,
+                    actual_points: points_count,
+                });
+            }
+        }
+        InputAnnotationFormat::Bbox4Point => {
+            // 4-point bbox: must have exactly 4 points
+            if points_count != 4 {
+                return Err(InvalidReason::PointsCountMismatch {
+                    expected_format: input_format,
+                    actual_points: points_count,
+                });
+            }
+        }
+        InputAnnotationFormat::Polygon => {
+            // Polygon: must have at least 3 points
+            if points_count < 3 {
+                return Err(InvalidReason::PointsCountMismatch {
+                    expected_format: input_format,
+                    actual_points: points_count,
+                });
+            }
+        }
+        InputAnnotationFormat::Unknown => {
+            // Unknown format: use legacy validation
+            if points_count == 0 {
+                return Err(InvalidReason::EmptyPoints);
+            }
+        }
+    }
+
+    // Now proceed with conversion based on output format
     match format {
         AnnotationFormat::Bbox => {
+            // For bbox output, we always calculate bounding box regardless of input format
             let (x_center, y_center, width, height) =
                 calculate_bbox(shape, image_width, image_height)
                     .ok_or_else(|| {
@@ -114,29 +156,28 @@ pub fn shape_to_yolo_line(
             ))
         }
         AnnotationFormat::Polygon => {
-            if shape.points.len() < 3 {
-                // Need at least 3 points for a polygon
-                // Fall back to bbox for rectangles with 2 points
-                if shape.shape_type == "rectangle" && shape.points.len() == 2 {
-                    let (x_center, y_center, width, height) =
-                        calculate_bbox(shape, image_width, image_height)
-                            .ok_or(InvalidReason::ZeroArea)?;
-                    return Ok(format!(
-                        "{} {:.6} {:.6} {:.6} {:.6}",
-                        class_id, x_center, y_center, width, height
-                    ));
+            // For polygon output
+            match input_format {
+                InputAnnotationFormat::Bbox2Point => {
+                    // Convert 2-point bbox to 4-point polygon
+                    let expanded = rectangle_to_polygon(&shape.points);
+                    let normalized = normalize_polygon(&expanded, image_width, image_height);
+                    let mut line = class_id.to_string();
+                    for (x, y) in normalized {
+                        line.push_str(&format!(" {:.6} {:.6}", x, y));
+                    }
+                    Ok(line)
                 }
-                return Err(InvalidReason::InsufficientPoints);
+                InputAnnotationFormat::Bbox4Point | InputAnnotationFormat::Polygon | InputAnnotationFormat::Unknown => {
+                    // Already has enough points, output as-is
+                    let normalized = normalize_polygon(&shape.points, image_width, image_height);
+                    let mut line = class_id.to_string();
+                    for (x, y) in normalized {
+                        line.push_str(&format!(" {:.6} {:.6}", x, y));
+                    }
+                    Ok(line)
+                }
             }
-
-            let normalized = normalize_polygon(&shape.points, image_width, image_height);
-
-            let mut line = class_id.to_string();
-            for (x, y) in normalized {
-                line.push_str(&format!(" {:.6} {:.6}", x, y));
-            }
-
-            Ok(line)
         }
     }
 }
@@ -245,6 +286,10 @@ pub fn hash_string(s: &str) -> u64 {
     s.hash(&mut hasher);
     hasher.finish()
 }
+
+// Note: detect_input_format and detect_input_format_from_annotations
+// have been moved to detection.rs for better modularity.
+// Use crate::labelme_convert::detection::detect_input_format instead.
 
 #[cfg(test)]
 mod tests {

@@ -12,7 +12,7 @@ use crate::labelme_convert::io::{
     resolve_image_path, setup_yolo_directories, write_file,
 };
 use crate::labelme_convert::types::{
-    ConversionResult, InvalidAnnotation, ProcessingStats, YoloOutputDirs,
+    ConversionResult, InputAnnotationFormat, InvalidAnnotation, ProcessingStats, Shape, YoloOutputDirs,
 };
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
@@ -55,6 +55,9 @@ pub fn convert_to_yolo(config: &ConversionConfig) -> ConversionResult {
         gather_labels(&json_files, &mut label_map);
     }
 
+    // Use the pre-detected input format from config (set by mod.rs convert())
+    let input_format = config.detected_input_format.unwrap_or(InputAnnotationFormat::Unknown);
+
     // Process each JSON file
     for json_path in &json_files {
         match process_single_file(
@@ -64,6 +67,7 @@ pub fn convert_to_yolo(config: &ConversionConfig) -> ConversionResult {
             &mut label_map,
             &mut processed_images,
             &mut skipped_labels,
+            input_format,
         ) {
             Ok((annotation_count, skipped_count, invalid_list)) => {
                 stats.increment_processed();
@@ -145,6 +149,7 @@ fn process_single_file(
     label_map: &mut HashMap<String, usize>,
     processed_images: &mut HashSet<String>,
     skipped_labels: &mut HashSet<String>,
+    input_format: InputAnnotationFormat,
 ) -> Result<(usize, usize, Vec<InvalidAnnotation>), String> {
     // Read and parse JSON
     let annotation = read_labelme_json(json_path)?;
@@ -215,6 +220,7 @@ fn process_single_file(
                 annotation.image_width,
                 annotation.image_height,
                 config.annotation_format,
+                input_format,
             ) {
                 Ok(line) => {
                     yolo_lines.push(line);

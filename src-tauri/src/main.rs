@@ -49,6 +49,7 @@ fn main() {
             commands::labelme_convert::scan_labelme_labels,
             commands::labelme_convert::scan_labelme_labels_with_counts,
             commands::labelme_convert::count_labelme_files,
+            commands::labelme_convert::analyze_labelme_dataset,
             // External module functions
             core::labelme2yolo::export_to_yolo_new,
             core::preview::generate_single_annotated_preview

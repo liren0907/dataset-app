@@ -28,6 +28,7 @@
 pub mod coco;
 pub mod config;
 pub mod conversion;
+pub mod detection;
 pub mod io;
 pub mod labelme_out;
 pub mod pipeline;
@@ -38,7 +39,8 @@ pub mod yolo;
 pub use config::{
     AnnotationFormat, ConversionConfig, OutputFormat, SegmentationMode,
 };
-pub use types::ConversionResult;
+pub use detection::{analyze_dataset, DatasetAnalysis};
+pub use types::{ConversionResult, InputAnnotationFormat};
 
 /// Main conversion function that dispatches to the appropriate converter
 /// based on the output format specified in the configuration.
@@ -73,10 +75,23 @@ pub use types::ConversionResult;
 /// }
 /// ```
 pub fn convert(config: &ConversionConfig) -> ConversionResult {
+    // Auto-detect input format if not already set
+    let mut config = config.clone();
+    if config.detected_input_format.is_none() {
+        let analysis = detection::analyze_dataset(&config.input_dir);
+        println!(
+            "📊 Auto-detected input format: {:?} (confidence: {:.1}%)",
+            analysis.input_format,
+            analysis.confidence * 100.0
+        );
+        println!("   {}", analysis.format_description);
+        config.detected_input_format = Some(analysis.input_format);
+    }
+
     match config.output_format {
-        OutputFormat::Yolo => yolo::convert_to_yolo(config),
-        OutputFormat::Coco => coco::convert_to_coco(config),
-        OutputFormat::LabelMe => labelme_out::convert_to_labelme(config),
+        OutputFormat::Yolo => yolo::convert_to_yolo(&config),
+        OutputFormat::Coco => coco::convert_to_coco(&config),
+        OutputFormat::LabelMe => labelme_out::convert_to_labelme(&config),
     }
 }
 
