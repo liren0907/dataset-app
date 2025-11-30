@@ -29,6 +29,7 @@
 		outputDir,
 		outputTarget,
 		annotationType,
+		labelmeOutputFormat,
 		customDatasetName,
 		trainRatio,
 		valRatio,
@@ -259,7 +260,8 @@
 				deterministic_labels: $useCustomLabels,
 				segmentation_mode: $annotationType === 'polygon' ? 'polygon' : 'bbox_only',
 				custom_dataset_name: $customDatasetName || null,
-				remove_image_data: $removeImageData
+				remove_image_data: $removeImageData,
+				labelme_output_format: $labelmeOutputFormat
 			};
 
 			// 呼叫後端進行轉換

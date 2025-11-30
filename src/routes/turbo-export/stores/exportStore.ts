@@ -14,6 +14,9 @@ export type OutputFormat = 'yolo' | 'coco' | 'labelme';
 /** 標註類型 */
 export type AnnotationType = 'bbox' | 'polygon';
 
+/** LabelMe 輸出格式（僅 LabelMe → LabelMe 時使用） */
+export type LabelMeOutputFormat = 'original' | 'bbox_2point' | 'bbox_4point';
+
 /** 標籤資訊 */
 export interface LabelInfo {
 	id: number;
@@ -83,6 +86,7 @@ export const activeDropZone = writable<DropZoneType>(null);
 export const outputTarget = writable<OutputFormat>('yolo');
 export const outputFormat = outputTarget; // 別名，保持向後相容
 export const annotationType = writable<AnnotationType>('bbox');
+export const labelmeOutputFormat = writable<LabelMeOutputFormat>('original'); // LabelMe 輸出點格式
 
 // --- 資料集分割（個別 store 方便 UI binding）---
 export const trainRatio = writable<number>(70);

@@ -36,7 +36,7 @@ pub mod types;
 pub mod yolo;
 
 // Re-export commonly used types for convenience
-pub use config::{AnnotationFormat, ConversionConfig, OutputFormat, SegmentationMode};
+pub use config::{AnnotationFormat, ConversionConfig, OutputFormat, SegmentationMode, LabelMeOutputFormat};
 pub use detection::{analyze_dataset, DatasetAnalysis};
 pub use pipeline::{ConversionPipeline, ProcessingContext, Split};
 pub use types::{ConversionResult, InputAnnotationFormat};

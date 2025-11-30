@@ -20,6 +20,9 @@ export type AnnotationType = 'bbox' | 'polygon';
 /** 分割模式 */
 export type SegmentationMode = 'polygon' | 'bbox_only';
 
+/** LabelMe 輸出點格式（僅 LabelMe → LabelMe 時使用） */
+export type LabelMeOutputFormat = 'original' | 'bbox_2point' | 'bbox_4point';
+
 /** 無效標註記錄 */
 export interface InvalidAnnotation {
 	file: string;
@@ -73,6 +76,8 @@ export interface ConvertLabelMeRequest {
 	custom_dataset_name: string | null;
 	/** 移除 imageData（僅 LabelMe 輸出格式） */
 	remove_image_data: boolean;
+	/** LabelMe 輸出點格式（僅 LabelMe 輸出格式） */
+	labelme_output_format: LabelMeOutputFormat;
 }
 
 /** 轉換回應結果 */
@@ -146,7 +151,8 @@ export function createDefaultRequest(
 		deterministic_labels: false,
 		segmentation_mode: 'bbox_only',
 		custom_dataset_name: null,
-		remove_image_data: true
+		remove_image_data: true,
+		labelme_output_format: 'original'
 	};
 }
 

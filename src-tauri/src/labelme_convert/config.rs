@@ -39,6 +39,24 @@ pub enum SegmentationMode {
     BboxOnly,
 }
 
+/// Output format for LabelMe-to-LabelMe conversion
+/// Controls how shapes are represented in the output
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum LabelMeOutputFormat {
+    /// Keep original format (no conversion)
+    #[default]
+    Original,
+    /// Convert all shapes to 2-point bounding box (rectangle)
+    /// - 4-point bbox → 2-point bbox
+    /// - polygon → 2-point bbox (minimum bounding rectangle)
+    Bbox2Point,
+    /// Convert all shapes to 4-point bounding box (polygon with 4 corners)
+    /// - 2-point bbox → 4-point bbox
+    /// - polygon → 4-point bbox (minimum bounding rectangle)
+    Bbox4Point,
+}
+
 /// Source for category definitions
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "value")]
@@ -132,6 +150,13 @@ pub struct ConversionConfig {
     #[serde(default)]
     pub remove_image_data: bool,
 
+    /// Output format for LabelMe-to-LabelMe conversion
+    /// - Original: Keep shapes as-is
+    /// - Bbox: Convert 4-point rectangles to 2-point bboxes
+    /// - Polygon: Convert 2-point bboxes to 4-point polygons
+    #[serde(default)]
+    pub labelme_output_format: LabelMeOutputFormat,
+
     /// Detected input annotation format (auto-detected before conversion)
     /// This is set by the conversion pipeline and can be manually overridden
     #[serde(default)]
@@ -172,6 +197,7 @@ impl Default for ConversionConfig {
             // LabelMe-specific
             skip_split: false,
             remove_image_data: false,
+            labelme_output_format: LabelMeOutputFormat::default(),
             // Auto-detection
             detected_input_format: None,
         }

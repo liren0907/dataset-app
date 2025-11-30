@@ -7,6 +7,7 @@
 
 use crate::labelme_convert::{
     convert, AnnotationFormat, ConversionConfig, ConversionResult, OutputFormat, SegmentationMode,
+    LabelMeOutputFormat,
 };
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -65,6 +66,10 @@ pub struct ConvertLabelMeRequest {
     /// Remove imageData from output JSON (for LabelMe output)
     #[serde(default)]
     pub remove_image_data: bool,
+
+    /// LabelMe output point format: "original", "bbox_2point", or "bbox_4point"
+    #[serde(default = "default_labelme_output_format")]
+    pub labelme_output_format: String,
 }
 
 fn default_output_format() -> String {
@@ -85,6 +90,10 @@ fn default_seed() -> u64 {
 
 fn default_segmentation_mode() -> String {
     "polygon".to_string()
+}
+
+fn default_labelme_output_format() -> String {
+    "original".to_string()
 }
 
 impl ConvertLabelMeRequest {
@@ -126,6 +135,14 @@ impl ConvertLabelMeRequest {
         if output_format == OutputFormat::LabelMe {
             config.skip_split = true; // LabelMe output never uses splits
             config.remove_image_data = self.remove_image_data;
+
+            // Parse LabelMe output format
+            config.labelme_output_format = match self.labelme_output_format.to_lowercase().as_str() {
+                "original" => LabelMeOutputFormat::Original,
+                "bbox_2point" | "bbox2point" => LabelMeOutputFormat::Bbox2Point,
+                "bbox_4point" | "bbox4point" => LabelMeOutputFormat::Bbox4Point,
+                other => return Err(format!("Unknown LabelMe output format: {}", other)),
+            };
         }
 
         if let Some(output_dir) = &self.output_dir {
