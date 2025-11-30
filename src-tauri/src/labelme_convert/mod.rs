@@ -39,7 +39,7 @@ pub mod yolo;
 pub use config::{
     AnnotationFormat, ConversionConfig, OutputFormat, SegmentationMode,
 };
-pub use detection::{analyze_dataset, DatasetAnalysis};
+pub use detection::{analyze_dataset, validate_shape_points, DatasetAnalysis};
 pub use types::{ConversionResult, InputAnnotationFormat};
 
 /// Main conversion function that dispatches to the appropriate converter

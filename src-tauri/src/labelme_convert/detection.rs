@@ -293,6 +293,58 @@ pub fn detect_input_format_from_annotations(
     detect_input_format(&shapes)
 }
 
+/// Validate shape points count based on detected input format
+/// This is a shared validation function used by both YOLO and COCO converters
+pub fn validate_shape_points(
+    shape: &Shape,
+    input_format: InputAnnotationFormat,
+) -> Result<(), crate::labelme_convert::types::InvalidReason> {
+    use crate::labelme_convert::types::InvalidReason;
+
+    let points_count = shape.points.len();
+
+    // Empty points is always invalid
+    if points_count == 0 {
+        return Err(InvalidReason::EmptyPoints);
+    }
+
+    // Validate based on detected input format
+    match input_format {
+        InputAnnotationFormat::Bbox2Point => {
+            if points_count != 2 {
+                return Err(InvalidReason::PointsCountMismatch {
+                    expected_format: input_format,
+                    actual_points: points_count,
+                });
+            }
+        }
+        InputAnnotationFormat::Bbox4Point => {
+            if points_count != 4 {
+                return Err(InvalidReason::PointsCountMismatch {
+                    expected_format: input_format,
+                    actual_points: points_count,
+                });
+            }
+        }
+        InputAnnotationFormat::Polygon => {
+            if points_count < 3 {
+                return Err(InvalidReason::PointsCountMismatch {
+                    expected_format: input_format,
+                    actual_points: points_count,
+                });
+            }
+        }
+        InputAnnotationFormat::Unknown => {
+            // For unknown format, just require at least 2 points
+            if points_count < 2 {
+                return Err(InvalidReason::InsufficientPoints);
+            }
+        }
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

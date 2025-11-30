@@ -10,12 +10,13 @@ use crate::labelme_convert::conversion::{
     calculate_coco_bbox, calculate_polygon_area, determine_split, flatten_polygon, hash_string,
     rectangle_to_polygon, Split,
 };
+use crate::labelme_convert::detection::validate_shape_points;
 use crate::labelme_convert::io::{
-    copy_image, extract_embedded_image, find_json_files, read_labelme_json, resolve_image_path,
-    setup_coco_directories, write_file,
+    copy_image, extract_embedded_image, find_background_images, find_json_files, read_labelme_json,
+    resolve_image_path, setup_coco_directories, write_file,
 };
 use crate::labelme_convert::types::{
-    CocoOutputDirs, ConversionResult, InputAnnotationFormat, InvalidAnnotation, InvalidReason,
+    CocoOutputDirs, ConversionResult, InputAnnotationFormat, InvalidAnnotation,
     ProcessingStats, Shape,
 };
 use serde::{Deserialize, Serialize};
@@ -208,6 +209,22 @@ pub fn convert_to_coco(config: &ConversionConfig) -> ConversionResult {
                 stats.increment_failed();
                 errors.push(format!("{}: {}", json_path.display(), e));
             }
+        }
+    }
+
+    // Process background images if enabled
+    if config.include_background {
+        let bg_files = process_background_images_coco(
+            config,
+            &output_dirs,
+            &processed_images,
+            &mut train_dataset,
+            &mut val_dataset,
+            &mut test_dataset,
+            &mut image_id_counter,
+        );
+        for file_name in bg_files {
+            stats.add_background_file(file_name);
         }
     }
 
@@ -406,52 +423,6 @@ fn process_single_file_coco(
     Ok((annotation_count, skipped_count, invalid_annotations))
 }
 
-/// Validate shape points count based on detected input format
-fn validate_shape_points(shape: &Shape, input_format: InputAnnotationFormat) -> Result<(), InvalidReason> {
-    let points_count = shape.points.len();
-
-    // Empty points is always invalid
-    if points_count == 0 {
-        return Err(InvalidReason::EmptyPoints);
-    }
-
-    // Validate based on detected input format
-    match input_format {
-        InputAnnotationFormat::Bbox2Point => {
-            if points_count != 2 {
-                return Err(InvalidReason::PointsCountMismatch {
-                    expected_format: input_format,
-                    actual_points: points_count,
-                });
-            }
-        }
-        InputAnnotationFormat::Bbox4Point => {
-            if points_count != 4 {
-                return Err(InvalidReason::PointsCountMismatch {
-                    expected_format: input_format,
-                    actual_points: points_count,
-                });
-            }
-        }
-        InputAnnotationFormat::Polygon => {
-            if points_count < 3 {
-                return Err(InvalidReason::PointsCountMismatch {
-                    expected_format: input_format,
-                    actual_points: points_count,
-                });
-            }
-        }
-        InputAnnotationFormat::Unknown => {
-            // For unknown format, just require at least 2 points
-            if points_count < 2 {
-                return Err(InvalidReason::InsufficientPoints);
-            }
-        }
-    }
-
-    Ok(())
-}
-
 /// Convert a LabelMe shape to COCO annotation
 fn shape_to_coco_annotation(
     shape: &Shape,
@@ -555,6 +526,78 @@ fn write_coco_json(path: &Path, dataset: &CocoDataset) -> Result<(), String> {
     write_file(path, &json).map_err(|e| format!("Failed to write file: {}", e))?;
 
     Ok(())
+}
+
+/// Process background images (images without annotations) for COCO
+/// Returns the list of background image file names
+#[allow(clippy::too_many_arguments)]
+fn process_background_images_coco(
+    config: &ConversionConfig,
+    output_dirs: &CocoOutputDirs,
+    processed_images: &HashSet<String>,
+    train_dataset: &mut CocoDataset,
+    val_dataset: &mut CocoDataset,
+    test_dataset: &mut CocoDataset,
+    image_id_counter: &mut u32,
+) -> Vec<String> {
+    let bg_images = find_background_images(&config.input_dir, processed_images);
+    let mut bg_files = Vec::new();
+
+    for image_path in bg_images {
+        let image_key = image_path.to_string_lossy().to_string();
+
+        // Determine split
+        let path_hash = hash_string(&image_key);
+        let split = determine_split(path_hash, config.val_size, config.test_size);
+
+        let images_dir = get_split_images_dir(output_dirs, split);
+
+        // Copy image
+        if let Err(e) = copy_image(&image_path, images_dir) {
+            eprintln!("Failed to copy background image {}: {}", image_path.display(), e);
+            continue;
+        }
+
+        // Get image dimensions (best effort)
+        let (width, height) = get_image_dimensions(&image_path).unwrap_or((0, 0));
+
+        // Get file name
+        let file_name = image_path
+            .file_name()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_else(|| "unknown".to_string());
+
+        // Create COCO image entry (no annotations for background)
+        let image_id = *image_id_counter;
+        *image_id_counter += 1;
+
+        let coco_image = CocoImage {
+            id: image_id,
+            file_name: file_name.clone(),
+            width,
+            height,
+            license: 1,
+            flickr_url: None,
+            coco_url: None,
+            date_captured: None,
+        };
+
+        // Add to appropriate dataset
+        match split {
+            Split::Train => train_dataset.images.push(coco_image),
+            Split::Val => val_dataset.images.push(coco_image),
+            Split::Test => test_dataset.images.push(coco_image),
+        };
+
+        bg_files.push(file_name);
+    }
+
+    bg_files
+}
+
+/// Get image dimensions (width, height)
+fn get_image_dimensions(path: &Path) -> Option<(u32, u32)> {
+    image::image_dimensions(path).ok()
 }
 
 #[cfg(test)]

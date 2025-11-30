@@ -293,6 +293,29 @@ pub fn create_dataset_yaml(
     Ok(())
 }
 
+/// Find background images (images without corresponding JSON annotations)
+/// Returns the list of background image paths
+pub fn find_background_images(
+    input_dir: &Path,
+    processed_images: &std::collections::HashSet<String>,
+) -> Vec<std::path::PathBuf> {
+    let image_files = find_image_files(input_dir);
+    let mut bg_files = Vec::new();
+
+    for image_path in image_files {
+        let image_key = image_path.to_string_lossy().to_string();
+
+        // Skip if already processed (has JSON annotation)
+        if processed_images.contains(&image_key) {
+            continue;
+        }
+
+        bg_files.push(image_path);
+    }
+
+    bg_files
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

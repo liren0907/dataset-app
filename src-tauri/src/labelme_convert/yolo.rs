@@ -8,11 +8,11 @@
 use crate::labelme_convert::config::ConversionConfig;
 use crate::labelme_convert::conversion::{determine_split, hash_string, shape_to_yolo_line, Split};
 use crate::labelme_convert::io::{
-    copy_image, create_dataset_yaml, extract_embedded_image, find_json_files, read_labelme_json,
-    resolve_image_path, setup_yolo_directories, write_file,
+    copy_image, create_dataset_yaml, extract_embedded_image, find_background_images, find_json_files,
+    read_labelme_json, resolve_image_path, setup_yolo_directories, write_file,
 };
 use crate::labelme_convert::types::{
-    ConversionResult, InputAnnotationFormat, InvalidAnnotation, ProcessingStats, Shape, YoloOutputDirs,
+    ConversionResult, InputAnnotationFormat, InvalidAnnotation, ProcessingStats, YoloOutputDirs,
 };
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
@@ -288,18 +288,11 @@ fn process_background_images(
     output_dirs: &YoloOutputDirs,
     processed_images: &HashSet<String>,
 ) -> Vec<String> {
-    use crate::labelme_convert::io::find_image_files;
-
-    let image_files = find_image_files(&config.input_dir);
+    let bg_images = find_background_images(&config.input_dir, processed_images);
     let mut bg_files = Vec::new();
 
-    for image_path in image_files {
+    for image_path in bg_images {
         let image_key = image_path.to_string_lossy().to_string();
-
-        // Skip if already processed
-        if processed_images.contains(&image_key) {
-            continue;
-        }
 
         // Determine split
         let path_hash = hash_string(&image_key);
