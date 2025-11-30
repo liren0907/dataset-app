@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { invoke } from '@tauri-apps/api/core';
 
 	// ===== 匯入組件 =====
 	import SourceOutputSection from './components/SourceOutputSection.svelte';
@@ -14,11 +13,17 @@
 	// ===== 匯入 Composables =====
 	import { setupDragDropListener, cleanupDragDropListeners } from './composables/useTauriDragDrop';
 
+	// ===== 匯入 Services =====
+	import {
+		scanLabels as scanLabelsService,
+		scanLabelsWithCounts,
+		convertLabelMe,
+		getTotalAnnotationCount,
+		type ConvertLabelMeRequest
+	} from './services/exportService';
+
 	// ===== 匯入 Store =====
 	import {
-		// Types
-		type LabelInfo,
-		type InvalidAnnotation,
 		// Stores
 		sourceDir,
 		outputDir,
@@ -36,6 +41,7 @@
 		includeBackground,
 		workerCount,
 		randomSeed,
+		removeImageData,
 		isProcessing,
 		progress,
 		statusMessage,
@@ -105,22 +111,15 @@
 		statusMessage.set('正在掃描標籤...');
 
 		try {
-			// 呼叫 Rust 後端掃描標籤（回傳 string[] 而非 Record）
-			const result = await invoke<string[]>('scan_labelme_labels', {
-				inputDir: $sourceDir
-			});
+			// 呼叫後端掃描標籤（回傳 string[]）
+			const result = await scanLabelsService($sourceDir);
 
 			// DEBUG: 輸出原始結果
 			console.log('🔍 scan_labelme_labels 原始回傳:', result);
-			console.log('🔍 結果類型:', typeof result);
-			console.log('🔍 是否為陣列:', Array.isArray(result));
-			if (result && result.length > 0) {
-				console.log('🔍 第一個元素:', result[0], '類型:', typeof result[0]);
-			}
 
 			// 轉換為 labelList 格式，並加入 id
 			// 先設定 count 為 0，背景計算後再更新
-			labelList.set(result.map((name, i) => ({
+			labelList.set(result.map((name: string, i: number) => ({
 				id: i + 1,
 				name,
 				count: 0,
@@ -152,9 +151,7 @@
 
 		countCalculationPromise = (async () => {
 			try {
-				const counts = await invoke<Record<string, number>>('scan_labelme_labels_with_counts', {
-					inputDir: $sourceDir
-				});
+				const counts = await scanLabelsWithCounts($sourceDir);
 
 				console.log('📊 標籤數量統計完成:', counts);
 
@@ -165,7 +162,7 @@
 				})));
 
 				// 計算總數
-				const totalCount = Object.values(counts).reduce((sum, c) => sum + c, 0);
+				const totalCount = getTotalAnnotationCount(counts);
 				labelScanMessage.set(`找到 ${$labelList.length} 個標籤，共 ${totalCount.toLocaleString()} 個標註`);
 			} catch (error) {
 				console.error('📊 標籤數量計算失敗:', error);
@@ -202,40 +199,25 @@
 					.map(l => l.name);
 			}
 
-			// 呼叫 Rust 後端進行轉換
-			// 注意：後端期望一個 request 物件
-			const result = await invoke<{
-				success: boolean;
-				output_dir: string;
-				stats: {
-					total_files: number;
-					processed_files: number;
-					skipped_files: number;
-					failed_files: number;
-					total_annotations: number;
-					skipped_annotations: number;
-					background_images: number;
-					labels_found: string[];
-					skipped_labels: string[];
-					invalid_annotations: InvalidAnnotation[];
-				};
-				errors: string[];
-			}>('convert_labelme', {
-				request: {
-					input_dir: $sourceDir,
-					output_dir: $outputDir || null,
-					output_format: $outputTarget,
-					annotation_format: $annotationType,
-					val_size: $valRatio / 100,
-					test_size: $testRatio / 100,
-					seed: $randomSeed,
-					include_background: $includeBackground,
-					label_list: labelListForConvert,
-					deterministic_labels: $useCustomLabels,
-					segmentation_mode: $annotationType === 'polygon' ? 'polygon' : 'bbox_only',
-					custom_dataset_name: $customDatasetName || null
-				}
-			});
+			// 組裝請求參數
+			const request: ConvertLabelMeRequest = {
+				input_dir: $sourceDir,
+				output_dir: $outputDir || null,
+				output_format: $outputTarget,
+				annotation_format: $annotationType,
+				val_size: $valRatio / 100,
+				test_size: $testRatio / 100,
+				seed: $randomSeed,
+				include_background: $includeBackground,
+				label_list: labelListForConvert,
+				deterministic_labels: $useCustomLabels,
+				segmentation_mode: $annotationType === 'polygon' ? 'polygon' : 'bbox_only',
+				custom_dataset_name: $customDatasetName || null,
+				remove_image_data: $removeImageData
+			};
+
+			// 呼叫後端進行轉換
+			const result = await convertLabelMe(request);
 
 			// 停止模擬進度
 			stopProgressSimulation();
@@ -332,8 +314,10 @@
 			<!-- 輸出格式 -->
 			<FormatSelector />
 
-			<!-- 資料集分割 -->
-			<SplitRatioSlider />
+			<!-- 資料集分割（LabelMe 輸出時不需要分割）-->
+			{#if $outputTarget !== 'labelme'}
+				<SplitRatioSlider />
+			{/if}
 
 			<!-- 標籤選擇 -->
 			<LabelManager on:rescan={scanLabels} />
