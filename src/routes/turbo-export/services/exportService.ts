@@ -120,6 +120,38 @@ export async function scanLabelsWithCounts(inputDir: string): Promise<LabelCount
 	});
 }
 
+/** 資料集分析結果（格式檢測） */
+export interface DatasetAnalysis {
+	/** 檢測到的輸入格式："Bbox2Point" | "Bbox4Point" | "Polygon" | "Unknown" */
+	input_format: string;
+	/** 資料集中的總檔案數 */
+	total_files: number;
+	/** 取樣分析的檔案數 */
+	sample_files: number;
+	/** 取樣分析的標註數 */
+	sample_annotations: number;
+	/** 信心分數 (0.0 - 1.0) */
+	confidence: number;
+	/** 信心分數百分比字串 (例如："87.5%") */
+	confidence_percent: string;
+	/** 點數分布統計 */
+	points_distribution: Record<number, number>;
+	/** 格式描述（人類可讀） */
+	format_description: string;
+}
+
+/**
+ * 分析 LabelMe 資料集以檢測輸入格式
+ * @param inputDir 來源目錄路徑
+ * @returns 資料集分析結果
+ */
+export async function analyzeLabelMeDataset(inputDir: string): Promise<DatasetAnalysis> {
+	return invoke<DatasetAnalysis>('analyze_labelme_dataset', {
+		inputDir
+	});
+}
+
+
 /**
  * 執行 LabelMe 格式轉換
  * @param request 轉換請求參數

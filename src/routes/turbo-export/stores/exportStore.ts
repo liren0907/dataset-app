@@ -66,6 +66,26 @@ export interface SplitRatio {
 	test: number;
 }
 
+/** 資料集分析結果（格式檢測） */
+export interface DatasetAnalysis {
+	/** 檢測到的輸入格式："Bbox2Point" | "Bbox4Point" | "Polygon" | "Unknown" */
+	input_format: string;
+	/** 資料集中的總檔案數 */
+	total_files: number;
+	/** 取樣分析的檔案數 */
+	sample_files: number;
+	/** 取樣分析的標註數 */
+	sample_annotations: number;
+	/** 信心分數 (0.0 - 1.0) */
+	confidence: number;
+	/** 信心分數百分比字串 (例如："87.5%") */
+	confidence_percent: string;
+	/** 點數分布統計 */
+	points_distribution: Record<number, number>;
+	/** 格式描述（人類可讀） */
+	format_description: string;
+}
+
 /** 進階選項 */
 export interface AdvancedOptions {
 	includeBackground: boolean;
@@ -115,6 +135,11 @@ export const labelList = writable<LabelInfo[]>([]);
 export const isScanning = writable<boolean>(false);
 export const labelScanMessage = writable<string>('');
 export const isCalculatingCounts = writable<boolean>(false);
+
+// --- 格式檢測 ---
+export const detectedFormat = writable<DatasetAnalysis | null>(null);
+export const isDetectingFormat = writable<boolean>(false);
+
 
 // --- 進階選項（個別 store 方便 UI binding）---
 export const showAdvanced = writable<boolean>(false);
