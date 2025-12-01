@@ -5,6 +5,7 @@
 	import {
 		sourceDir,
 		useCustomLabels,
+		includeEmptyLabelImages,
 		labelList,
 		isScanning,
 		labelScanMessage,
@@ -68,7 +69,7 @@
 	</div>
 
 	<!-- 切換開關 -->
-	<div class="flex items-center gap-3 mb-4">
+	<div class="flex items-center gap-3 mb-4 flex-wrap">
 		<div class="flex items-center gap-3">
 			<label class="relative inline-flex items-center cursor-pointer">
 				<input type="checkbox" checked={$useCustomLabels} on:change={() => useCustomLabels.update(v => !v)} class="sr-only peer" />
@@ -76,6 +77,22 @@
 			</label>
 			<span class="text-sm text-slate-700 dark:text-slate-300">只匯出選定的類別</span>
 		</div>
+
+		<!-- 輸出無標籤圖片（僅在啟用自訂標籤時顯示） -->
+		{#if $useCustomLabels}
+			<div class="flex items-center gap-2 pl-3 border-l border-slate-200 dark:border-slate-600">
+				<label class="flex items-center gap-2 cursor-pointer" title="篩選後若圖片不含任何選定標籤，是否仍輸出該圖片（空標籤檔）">
+					<input
+						type="checkbox"
+						checked={$includeEmptyLabelImages}
+						on:change={() => includeEmptyLabelImages.update(v => !v)}
+						class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+					/>
+					<span class="text-sm text-slate-600 dark:text-slate-400">輸出無標籤圖片</span>
+				</label>
+			</div>
+		{/if}
+
 		{#if $useCustomLabels && $labelList.length > 0}
 			<span class="text-xs text-slate-500 dark:text-slate-400 ml-auto pr-3">
 				已選 {$labelList.filter(l => l.selected).length} / {$labelList.length}

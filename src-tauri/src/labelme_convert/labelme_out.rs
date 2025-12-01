@@ -53,13 +53,23 @@ impl BoundingBox {
         }
 
         let (min_x, max_x, min_y, max_y) = points.iter().fold(
-            (f64::INFINITY, f64::NEG_INFINITY, f64::INFINITY, f64::NEG_INFINITY),
+            (
+                f64::INFINITY,
+                f64::NEG_INFINITY,
+                f64::INFINITY,
+                f64::NEG_INFINITY,
+            ),
             |(min_x, max_x, min_y, max_y), &(x, y)| {
                 (min_x.min(x), max_x.max(x), min_y.min(y), max_y.max(y))
             },
         );
 
-        Some(Self { min_x, min_y, max_x, max_y })
+        Some(Self {
+            min_x,
+            min_y,
+            max_x,
+            max_y,
+        })
     }
 
     /// Convert to 2-point representation (top-left, bottom-right)
@@ -256,6 +266,26 @@ impl ConversionPipeline for LabelMePipeline {
             annotation.image_data = None;
         }
 
+        let annotations_processed = annotation.shapes.len();
+
+        // Check if this image became empty after label filtering
+        // Note: We need to check original_shape_count vs annotations_processed
+        let original_shape_count =
+            skipped_count + annotations_processed + invalid_annotations.len();
+        let is_filtered_empty =
+            annotations_processed == 0 && original_shape_count > 0 && !config.label_list.is_empty();
+
+        // If image became empty after filtering and user doesn't want to include empty images, skip it
+        if is_filtered_empty && !config.include_background {
+            return Ok(ProcessedFileResult {
+                annotations_processed: 0,
+                annotations_skipped: skipped_count,
+                invalid_annotations,
+                is_filtered_empty: true,
+                filtered_empty_file_name: Some(json_filename),
+            });
+        }
+
         // Get output directory (no split for LabelMe)
         let output_dir = output_dirs.get_output_dir(Split::None, FileType::Annotation);
 
@@ -269,12 +299,16 @@ impl ConversionPipeline for LabelMePipeline {
                 .map_err(|e| format!("Failed to copy image: {}", e))?;
         }
 
-        let annotations_processed = annotation.shapes.len();
-
         Ok(ProcessedFileResult {
             annotations_processed,
             annotations_skipped: skipped_count,
             invalid_annotations,
+            is_filtered_empty,
+            filtered_empty_file_name: if is_filtered_empty {
+                Some(json_filename)
+            } else {
+                None
+            },
         })
     }
 
@@ -316,7 +350,12 @@ impl ConversionPipeline for LabelMePipeline {
             context.stats.processed_files,
             context.stats.total_annotations,
             context.stats.skipped_annotations,
-            context.label_map.keys().cloned().collect::<Vec<_>>().join(", ")
+            context
+                .label_map
+                .keys()
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(", ")
         );
 
         std::fs::write(&summary_path, summary)
@@ -418,10 +457,18 @@ pub fn convert_to_labelme(config: &ConversionConfig) -> ConversionResult {
             Ok(result) => {
                 context.stats.increment_processed();
                 context.stats.add_annotations(result.annotations_processed);
-                context.stats.add_skipped_annotations(result.annotations_skipped);
+                context
+                    .stats
+                    .add_skipped_annotations(result.annotations_skipped);
                 // Add invalid annotations to stats
                 for invalid in result.invalid_annotations {
                     context.stats.add_invalid_annotation(invalid);
+                }
+                // Track filtered empty images
+                if result.is_filtered_empty {
+                    if let Some(file_name) = result.filtered_empty_file_name {
+                        context.stats.add_filtered_empty_file(file_name);
+                    }
                 }
             }
             Err(e) => {
@@ -433,7 +480,8 @@ pub fn convert_to_labelme(config: &ConversionConfig) -> ConversionResult {
 
     // Process background images if enabled
     if config.include_background {
-        let bg_files = process_background_images(config, output_dirs.as_ref(), &context.processed_images);
+        let bg_files =
+            process_background_images(config, output_dirs.as_ref(), &context.processed_images);
         for file_name in bg_files {
             context.stats.add_background_file(file_name);
         }
@@ -522,10 +570,7 @@ mod tests {
 
     #[test]
     fn test_filter_and_validate_shapes_empty_list() {
-        let shapes = vec![
-            create_test_shape("cat", 4),
-            create_test_shape("dog", 4),
-        ];
+        let shapes = vec![create_test_shape("cat", 4), create_test_shape("dog", 4)];
 
         let mut context = ProcessingContext::new();
         let (filtered, skipped, invalid) = filter_and_validate_shapes(
@@ -546,10 +591,7 @@ mod tests {
 
     #[test]
     fn test_filter_and_validate_shapes_with_label_filter() {
-        let shapes = vec![
-            create_test_shape("cat", 4),
-            create_test_shape("dog", 4),
-        ];
+        let shapes = vec![create_test_shape("cat", 4), create_test_shape("dog", 4)];
 
         let label_list = vec!["cat".to_string()];
         let mut context = ProcessingContext::new();
@@ -574,8 +616,8 @@ mod tests {
     #[test]
     fn test_filter_and_validate_shapes_with_invalid_points() {
         let shapes = vec![
-            create_test_shape("cat", 4),  // Valid for Bbox4Point
-            create_test_shape("dog", 2),  // Invalid for Bbox4Point (should be 4)
+            create_test_shape("cat", 4), // Valid for Bbox4Point
+            create_test_shape("dog", 2), // Invalid for Bbox4Point (should be 4)
         ];
 
         let mut context = ProcessingContext::new();
@@ -644,10 +686,10 @@ mod tests {
         assert_eq!(polygon.label, "cat");
 
         // Verify correct corners (clockwise from top-left)
-        assert_eq!(polygon.points[0], (10.0, 20.0));  // top-left
+        assert_eq!(polygon.points[0], (10.0, 20.0)); // top-left
         assert_eq!(polygon.points[1], (100.0, 20.0)); // top-right
         assert_eq!(polygon.points[2], (100.0, 80.0)); // bottom-right
-        assert_eq!(polygon.points[3], (10.0, 80.0));  // bottom-left
+        assert_eq!(polygon.points[3], (10.0, 80.0)); // bottom-left
     }
 
     #[test]
@@ -658,21 +700,24 @@ mod tests {
         let polygon = convert_2point_to_4point(&rect).expect("Should convert successfully");
 
         // Should normalize to proper order
-        assert_eq!(polygon.points[0], (10.0, 20.0));  // top-left
+        assert_eq!(polygon.points[0], (10.0, 20.0)); // top-left
         assert_eq!(polygon.points[1], (100.0, 20.0)); // top-right
         assert_eq!(polygon.points[2], (100.0, 80.0)); // bottom-right
-        assert_eq!(polygon.points[3], (10.0, 80.0));  // bottom-left
+        assert_eq!(polygon.points[3], (10.0, 80.0)); // bottom-left
     }
 
     #[test]
     fn test_bbox_4point_to_2point_conversion() {
         // Create a 4-point polygon that forms a rectangle
-        let polygon = create_polygon_4point_shape("bird", vec![
-            (10.0, 20.0),  // top-left
-            (100.0, 20.0), // top-right
-            (100.0, 80.0), // bottom-right
-            (10.0, 80.0),  // bottom-left
-        ]);
+        let polygon = create_polygon_4point_shape(
+            "bird",
+            vec![
+                (10.0, 20.0),  // top-left
+                (100.0, 20.0), // top-right
+                (100.0, 80.0), // bottom-right
+                (10.0, 80.0),  // bottom-left
+            ],
+        );
 
         let rect = convert_4point_to_2point_strict(&polygon).expect("Should convert successfully");
 
@@ -681,19 +726,22 @@ mod tests {
         assert_eq!(rect.label, "bird");
 
         // Verify bbox corners
-        assert_eq!(rect.points[0], (10.0, 20.0));  // top-left
+        assert_eq!(rect.points[0], (10.0, 20.0)); // top-left
         assert_eq!(rect.points[1], (100.0, 80.0)); // bottom-right
     }
 
     #[test]
     fn test_polygon_4point_non_rectangular_fallback() {
         // Create a 4-point polygon that is NOT a rectangle (parallelogram)
-        let polygon = create_polygon_4point_shape("fish", vec![
-            (10.0, 20.0),
-            (110.0, 30.0), // Not aligned with y axis
-            (100.0, 80.0),
-            (0.0, 70.0),
-        ]);
+        let polygon = create_polygon_4point_shape(
+            "fish",
+            vec![
+                (10.0, 20.0),
+                (110.0, 30.0), // Not aligned with y axis
+                (100.0, 80.0),
+                (0.0, 70.0),
+            ],
+        );
 
         // Should return None for strict rectangle check
         let result = convert_4point_to_2point_strict(&polygon);
@@ -702,7 +750,7 @@ mod tests {
         // But convert_polygon_to_2point should work (computes bounding box)
         let bbox = convert_polygon_to_2point(&polygon).expect("Should compute bounding box");
         assert_eq!(bbox.points.len(), 2);
-        assert_eq!(bbox.points[0], (0.0, 20.0));   // min_x, min_y
+        assert_eq!(bbox.points[0], (0.0, 20.0)); // min_x, min_y
         assert_eq!(bbox.points[1], (110.0, 80.0)); // max_x, max_y
     }
 
@@ -728,12 +776,10 @@ mod tests {
 
     #[test]
     fn test_transform_shape_to_bbox_2point() {
-        let polygon = create_polygon_4point_shape("dog", vec![
-            (10.0, 20.0),
-            (100.0, 20.0),
-            (100.0, 80.0),
-            (10.0, 80.0),
-        ]);
+        let polygon = create_polygon_4point_shape(
+            "dog",
+            vec![(10.0, 20.0), (100.0, 20.0), (100.0, 80.0), (10.0, 80.0)],
+        );
 
         let transformed = transform_shape_for_output(&polygon, LabelMeOutputFormat::Bbox2Point);
 
@@ -774,12 +820,14 @@ mod tests {
     fn test_filter_shapes_with_bbox_2point_output() {
         // Create 4-point polygons that are rectangles
         let shapes = vec![
-            create_polygon_4point_shape("cat", vec![
-                (10.0, 20.0), (100.0, 20.0), (100.0, 80.0), (10.0, 80.0)
-            ]),
-            create_polygon_4point_shape("dog", vec![
-                (50.0, 60.0), (150.0, 60.0), (150.0, 160.0), (50.0, 160.0)
-            ]),
+            create_polygon_4point_shape(
+                "cat",
+                vec![(10.0, 20.0), (100.0, 20.0), (100.0, 80.0), (10.0, 80.0)],
+            ),
+            create_polygon_4point_shape(
+                "dog",
+                vec![(50.0, 60.0), (150.0, 60.0), (150.0, 160.0), (50.0, 160.0)],
+            ),
         ];
 
         let mut context = ProcessingContext::new();
@@ -822,55 +870,64 @@ mod tests {
     #[test]
     fn test_polygon_to_bbox_2point() {
         // Create a 5-point polygon (pentagon-ish)
-        let polygon = create_polygon_shape("cat", vec![
-            (50.0, 10.0),   // top
-            (90.0, 40.0),   // right
-            (70.0, 90.0),   // bottom-right
-            (30.0, 90.0),   // bottom-left
-            (10.0, 40.0),   // left
-        ]);
+        let polygon = create_polygon_shape(
+            "cat",
+            vec![
+                (50.0, 10.0), // top
+                (90.0, 40.0), // right
+                (70.0, 90.0), // bottom-right
+                (30.0, 90.0), // bottom-left
+                (10.0, 40.0), // left
+            ],
+        );
 
         let bbox = convert_polygon_to_2point(&polygon).expect("Should compute bounding box");
 
         assert_eq!(bbox.points.len(), 2);
         assert_eq!(bbox.shape_type, "rectangle");
-        assert_eq!(bbox.points[0], (10.0, 10.0));  // min_x, min_y
-        assert_eq!(bbox.points[1], (90.0, 90.0));  // max_x, max_y
+        assert_eq!(bbox.points[0], (10.0, 10.0)); // min_x, min_y
+        assert_eq!(bbox.points[1], (90.0, 90.0)); // max_x, max_y
     }
 
     #[test]
     fn test_polygon_to_bbox_4point() {
         // Create a 5-point polygon (pentagon-ish)
-        let polygon = create_polygon_shape("dog", vec![
-            (50.0, 10.0),   // top
-            (90.0, 40.0),   // right
-            (70.0, 90.0),   // bottom-right
-            (30.0, 90.0),   // bottom-left
-            (10.0, 40.0),   // left
-        ]);
+        let polygon = create_polygon_shape(
+            "dog",
+            vec![
+                (50.0, 10.0), // top
+                (90.0, 40.0), // right
+                (70.0, 90.0), // bottom-right
+                (30.0, 90.0), // bottom-left
+                (10.0, 40.0), // left
+            ],
+        );
 
         let bbox = convert_polygon_to_4point(&polygon).expect("Should compute bounding box");
 
         assert_eq!(bbox.points.len(), 4);
         assert_eq!(bbox.shape_type, "polygon");
         // Clockwise from top-left
-        assert_eq!(bbox.points[0], (10.0, 10.0));  // top-left
-        assert_eq!(bbox.points[1], (90.0, 10.0));  // top-right
-        assert_eq!(bbox.points[2], (90.0, 90.0));  // bottom-right
-        assert_eq!(bbox.points[3], (10.0, 90.0));  // bottom-left
+        assert_eq!(bbox.points[0], (10.0, 10.0)); // top-left
+        assert_eq!(bbox.points[1], (90.0, 10.0)); // top-right
+        assert_eq!(bbox.points[2], (90.0, 90.0)); // bottom-right
+        assert_eq!(bbox.points[3], (10.0, 90.0)); // bottom-left
     }
 
     #[test]
     fn test_transform_polygon_to_bbox_2point() {
         // Create a 6-point polygon
-        let polygon = create_polygon_shape("fish", vec![
-            (20.0, 10.0),
-            (80.0, 10.0),
-            (100.0, 50.0),
-            (80.0, 90.0),
-            (20.0, 90.0),
-            (0.0, 50.0),
-        ]);
+        let polygon = create_polygon_shape(
+            "fish",
+            vec![
+                (20.0, 10.0),
+                (80.0, 10.0),
+                (100.0, 50.0),
+                (80.0, 90.0),
+                (20.0, 90.0),
+                (0.0, 50.0),
+            ],
+        );
 
         let transformed = transform_shape_for_output(&polygon, LabelMeOutputFormat::Bbox2Point);
 
@@ -883,14 +940,17 @@ mod tests {
     #[test]
     fn test_transform_polygon_to_bbox_4point() {
         // Create a 6-point polygon
-        let polygon = create_polygon_shape("bird", vec![
-            (20.0, 10.0),
-            (80.0, 10.0),
-            (100.0, 50.0),
-            (80.0, 90.0),
-            (20.0, 90.0),
-            (0.0, 50.0),
-        ]);
+        let polygon = create_polygon_shape(
+            "bird",
+            vec![
+                (20.0, 10.0),
+                (80.0, 10.0),
+                (100.0, 50.0),
+                (80.0, 90.0),
+                (20.0, 90.0),
+                (0.0, 50.0),
+            ],
+        );
 
         let transformed = transform_shape_for_output(&polygon, LabelMeOutputFormat::Bbox4Point);
 

@@ -52,6 +52,11 @@ pub struct ProcessedFileResult {
     pub annotations_skipped: usize,
     /// List of invalid annotations with reasons
     pub invalid_annotations: Vec<InvalidAnnotation>,
+    /// Whether this image became empty after label filtering
+    /// (had annotations originally but all were filtered out)
+    pub is_filtered_empty: bool,
+    /// File name for tracking (only set when is_filtered_empty is true)
+    pub filtered_empty_file_name: Option<String>,
 }
 
 /// Shared context during conversion process

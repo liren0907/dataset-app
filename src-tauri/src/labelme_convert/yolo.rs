@@ -152,10 +152,22 @@ impl ConversionPipeline for YoloPipeline {
         write_file(&label_path, &content)
             .map_err(|e| format!("Failed to write label file: {}", e))?;
 
+        // Check if this image became empty after label filtering
+        // Conditions: no output lines, but original had shapes, and we're using label filtering
+        let is_filtered_empty = yolo_lines.is_empty()
+            && !annotation.shapes.is_empty()
+            && !config.label_list.is_empty();
+
         Ok(ProcessedFileResult {
             annotations_processed: annotation_count,
             annotations_skipped: skipped_count,
             invalid_annotations,
+            is_filtered_empty,
+            filtered_empty_file_name: if is_filtered_empty {
+                Some(file_name)
+            } else {
+                None
+            },
         })
     }
 
@@ -216,6 +228,12 @@ pub fn convert_to_yolo(config: &ConversionConfig) -> ConversionResult {
                 context.stats.add_skipped_annotations(result.annotations_skipped);
                 for invalid in result.invalid_annotations {
                     context.stats.add_invalid_annotation(invalid);
+                }
+                // Track filtered empty images
+                if result.is_filtered_empty {
+                    if let Some(file_name) = result.filtered_empty_file_name {
+                        context.stats.add_filtered_empty_file(file_name);
+                    }
                 }
             }
             Err(e) => {

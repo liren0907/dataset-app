@@ -157,9 +157,14 @@ pub struct ProcessingStats {
     pub failed_files: usize,
     pub total_annotations: usize,
     pub skipped_annotations: usize,
+    /// Background images (images without any JSON annotation file)
     pub background_images: usize,
     /// Background image file names (limited to first 100)
     pub background_files: Vec<String>,
+    /// Images that became empty after label filtering
+    pub filtered_empty_images: usize,
+    /// Filtered empty image file names (limited to first 100)
+    pub filtered_empty_files: Vec<String>,
     pub labels_found: Vec<String>,
     pub skipped_labels: Vec<String>,
     /// Detailed invalid annotation records (limited to first 100)
@@ -204,6 +209,15 @@ impl ProcessingStats {
         self.background_images += 1;
         if self.background_files.len() < 100 {
             self.background_files.push(file_name);
+        }
+    }
+
+    /// Add a filtered empty file name (limited to first 100 to avoid memory issues)
+    /// These are images that had annotations but all labels were filtered out
+    pub fn add_filtered_empty_file(&mut self, file_name: String) {
+        self.filtered_empty_images += 1;
+        if self.filtered_empty_files.len() < 100 {
+            self.filtered_empty_files.push(file_name);
         }
     }
 

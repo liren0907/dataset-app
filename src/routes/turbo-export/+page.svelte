@@ -35,11 +35,11 @@
 		valRatio,
 		testRatio,
 		useCustomLabels,
+		includeEmptyLabelImages,
 		labelList,
 		isScanning,
 		labelScanMessage,
 		isCalculatingCounts,
-		includeBackground,
 		workerCount,
 		randomSeed,
 		removeImageData,
@@ -98,7 +98,8 @@
 	let labelScanAbortController: AbortController | null = null;
 
 	// ===== 進階選項（已移至 store）=====
-	// showAdvanced, includeBackground, workerCount, randomSeed 已移至 store
+	// showAdvanced, workerCount, randomSeed 已移至 store
+	// includeEmptyLabelImages 已移至標籤管理區
 
 	// ===== 執行狀態（已移至 store）=====
 	// isProcessing, progress, statusMessage, stats, detailedStats, showInvalidDetails 已移至 store
@@ -230,7 +231,16 @@
 		isProcessing.set(true);
 		progress.set(0);
 		stats.set({ total: 0, processed: 0, success: 0, skipped: 0, failed: 0 });
-		detailedStats.set({ totalAnnotations: 0, skippedAnnotations: 0, backgroundImages: 0, backgroundFiles: [], skippedLabels: [], invalidAnnotations: [] });
+		detailedStats.set({
+			totalAnnotations: 0,
+			skippedAnnotations: 0,
+			backgroundImages: 0,
+			backgroundFiles: [],
+			filteredEmptyImages: 0,
+			filteredEmptyFiles: [],
+			skippedLabels: [],
+			invalidAnnotations: []
+		});
 		showInvalidDetails.set(false);
 		statusMessage.set('開始處理...');
 
@@ -255,7 +265,7 @@
 				val_size: $valRatio / 100,
 				test_size: $testRatio / 100,
 				seed: $randomSeed,
-				include_background: $includeBackground,
+				include_background: $useCustomLabels ? $includeEmptyLabelImages : false,
 				label_list: labelListForConvert,
 				deterministic_labels: $useCustomLabels,
 				segmentation_mode: $annotationType === 'polygon' ? 'polygon' : 'bbox_only',
@@ -285,6 +295,8 @@
 					skippedAnnotations: result.stats.skipped_annotations,
 					backgroundImages: result.stats.background_images,
 					backgroundFiles: result.stats.background_files || [],
+					filteredEmptyImages: result.stats.filtered_empty_images || 0,
+					filteredEmptyFiles: result.stats.filtered_empty_files || [],
 					skippedLabels: result.stats.skipped_labels || [],
 					invalidAnnotations: result.stats.invalid_annotations || []
 				});
@@ -296,8 +308,9 @@
 				if (result.stats.skipped_annotations > 0) {
 					message += `，跳過 ${result.stats.skipped_annotations.toLocaleString()} 個`;
 				}
-				if (result.stats.background_images > 0) {
-					message += `，背景圖片 ${result.stats.background_images} 張`;
+				const totalEmptyImages = result.stats.background_images + (result.stats.filtered_empty_images || 0);
+				if (totalEmptyImages > 0) {
+					message += `，無標籤圖片 ${totalEmptyImages} 張`;
 				}
 				statusMessage.set(message);
 			} else {

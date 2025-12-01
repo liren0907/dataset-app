@@ -40,9 +40,14 @@ export interface ConversionStats {
 	failed_files: number;
 	total_annotations: number;
 	skipped_annotations: number;
+	/** 背景圖片數量（原本就沒有 JSON 標註檔的圖片） */
 	background_images: number;
 	/** 背景圖片檔名列表（限制前 100 筆） */
 	background_files: string[];
+	/** 因標籤篩選而變空的圖片數量 */
+	filtered_empty_images: number;
+	/** 因標籤篩選而變空的圖片檔名列表（限制前 100 筆） */
+	filtered_empty_files: string[];
 	labels_found: string[];
 	skipped_labels: string[];
 	invalid_annotations: InvalidAnnotation[];

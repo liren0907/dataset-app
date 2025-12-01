@@ -241,10 +241,21 @@ impl ConversionPipeline for CocoPipeline {
             }
         }
 
+        // Check if this image became empty after label filtering
+        let is_filtered_empty = annotation_count == 0
+            && !annotation.shapes.is_empty()
+            && !config.label_list.is_empty();
+
         Ok(ProcessedFileResult {
             annotations_processed: annotation_count,
             annotations_skipped: skipped_count,
             invalid_annotations,
+            is_filtered_empty,
+            filtered_empty_file_name: if is_filtered_empty {
+                Some(json_file_name)
+            } else {
+                None
+            },
         })
     }
 
@@ -328,12 +339,16 @@ pub fn convert_to_coco(config: &ConversionConfig) -> ConversionResult {
             &mut annotation_id_counter,
             input_format,
         ) {
-            Ok((annotation_count, skipped_count, invalid_list)) => {
+            Ok((annotation_count, skipped_count, invalid_list, filtered_empty_file_name)) => {
                 stats.increment_processed();
                 stats.add_annotations(annotation_count);
                 stats.add_skipped_annotations(skipped_count);
                 for invalid in invalid_list {
                     stats.add_invalid_annotation(invalid);
+                }
+                // Track filtered empty images
+                if let Some(file_name) = filtered_empty_file_name {
+                    stats.add_filtered_empty_file(file_name);
                 }
             }
             Err(e) => {
@@ -421,7 +436,7 @@ fn gather_labels_coco(json_files: &[std::path::PathBuf], label_map: &mut HashMap
 }
 
 /// Process a single LabelMe JSON file for COCO
-/// Returns (annotation_count, skipped_count, invalid_annotations)
+/// Returns (annotation_count, skipped_count, invalid_annotations, filtered_empty_file_name)
 #[allow(clippy::too_many_arguments)]
 fn process_single_file_coco(
     json_path: &Path,
@@ -436,7 +451,7 @@ fn process_single_file_coco(
     image_id_counter: &mut u32,
     annotation_id_counter: &mut u32,
     input_format: InputAnnotationFormat,
-) -> Result<(usize, usize, Vec<InvalidAnnotation>), String> {
+) -> Result<(usize, usize, Vec<InvalidAnnotation>, Option<String>), String> {
     // Read and parse JSON
     let annotation = read_labelme_json(json_path)?;
 
@@ -541,6 +556,17 @@ fn process_single_file_coco(
 
     let annotation_count = coco_annotations.len();
 
+    // Check if this image became empty after label filtering
+    let is_filtered_empty = annotation_count == 0
+        && !annotation.shapes.is_empty()
+        && !config.label_list.is_empty();
+
+    let filtered_empty_file_name = if is_filtered_empty {
+        Some(json_file_name)
+    } else {
+        None
+    };
+
     // Add to appropriate dataset
     let dataset = match split {
         Split::Train | Split::None => train_dataset,
@@ -551,7 +577,7 @@ fn process_single_file_coco(
     dataset.images.push(coco_image);
     dataset.annotations.extend(coco_annotations);
 
-    Ok((annotation_count, skipped_count, invalid_annotations))
+    Ok((annotation_count, skipped_count, invalid_annotations, filtered_empty_file_name))
 }
 
 /// Convert a LabelMe shape to COCO annotation

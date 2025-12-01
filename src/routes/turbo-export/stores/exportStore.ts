@@ -47,9 +47,14 @@ export interface ProcessingStats {
 export interface DetailedStats {
 	totalAnnotations: number;
 	skippedAnnotations: number;
+	/** 背景圖片數量（原本就沒有 JSON 標註檔的圖片） */
 	backgroundImages: number;
 	/** 背景圖片檔名列表 */
 	backgroundFiles: string[];
+	/** 因標籤篩選而變空的圖片數量 */
+	filteredEmptyImages: number;
+	/** 因標籤篩選而變空的圖片檔名列表 */
+	filteredEmptyFiles: string[];
 	skippedLabels: string[];
 	invalidAnnotations: InvalidAnnotation[];
 }
@@ -105,6 +110,7 @@ export const splitRatio = derived(
 
 // --- 標籤管理 ---
 export const useCustomLabels = writable<boolean>(false);
+export const includeEmptyLabelImages = writable<boolean>(true); // 輸出篩選後無標籤的圖片
 export const labelList = writable<LabelInfo[]>([]);
 export const isScanning = writable<boolean>(false);
 export const labelScanMessage = writable<string>('');
@@ -112,16 +118,16 @@ export const isCalculatingCounts = writable<boolean>(false);
 
 // --- 進階選項（個別 store 方便 UI binding）---
 export const showAdvanced = writable<boolean>(false);
-export const includeBackground = writable<boolean>(false);
 export const workerCount = writable<number>(0);
 export const randomSeed = writable<number>(42);
 export const removeImageData = writable<boolean>(true); // LabelMe 輸出專用：移除 base64 圖片資料
 
 // 合併的 advancedOptions（保持向後相容）
+// 注意：includeBackground 已移至標籤管理區的 includeEmptyLabelImages
 export const advancedOptions = derived(
-	[includeBackground, workerCount, randomSeed],
-	([$includeBackground, $workerCount, $randomSeed]) => ({
-		includeBackground: $includeBackground,
+	[includeEmptyLabelImages, workerCount, randomSeed],
+	([$includeEmptyLabelImages, $workerCount, $randomSeed]) => ({
+		includeBackground: $includeEmptyLabelImages, // 向後相容映射
 		workerCount: $workerCount,
 		randomSeed: $randomSeed
 	})
@@ -260,6 +266,8 @@ export function resetExportState() {
 		skippedAnnotations: 0,
 		backgroundImages: 0,
 		backgroundFiles: [],
+		filteredEmptyImages: 0,
+		filteredEmptyFiles: [],
 		skippedLabels: [],
 		invalidAnnotations: []
 	});

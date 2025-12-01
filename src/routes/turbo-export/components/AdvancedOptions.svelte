@@ -1,7 +1,6 @@
 <script lang="ts">
 	import {
 		showAdvanced,
-		includeBackground,
 		workerCount,
 		randomSeed,
 		removeImageData,
@@ -33,20 +32,6 @@
 	{#if $showAdvanced}
 		<div class="px-6 pb-6 space-y-4 border-t border-slate-100 dark:border-slate-700 pt-4">
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<!-- 包含背景圖 -->
-				<label class="flex items-center gap-3 cursor-pointer">
-					<input
-						type="checkbox"
-						checked={$includeBackground}
-						on:change={() => includeBackground.update(v => !v)}
-						class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
-					/>
-					<div>
-						<div class="text-sm font-medium text-slate-700 dark:text-slate-300">包含背景圖片</div>
-						<div class="text-xs text-slate-500 dark:text-slate-400">將無標註的圖片也複製到輸出</div>
-					</div>
-				</label>
-
 				<!-- Worker 數量 -->
 				<div>
 					<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -62,9 +47,7 @@
 					/>
 					<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">0 = 自動 (CPU 核心數)</p>
 				</div>
-			</div>
 
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 				<!-- 隨機種子（非 LabelMe 格式時顯示）-->
 				{#if !isLabelMeOutput}
 					<div>
@@ -81,23 +64,23 @@
 						<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">用於資料集分割的隨機性</p>
 					</div>
 				{/if}
-
-				<!-- 移除 base64 圖片資料（LabelMe 格式專用）-->
-				{#if isLabelMeOutput}
-					<label class="flex items-center gap-3 cursor-pointer md:col-span-2">
-						<input
-							type="checkbox"
-							checked={$removeImageData}
-							on:change={() => removeImageData.update(v => !v)}
-							class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
-						/>
-						<div>
-							<div class="text-sm font-medium text-slate-700 dark:text-slate-300">移除內嵌圖片資料</div>
-							<div class="text-xs text-slate-500 dark:text-slate-400">將 imageData 設為 null，大幅減少 JSON 檔案大小</div>
-						</div>
-					</label>
-				{/if}
 			</div>
+
+			<!-- 移除 base64 圖片資料（LabelMe 格式專用）-->
+			{#if isLabelMeOutput}
+				<label class="flex items-center gap-3 cursor-pointer">
+					<input
+						type="checkbox"
+						checked={$removeImageData}
+						on:change={() => removeImageData.update(v => !v)}
+						class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+					/>
+					<div>
+						<div class="text-sm font-medium text-slate-700 dark:text-slate-300">移除內嵌圖片資料</div>
+						<div class="text-xs text-slate-500 dark:text-slate-400">將 imageData 設為 null，大幅減少 JSON 檔案大小</div>
+					</div>
+				</label>
+			{/if}
 		</div>
 	{/if}
 </section>

@@ -7,14 +7,15 @@
 	} from '../stores/exportStore';
 	import { writable } from 'svelte/store';
 
-	// 本地狀態：是否展開背景圖片列表
+	// 本地狀態：是否展開各類圖片列表
 	const showBackgroundFiles = writable(false);
+	const showFilteredEmptyFiles = writable(false);
 </script>
 
 <!-- 詳細統計（轉換完成後顯示） -->
 <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
 	<!-- 數據摘要 -->
-	<div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm">
+	<div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-center text-sm">
 		<div>
 			<div class="text-2xl font-bold text-slate-800 dark:text-slate-100">{$stats.processed}</div>
 			<div class="text-slate-500 dark:text-slate-400">檔案處理</div>
@@ -36,6 +37,12 @@
 				{$detailedStats.backgroundImages}
 			</div>
 			<div class="text-slate-500 dark:text-slate-400">背景圖片</div>
+		</div>
+		<div>
+			<div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
+				{$detailedStats.filteredEmptyImages}
+			</div>
+			<div class="text-slate-500 dark:text-slate-400">篩選空標籤</div>
 		</div>
 	</div>
 
@@ -123,7 +130,7 @@
 		</div>
 	{/if}
 
-	<!-- 背景圖片清單（點擊展開） -->
+	<!-- 背景圖片清單（原本無 JSON 標註檔的圖片） -->
 	{#if $detailedStats.backgroundImages > 0}
 		<div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-800">
 			<button
@@ -134,13 +141,13 @@
 					<span class="text-blue-500">🖼️</span>
 					<div class="text-sm">
 						<div class="font-medium text-blue-700 dark:text-blue-300">
-							{$detailedStats.backgroundImages} 張背景圖片（無標註）
+							{$detailedStats.backgroundImages} 張背景圖片
 							{#if $detailedStats.backgroundFiles.length >= 100}
 								<span class="text-blue-500">（僅顯示前 100 筆）</span>
 							{/if}
 						</div>
 						<div class="text-blue-600 dark:text-blue-400 mt-0.5">
-							點擊查看這些圖片的檔名
+							這些圖片原本就沒有對應的 JSON 標註檔
 						</div>
 					</div>
 				</div>
@@ -161,6 +168,52 @@
 						{#if $detailedStats.backgroundImages > 100}
 							<div class="text-center text-slate-400 dark:text-slate-500 py-1">
 								...還有 {$detailedStats.backgroundImages - 100} 個
+							</div>
+						{/if}
+					</div>
+				</div>
+			{/if}
+		</div>
+	{/if}
+
+	<!-- 因篩選產生的空標籤圖片 -->
+	{#if $detailedStats.filteredEmptyImages > 0}
+		<div class="mt-4 p-3 bg-purple-50 dark:bg-purple-900/30 rounded-lg border border-purple-200 dark:border-purple-800">
+			<button
+				on:click={() => showFilteredEmptyFiles.update(v => !v)}
+				class="w-full flex items-center justify-between text-left"
+			>
+				<div class="flex items-start gap-2">
+					<span class="text-purple-500">🏷️</span>
+					<div class="text-sm">
+						<div class="font-medium text-purple-700 dark:text-purple-300">
+							{$detailedStats.filteredEmptyImages} 張圖片因標籤篩選而變成空標籤
+							{#if $detailedStats.filteredEmptyFiles.length >= 100}
+								<span class="text-purple-500">（僅顯示前 100 筆）</span>
+							{/if}
+						</div>
+						<div class="text-purple-600 dark:text-purple-400 mt-0.5">
+							這些圖片原本有標註，但所有標籤都不在選取範圍內
+						</div>
+					</div>
+				</div>
+				<span class="text-purple-500 transition-transform {$showFilteredEmptyFiles ? 'rotate-180' : ''}">
+					▼
+				</span>
+			</button>
+
+			{#if $showFilteredEmptyFiles}
+				<div class="mt-3 pt-3 border-t border-purple-200 dark:border-purple-700">
+					<div class="max-h-40 overflow-y-auto text-xs space-y-1">
+						{#each $detailedStats.filteredEmptyFiles.slice(0, 100) as fileName}
+							<div class="flex items-center gap-2 text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/50 rounded px-2 py-1">
+								<span class="text-slate-400 dark:text-slate-500">🏷️</span>
+								<span class="font-mono truncate flex-1" title={fileName}>{fileName}</span>
+							</div>
+						{/each}
+						{#if $detailedStats.filteredEmptyImages > 100}
+							<div class="text-center text-slate-400 dark:text-slate-500 py-1">
+								...還有 {$detailedStats.filteredEmptyImages - 100} 個
 							</div>
 						{/if}
 					</div>
