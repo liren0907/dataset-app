@@ -35,8 +35,14 @@ pub mod pipeline;
 pub mod types;
 pub mod yolo;
 
+// 🆕 Async scanner module with progress reporting
+pub mod progress;
+pub mod scanner;
+
 // Re-export commonly used types for convenience
-pub use config::{AnnotationFormat, ConversionConfig, OutputFormat, SegmentationMode, LabelMeOutputFormat};
+pub use config::{
+    AnnotationFormat, ConversionConfig, LabelMeOutputFormat, OutputFormat, SegmentationMode,
+};
 pub use detection::{analyze_dataset, DatasetAnalysis};
 pub use pipeline::{ConversionPipeline, ProcessingContext, Split};
 pub use types::{ConversionResult, InputAnnotationFormat};

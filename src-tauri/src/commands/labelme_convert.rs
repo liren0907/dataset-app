@@ -6,8 +6,8 @@
 // Adapted and modified for dataset-app
 
 use crate::labelme_convert::{
-    convert, AnnotationFormat, ConversionConfig, ConversionResult, OutputFormat, SegmentationMode,
-    LabelMeOutputFormat,
+    convert, AnnotationFormat, ConversionConfig, ConversionResult, LabelMeOutputFormat,
+    OutputFormat, SegmentationMode,
 };
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -137,7 +137,8 @@ impl ConvertLabelMeRequest {
             config.remove_image_data = self.remove_image_data;
 
             // Parse LabelMe output format
-            config.labelme_output_format = match self.labelme_output_format.to_lowercase().as_str() {
+            config.labelme_output_format = match self.labelme_output_format.to_lowercase().as_str()
+            {
                 "original" => LabelMeOutputFormat::Original,
                 "bbox_2point" | "bbox2point" => LabelMeOutputFormat::Bbox2Point,
                 "bbox_4point" | "bbox4point" => LabelMeOutputFormat::Bbox4Point,
@@ -338,4 +339,69 @@ pub struct DatasetAnalysisResponse {
     pub points_distribution: std::collections::HashMap<usize, usize>,
     /// Human-readable description of the detected format
     pub format_description: String,
+}
+
+// ===== 🆕 Async commands with progress reporting =====
+
+/// Asynchronously scan labels with progress updates
+///
+/// This is the new async version that doesn't block the UI.
+/// It reports progress via the "label-scan-progress" event.
+#[tauri::command]
+pub async fn scan_labelme_labels_async(
+    window: tauri::Window,
+    input_dir: String,
+) -> Result<Vec<String>, String> {
+    use crate::labelme_convert::{progress::ProgressEmitter, scanner};
+    use std::path::PathBuf;
+
+    let input_path = PathBuf::from(&input_dir);
+    let progress = ProgressEmitter::new(window, "label-scan-progress");
+
+    scanner::scan_labels_async(input_path, Some(progress)).await
+}
+
+/// Asynchronously scan labels with counts and progress updates
+///
+/// Reports progress via the "count-scan-progress" event.
+#[tauri::command]
+pub async fn scan_labelme_labels_with_counts_async(
+    window: tauri::Window,
+    input_dir: String,
+) -> Result<std::collections::HashMap<String, usize>, String> {
+    use crate::labelme_convert::{progress::ProgressEmitter, scanner};
+    use std::path::PathBuf;
+
+    let input_path = PathBuf::from(&input_dir);
+    let progress = ProgressEmitter::new(window, "count-scan-progress");
+
+    scanner::scan_labels_with_counts_async(input_path, Some(progress)).await
+}
+
+/// Asynchronously analyze dataset format with progress updates
+///
+/// Reports progress via the "format-analysis-progress" event.
+#[tauri::command]
+pub async fn analyze_labelme_dataset_async(
+    window: tauri::Window,
+    input_dir: String,
+) -> Result<DatasetAnalysisResponse, String> {
+    use crate::labelme_convert::{progress::ProgressEmitter, scanner};
+    use std::path::PathBuf;
+
+    let input_path = PathBuf::from(&input_dir);
+    let progress = ProgressEmitter::new(window, "format-analysis-progress");
+
+    let analysis = scanner::analyze_dataset_async(input_path, Some(progress)).await?;
+
+    Ok(DatasetAnalysisResponse {
+        input_format: format!("{:?}", analysis.input_format),
+        total_files: analysis.total_files,
+        sample_files: analysis.sample_files,
+        sample_annotations: analysis.sample_annotations,
+        confidence: analysis.confidence,
+        confidence_percent: format!("{:.1}%", analysis.confidence * 100.0),
+        points_distribution: analysis.points_distribution,
+        format_description: analysis.format_description,
+    })
 }

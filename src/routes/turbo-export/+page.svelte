@@ -18,9 +18,10 @@
 
 	// ===== 匯入 Services =====
 	import {
-		scanLabels as scanLabelsService,
-		scanLabelsWithCounts,
-		analyzeLabelMeDataset,
+		// 舊的同步 API 已不再使用，改用異步版本
+		// scanLabels as scanLabelsService,
+		// scanLabelsWithCounts,
+		// analyzeLabelMeDataset,
 		convertLabelMe,
 		getTotalAnnotationCount,
 		type ConvertLabelMeRequest,
@@ -112,7 +113,7 @@
 	// invalidReasonGroups 由 store 的 derived store 計算
 	let progressInterval: ReturnType<typeof setInterval> | null = null;
 
-	// ===== 掃描標籤（完全非阻塞版本）=====
+	// ===== 掃描標籤（核彈級優化版本：使用 Rust 異步+並行處理）=====
 	async function scanLabels() {
 		if (!$sourceDir) return;
 
@@ -127,24 +128,67 @@
 		isDetectingFormat.set(true);
 		statusMessage.set("正在掃描標籤並檢測格式...");
 
-		// 🆕 同時啟動三個任務：1) 掃描標籤 2) 背景計算數量 3) 檢測格式
-		const scanPromise = scanLabelsService($sourceDir);
-		const formatPromise = analyzeLabelMeDataset($sourceDir);
+		// 導入 Tauri 事件監聽
+		const { listen } = await import("@tauri-apps/api/event");
+		const { invoke } = await import("@tauri-apps/api/core");
 
-		// 同時在背景啟動數量計算（核彈級別：完全並行）
-		scheduleBackgroundCountCalculation($sourceDir, signal);
+		// 進度事件監聽器
+		interface ScanProgress {
+			current: number;
+			total: number;
+			percentage: number;
+			message: string;
+		}
+
+		let labelUnlisten: (() => void) | null = null;
+		let countUnlisten: (() => void) | null = null;
+		let formatUnlisten: (() => void) | null = null;
 
 		try {
-			// 等待標籤掃描和格式檢測完成（並行）
+			// 🎯 監聽標籤掃描進度
+			labelUnlisten = await listen<ScanProgress>(
+				"label-scan-progress",
+				(event) => {
+					console.log(`📊 標籤掃描: ${event.payload.message}`);
+					labelScanMessage.set(event.payload.message);
+				},
+			);
+
+			// 🎯 監聽數量統計進度
+			countUnlisten = await listen<ScanProgress>(
+				"count-scan-progress",
+				(event) => {
+					console.log(`📊 數量統計: ${event.payload.message}`);
+				},
+			);
+
+			// 🎯 監聽格式檢測進度
+			formatUnlisten = await listen<ScanProgress>(
+				"format-analysis-progress",
+				(event) => {
+					console.log(`📊 格式分析: ${event.payload.message}`);
+				},
+			);
+
+			// 🚀 並行啟動三個異步任務（Rust 端使用 Tokio + Rayon 處理）
+			const labelPromise = invoke<string[]>("scan_labelme_labels_async", {
+				inputDir: $sourceDir,
+			});
+
+			const formatPromise = invoke<any>("analyze_labelme_dataset_async", {
+				inputDir: $sourceDir,
+			});
+
+			// 等待標籤掃描和格式檢測完成
 			const [result, formatAnalysis] = await Promise.all([
-				scanPromise,
+				labelPromise,
 				formatPromise,
 			]);
 
 			if (signal.aborted) return;
 
 			// DEBUG: 輸出原始結果
-			console.log("🔍 scan_labelme_labels 原始回傳:", result);
+			console.log("🔍 scan_labelme_labels_async 原始回傳:", result);
 			console.log("🔍 format detection 結果:", formatAnalysis);
 
 			// 轉換為 labelList 格式，並加入 id
@@ -169,11 +213,19 @@
 				`找到 ${$labelList.length} 個標籤 | 格式：${formatAnalysis.format_description}`,
 			);
 			statusMessage.set("");
+
+			// 🚀 在背景啟動數量計算（完全非阻塞）
+			scheduleBackgroundCountCalculation($sourceDir, signal);
 		} catch (error) {
 			if (signal.aborted) return;
 			console.error("掃描標籤失敗:", error);
 			statusMessage.set(`掃描失敗: ${error}`);
 		} finally {
+			// 清理事件監聽器
+			if (labelUnlisten) labelUnlisten();
+			if (countUnlisten) countUnlisten();
+			if (formatUnlisten) formatUnlisten();
+
 			if (!signal.aborted) {
 				isScanning.set(false);
 				isDetectingFormat.set(false);
@@ -182,37 +234,22 @@
 	}
 
 	// ===== 核彈級別：完全非阻塞的背景計算 =====
-	// 使用多重調度確保 UI 完全不受影響
+	// 使用 Rust 異步函數，不再需要多層 JS 調度
 	function scheduleBackgroundCountCalculation(
 		sourceDir: string,
 		signal: AbortSignal,
 	) {
 		if ($isCalculatingCounts) return;
 
-		// 第一層：使用 requestAnimationFrame 確保當前渲染幀完成
-		requestAnimationFrame(() => {
+		// 簡單的延遲啟動，給 UI 一點喘息時間
+		setTimeout(() => {
 			if (signal.aborted) return;
-
-			// 第二層：使用 setTimeout 跳出當前事件循環
-			setTimeout(() => {
-				if (signal.aborted) return;
-
-				// 第三層：使用 requestIdleCallback（如果支援）在瀏覽器空閒時執行
-				// 這是最重要的一層，確保只在瀏覽器「真正空閒」時才執行
-				const scheduleTask =
-					window.requestIdleCallback ||
-					((cb: () => void) => setTimeout(cb, 1));
-
-				scheduleTask(() => {
-					if (signal.aborted) return;
-					executeBackgroundCountCalculation(sourceDir, signal);
-				});
-			}, 50); // 給 UI 50ms 的喘息空間
-		});
+			executeBackgroundCountCalculation(sourceDir, signal);
+		}, 100);
 	}
 
-	// ===== 實際執行背景計算 =====
-	function executeBackgroundCountCalculation(
+	// ===== 實際執行背景計算（使用異步 Rust API）=====
+	async function executeBackgroundCountCalculation(
 		sourceDir: string,
 		signal: AbortSignal,
 	) {
@@ -221,37 +258,39 @@
 		isCalculatingCounts.set(true);
 		console.log("📊 開始背景計算標籤數量...");
 
-		countCalculationPromise = (async () => {
-			try {
-				const counts = await scanLabelsWithCounts(sourceDir);
+		const { invoke } = await import("@tauri-apps/api/core");
 
-				if (signal.aborted) return;
+		try {
+			const counts = await invoke<Record<string, number>>(
+				"scan_labelme_labels_with_counts_async",
+				{ inputDir: sourceDir },
+			);
 
-				console.log("📊 標籤數量統計完成:", counts);
+			if (signal.aborted) return;
 
-				// 更新 labelList 中的 count
-				labelList.update((list) =>
-					list.map((label) => ({
-						...label,
-						count: counts[label.name] ?? 0,
-					})),
-				);
+			console.log("📊 標籤數量統計完成:", counts);
 
-				// 計算總數
-				const totalCount = getTotalAnnotationCount(counts);
-				labelScanMessage.set(
-					`找到 ${$labelList.length} 個標籤，共 ${totalCount.toLocaleString()} 個標註`,
-				);
-			} catch (error) {
-				if (signal.aborted) return;
-				console.error("📊 標籤數量計算失敗:", error);
-			} finally {
-				if (!signal.aborted) {
-					isCalculatingCounts.set(false);
-					countCalculationPromise = null;
-				}
+			// 更新 labelList 中的 count
+			labelList.update((list) =>
+				list.map((label) => ({
+					...label,
+					count: counts[label.name] ?? 0,
+				})),
+			);
+
+			// 計算總數
+			const totalCount = getTotalAnnotationCount(counts);
+			labelScanMessage.set(
+				`找到 ${$labelList.length} 個標籤，共 ${totalCount.toLocaleString()} 個標註`,
+			);
+		} catch (error) {
+			if (signal.aborted) return;
+			console.error("📊 標籤數量計算失敗:", error);
+		} finally {
+			if (!signal.aborted) {
+				isCalculatingCounts.set(false);
 			}
-		})();
+		}
 	}
 
 	// ===== 開始轉換 =====
