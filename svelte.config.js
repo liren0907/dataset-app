@@ -18,6 +18,11 @@ const config = {
       strict: true
     }),
   },
+  /* closing a11y warnings */
+  onwarn: (warning, handler) => {
+    if (warning.code.startsWith('a11y-')) return;
+    handler(warning);
+  },
 };
 
 export default config;

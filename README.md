@@ -2,6 +2,8 @@
 
 A desktop application for exploring and processing image datasets annotated in LabelMe, with tools for visualization, conversion to YOLO, label extraction, basic auto-annotation, and crop/remap utilities. Built with SvelteKit (frontend) and Tauri v2 (Rust backend).
 
+**Version**: 0.1.1
+
 ## Status and Caution
 - This project is under rapid development.
 - APIs, commands, and UI may change frequently and introduce breaking changes.
@@ -20,12 +22,47 @@ A desktop application for exploring and processing image datasets annotated in L
 
 ## Getting Started
 
+### Prerequisites
+- Node.js & Yarn
+- Rust toolchain
+- **Windows**: LLVM (for OpenCV bindings) + OpenCV
+- **macOS/Linux**: OpenCV (via Homebrew/apt)
+
+**⚠️ Platform-specific notes**:
+- **Windows**: If you encounter compilation errors or zombie processes, see [TROUBLESHOOTING_WINDOWS.md](.vscode/.tmp/TROUBLESHOOTING_WINDOWS.md)
+- **All platforms**:
+  - 🚑 **Quick fix guide**: [QUICK_FIX.md](docs/QUICK_FIX.md) ← Start here if your system is stuck
+  - 📚 **Detailed cleanup guide**: [ZOMBIE_CLEANUP.md](docs/ZOMBIE_CLEANUP.md)
 
 ### Install dependencies and build
 ```bash
 yarn install
+
+# Standard start
 yarn tauri dev
+
+# If you had previous crashes or zombie processes
+yarn tauri:clean
 ```
+
+### Clean up zombie processes (All platforms)
+If your CPU/RAM usage is high after closing the app:
+```bash
+# Standard clean (recommended for daily use)
+yarn clean
+
+# Aggressive clean (if zombies keep reappearing)
+# ⚠️ This will also kill rust-analyzer, requiring a VSCode window reload
+yarn clean:hard
+```
+
+**Common scenario**: If zombies keep reappearing, you likely have multiple editors open (VSCode, Cursor, etc.) or `rust-analyzer` is stuck. Use `yarn clean:hard` then reload your editor.
+
+### Proper shutdown procedure
+- ✅ **Recommended**: Press `Ctrl+C` in the terminal running `yarn tauri dev`
+- ❌ **Avoid**: Clicking the X button on the app window (may leave zombie build processes)
+
+**Why?** Clicking X only closes the GUI, leaving `cargo build` and its child processes (`build-script-build`) running in the background, consuming memory.
 This will:
 - Start SvelteKit dev server on `http://localhost:1420`
 - Launch the Tauri shell pointing at the dev server
