@@ -15,7 +15,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # ============================================================
+          # IMPORTANT: PAT_TOKEN Setup Required
+          # ============================================================
+          # We use a Personal Access Token (PAT) instead of GITHUB_TOKEN
+          # because events triggered by GITHUB_TOKEN do NOT trigger other
+          # workflows. This is a GitHub security measure to prevent
+          # infinite workflow loops.
+          #
+          # Our release flow:
+          #   README version change → This workflow creates tag → build-release.yml builds
+          #
+          # If we used GITHUB_TOKEN, the tag push would NOT trigger build-release.yml!
+          #
+          # Setup Instructions:
+          # 1. Create a PAT at: GitHub → Settings → Developer settings → Personal access tokens
+          # 2. Required permissions: repo (full control of private repositories)
+          # 3. Add as repository secret: Settings → Secrets → Actions → New repository secret
+          #    Name: PAT_TOKEN
+          #    Value: <your-personal-access-token>
+          # ============================================================
+          token: ${{ secrets.PAT_TOKEN }}
 
       - name: Extract Version from README
         id: readme_version
