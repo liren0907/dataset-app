@@ -130,7 +130,7 @@
                 {#each images as image, i (image.path)}
                     <button
                         type="button"
-                        class="card bg-base-100 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden hover:-translate-y-0.5"
+                        class="card bg-base-100 border border-base-content/10 hover:border-primary transition-all duration-200 cursor-pointer overflow-hidden hover:-translate-y-0.5"
                         on:click={() => handleImageClick(image, i)}
                         aria-label={`View details for ${image.name}`}
                     >
@@ -213,7 +213,7 @@
                 {#each images as image, i (image.path)}
                     <button
                         type="button"
-                        class="card card-side bg-base-100 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden hover:-translate-y-0.5 w-full"
+                        class="card card-side bg-base-100 border border-base-content/10 hover:border-primary transition-all duration-200 cursor-pointer overflow-hidden hover:-translate-y-0.5 w-full"
                         on:click={() => handleImageClick(image, i)}
                         aria-label={`View details for ${image.name}`}
                     >

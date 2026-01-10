@@ -13,7 +13,7 @@
 </script>
 
 {#if datasetSummary}
-    <div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card bg-base-100 border border-base-content/10 mb-6">
         <div class="card-body">
             <h2 class="card-title">
                 <span class="material-symbols-rounded text-primary"
@@ -24,7 +24,9 @@
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                 <!-- File Statistics -->
-                <div class="stats stats-vertical bg-info/10 shadow">
+                <div
+                    class="stats stats-vertical bg-info/10 border border-info/20"
+                >
                     <div class="stat">
                         <div class="stat-figure text-info">
                             <span class="material-symbols-rounded text-2xl"
@@ -51,7 +53,9 @@
                 </div>
 
                 <!-- Annotation Statistics -->
-                <div class="stats stats-vertical bg-success/10 shadow">
+                <div
+                    class="stats stats-vertical bg-success/10 border border-success/20"
+                >
                     <div class="stat">
                         <div class="stat-figure text-success">
                             <span class="material-symbols-rounded text-2xl"
@@ -82,7 +86,9 @@
                 </div>
 
                 <!-- Label Statistics -->
-                <div class="stats stats-vertical bg-secondary/10 shadow">
+                <div
+                    class="stats stats-vertical bg-secondary/10 border border-secondary/20"
+                >
                     <div class="stat">
                         <div class="stat-figure text-secondary">
                             <span class="material-symbols-rounded text-2xl"

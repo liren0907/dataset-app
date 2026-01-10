@@ -1,18 +1,22 @@
 <script lang="ts">
     import { onMount, tick } from "svelte";
-    import { invoke } from "@tauri-apps/api/core";
     import { open } from "@tauri-apps/plugin-dialog";
     import DatasetSummaryCard from "$lib/DatasetSummaryCard.svelte";
     import CropRemapTool from "$lib/CropRemapTool.svelte";
     import ImageGallery from "$lib/ImageGallery.svelte";
     import ImageViewerModal from "$lib/ImageViewerModal.svelte";
     import ExportModal from "$lib/ExportModal.svelte";
+
+    // New Components
+    import GalleryControls from "./components/GalleryControls.svelte";
+    import EmptyState from "./components/EmptyState.svelte";
+    import ErrorDisplay from "./components/ErrorDisplay.svelte";
+
     import {
         fetchPaginatedImages,
         fetchImageDetails,
         fetchDatasetSummary,
         performAutoAnnotation,
-        performCropAndRemap,
         performDatasetExport,
     } from "$lib/services/datasetService";
     import type {
@@ -71,7 +75,7 @@
             });
 
             if (selected) {
-                directoryPath = selected;
+                directoryPath = selected as string;
                 currentPage = 1;
                 images = [];
 
@@ -316,6 +320,21 @@
             error = `Failed to load images from cropped directory: ${errMsg}`;
         }
     }
+
+    function toggleCropTool() {
+        cropToolOpen = !cropToolOpen;
+        if (cropToolOpen) {
+            setTimeout(() => {
+                const element = document.querySelector("[data-crop-tool]");
+                if (element) {
+                    element.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                    });
+                }
+            }, 100);
+        }
+    }
 </script>
 
 <svelte:head>
@@ -340,125 +359,24 @@
             </h1>
 
             {#if directoryPath}
-                <!-- Controls Section -->
-                <div class="flex flex-wrap items-center gap-3 mb-6">
-                    <!-- Change Directory Button -->
-                    <button
-                        on:click={selectDirectory}
-                        class="btn btn-primary btn-sm"
-                        disabled={loading}
-                    >
-                        <span class="material-symbols-rounded icon-sm"
-                            >folder_open</span
-                        >
-                        {loading ? "Loading..." : "Change Directory"}
-                    </button>
-
-                    <!-- Directory Path -->
-                    <div
-                        class="badge badge-lg badge-ghost flex-1 truncate max-w-md"
-                    >
-                        <span class="material-symbols-rounded icon-sm mr-1"
-                            >folder</span
-                        >
-                        {directoryPath}
-                    </div>
-
-                    {#if images.length > 0}
-                        <!-- Annotation Controls -->
-                        <div class="join">
-                            <select
-                                bind:value={annotationType}
-                                class="select select-sm select-bordered join-item"
-                            >
-                                <option value="bounding_box"
-                                    >Bounding Boxes</option
-                                >
-                                <option value="polygon">Polygons</option>
-                            </select>
-
-                            <button
-                                on:click={annotateImages}
-                                class="btn btn-success btn-sm join-item"
-                                disabled={annotating}
-                            >
-                                <span class="material-symbols-rounded icon-sm">
-                                    {annotating
-                                        ? "hourglass_empty"
-                                        : "auto_fix_high"}
-                                </span>
-                                {annotating ? "Loading..." : "Load Annotations"}
-                            </button>
-                        </div>
-
-                        <!-- Export Button -->
-                        <button
-                            on:click={() => {
-                                showActualExportModal = true;
-                                pageExportError = "";
-                                pageExportSuccess = "";
-                            }}
-                            class="btn btn-info btn-sm"
-                            disabled={!directoryPath || images.length === 0}
-                        >
-                            <span class="material-symbols-rounded icon-sm"
-                                >upload</span
-                            >
-                            Export Dataset
-                        </button>
-
-                        <!-- Crop & Remap Toggle -->
-                        <button
-                            on:click={() => {
-                                cropToolOpen = !cropToolOpen;
-                                if (cropToolOpen) {
-                                    setTimeout(() => {
-                                        const element =
-                                            document.querySelector(
-                                                "[data-crop-tool]",
-                                            );
-                                        if (element)
-                                            element.scrollIntoView({
-                                                behavior: "smooth",
-                                                block: "start",
-                                            });
-                                    }, 100);
-                                }
-                            }}
-                            class="btn btn-secondary btn-sm"
-                        >
-                            <span class="material-symbols-rounded icon-sm"
-                                >crop</span
-                            >
-                            {cropToolOpen ? "Hide" : "Show"} Crop & Remap
-                        </button>
-
-                        <!-- View Mode Toggle -->
-                        <div class="join ml-auto">
-                            <button
-                                class="btn btn-sm join-item {viewMode === 'grid'
-                                    ? 'btn-active'
-                                    : ''}"
-                                on:click={() => changeViewMode("grid")}
-                            >
-                                <span class="material-symbols-rounded icon-sm"
-                                    >grid_view</span
-                                >
-                            </button>
-                            <button
-                                class="btn btn-sm join-item {viewMode ===
-                                'column'
-                                    ? 'btn-active'
-                                    : ''}"
-                                on:click={() => changeViewMode("column")}
-                            >
-                                <span class="material-symbols-rounded icon-sm"
-                                    >view_list</span
-                                >
-                            </button>
-                        </div>
-                    {/if}
-                </div>
+                <GalleryControls
+                    {directoryPath}
+                    {images}
+                    {loading}
+                    {annotating}
+                    bind:annotationType
+                    {cropToolOpen}
+                    {viewMode}
+                    on:selectDirectory={selectDirectory}
+                    on:annotate={annotateImages}
+                    on:export={() => {
+                        showActualExportModal = true;
+                        pageExportError = "";
+                        pageExportSuccess = "";
+                    }}
+                    on:toggleCrop={toggleCropTool}
+                    on:changeViewMode={(e) => changeViewMode(e.detail)}
+                />
             {/if}
 
             <!-- Crop and Remap Tool -->
@@ -467,19 +385,7 @@
                 on:cropCompleted={handleCropCompleted}
             />
 
-            <!-- Error Alert -->
-            {#if error}
-                <div class="alert alert-error mb-6">
-                    <span class="material-symbols-rounded">error</span>
-                    <span>{error}</span>
-                    <button
-                        class="btn btn-ghost btn-sm"
-                        on:click={() => (error = "")}
-                    >
-                        <span class="material-symbols-rounded">close</span>
-                    </button>
-                </div>
-            {/if}
+            <ErrorDisplay {error} on:close={() => (error = "")} />
 
             <!-- Dataset Summary Card -->
             <DatasetSummaryCard {datasetSummary} />
@@ -518,35 +424,7 @@
                 </p>
             </div>
         {:else if !loading && !directoryPath && !error}
-            <!-- Empty State / Select Directory -->
-            <div class="card bg-base-200 shadow-xl">
-                <div class="card-body items-center text-center py-16">
-                    <span
-                        class="material-symbols-rounded text-6xl text-primary opacity-50"
-                        >folder_open</span
-                    >
-                    <h2 class="card-title mt-4">No Directory Selected</h2>
-                    <p class="opacity-70 max-w-md">
-                        Select a directory containing your images and LabelMe
-                        (.json) annotations to begin.
-                    </p>
-                    <div class="card-actions mt-6">
-                        <button
-                            class="btn btn-primary"
-                            on:click={selectDirectory}
-                        >
-                            <span class="material-symbols-rounded"
-                                >folder_open</span
-                            >
-                            Select Directory
-                        </button>
-                    </div>
-                    <p class="text-sm opacity-50 mt-4">
-                        Alternatively, you can use the Crop & Remap tool to
-                        process a dataset.
-                    </p>
-                </div>
-            </div>
+            <EmptyState on:selectDirectory={selectDirectory} />
         {:else if images.length > 0}
             <ImageGallery
                 bind:images
