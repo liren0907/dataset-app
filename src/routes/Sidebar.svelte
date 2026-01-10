@@ -5,6 +5,8 @@
 	// Props from parent layout
 	export let theme = "light";
 	export let toggleTheme = () => {};
+    export let isSidebarExpanded = true;
+    export let toggleSidebar = () => {};
 
 	// 工具列表 - using Material Symbols icon names
 	const tools = [
@@ -55,11 +57,17 @@
 </script>
 
 <!-- DaisyUI Menu Sidebar -->
-<ul class="menu bg-base-200 min-h-full w-64 p-4 gap-1">
+<ul class="menu bg-base-200 min-h-full w-64 p-4 gap-1 border-r border-base-300">
 	<!-- Logo / Title -->
-	<li class="menu-title flex flex-row items-center gap-2 mb-4">
-		<span class="material-symbols-rounded text-primary">dataset</span>
-		<span class="text-lg font-bold">Dataset App</span>
+	<li class="menu-title flex flex-row items-center justify-between gap-2 mb-4">
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-rounded text-primary">dataset</span>
+            <span class="text-lg font-bold">Dataset App</span>
+        </div>
+        <!-- Collapse Button inside Sidebar (Optional, maybe redundant if we have the floating one, but user asked for "retract" button) -->
+        <button on:click={toggleSidebar} class="btn btn-ghost btn-xs btn-circle opacity-50 hover:opacity-100">
+            <span class="material-symbols-rounded log-icon">first_page</span>
+        </button>
 	</li>
 
 	<!-- Navigation Items -->
