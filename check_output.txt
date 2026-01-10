@@ -1,0 +1,3264 @@
+
+> dataset-app@0.0.1 check
+> svelte-kit sync && svelte-check --tsconfig ./tsconfig.json
+
+
+====================================
+Loading svelte-check in workspace: /Users/admin/Desktop/code/dataset-app
+Getting Svelte diagnostics...
+
+/*! 🌼 daisyUI 5.5.14 */
+/Users/admin/Desktop/code/dataset-app/src/store.js:2:25
+Error: Cannot find module '$app/environment' or its corresponding type declarations. 
+import { writable } from "svelte/store";
+import { browser } from '$app/environment';
+
+
+
+/Users/admin/Desktop/code/dataset-app/src/store.js:13:26
+Error: Parameter 'newTheme' implicitly has an 'any' type. 
+
+export const setTheme = (newTheme) => {
+    theme.set(newTheme);
+
+
+/Users/admin/Desktop/code/dataset-app/src/store.js:72:27
+Error: Parameter 'component' implicitly has an 'any' type. 
+
+export const showModal = (component) => {
+    guiStore.update(val => {
+
+
+/Users/admin/Desktop/code/dataset-app/src/store.js:93:28
+Error: Parameter 'obj' implicitly has an 'any' type. 
+
+export const updateData = (obj) => {
+    dataStore.update(val => {
+
+
+/Users/admin/Desktop/code/dataset-app/src/store.js:110:29
+Error: Parameter 'obj' implicitly has an 'any' type. 
+
+export const updateImage = (obj) => {
+    imageStore.update(val => {
+
+
+/Users/admin/Desktop/code/dataset-app/src/funcs/biz.js:2:30
+Error: Cannot find module './file' or its corresponding type declarations. 
+import { open } from "@tauri-apps/plugin-dialog";
+import { dragHandling } from "./file";
+import { updateData } from "../store";
+
+
+/Users/admin/Desktop/code/dataset-app/src/funcs/image.js:1:21
+Error: Cannot find module './file' or its corresponding type declarations. 
+import { ext } from "./file";
+
+
+
+/Users/admin/Desktop/code/dataset-app/src/funcs/image.js:5:29
+Error: Parameter 'filePath' implicitly has an 'any' type. 
+
+export const isImageFormat=(filePath)=>{
+    const extension=ext(filePath);
+
+
+/Users/admin/Desktop/code/dataset-app/src/funcs/image.js:15:23
+Error: Parameter 'img' implicitly has an 'any' type. 
+// natural size
+export const nSize = (img) => {
+    return { w: img?.naturalWidth ?? 0, h: img?.naturalHeight ?? 0 };
+
+
+/Users/admin/Desktop/code/dataset-app/src/funcs/image.js:19:22
+Error: Parameter 'img' implicitly has an 'any' type. 
+
+export const size = (img) => {
+    console.log(img.height)
+
+
+/Users/admin/Desktop/code/dataset-app/src/funcs/image.js:24:25
+Error: Parameter 'img' implicitly has an 'any' type. 
+// fit to container at center based on default transform-origin:center
+export const fitSize = (img, w, h, margin) => {
+    console.log(w, h)
+
+
+/Users/admin/Desktop/code/dataset-app/src/funcs/image.js:24:30
+Error: Parameter 'w' implicitly has an 'any' type. 
+// fit to container at center based on default transform-origin:center
+export const fitSize = (img, w, h, margin) => {
+    console.log(w, h)
+
+
+/Users/admin/Desktop/code/dataset-app/src/funcs/image.js:24:33
+Error: Parameter 'h' implicitly has an 'any' type. 
+// fit to container at center based on default transform-origin:center
+export const fitSize = (img, w, h, margin) => {
+    console.log(w, h)
+
+
+/Users/admin/Desktop/code/dataset-app/src/funcs/image.js:24:36
+Error: Parameter 'margin' implicitly has an 'any' type. 
+// fit to container at center based on default transform-origin:center
+export const fitSize = (img, w, h, margin) => {
+    console.log(w, h)
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/CropRemapTool.svelte:88:17
+Warn: A11y: A form label must be associated with a control. (svelte)
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text font-medium"
+                        >Crop Source Directory</span
+                    >
+                </label>
+                <div class="join w-full">
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/CropRemapTool.svelte:113:17
+Warn: A11y: A form label must be associated with a control. (svelte)
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text font-medium"
+                        >Crop Output Directory</span
+                    >
+                </label>
+                <div class="join w-full">
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/CropRemapTool.svelte:134:17
+Warn: A11y: A form label must be associated with a control. (svelte)
+                </div>
+                <label class="label">
+                    <span class="label-text-alt opacity-60"
+                        >Results will be loaded into the viewer automatically
+                        after processing.</span
+                    >
+                </label>
+            </div>
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/CropRemapTool.svelte:144:17
+Warn: A11y: A form label must be associated with a control. (svelte)
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text font-medium">Parent Label</span>
+                </label>
+                <input
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/CropRemapTool.svelte:153:17
+Warn: A11y: A form label must be associated with a control. (svelte)
+                />
+                <label class="label">
+                    <span class="label-text-alt opacity-60"
+                        >The label of the object to crop around.</span
+                    >
+                </label>
+            </div>
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/DatasetSummaryCard.svelte:4:31
+Error: Parameter 'value' implicitly has an 'any' type. (ts)
+
+    function formatPercentage(value, total) {
+        if (!total || total === 0) return "0.0%";
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/DatasetSummaryCard.svelte:4:38
+Error: Parameter 'total' implicitly has an 'any' type. (ts)
+
+    function formatPercentage(value, total) {
+        if (!total || total === 0) return "0.0%";
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/DatasetSummaryCard.svelte:9:28
+Error: Parameter 'value' implicitly has an 'any' type. (ts)
+
+    function formatAverage(value, count) {
+        if (!count || count === 0) return "0.0";
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/DatasetSummaryCard.svelte:9:35
+Error: Parameter 'count' implicitly has an 'any' type. (ts)
+
+    function formatAverage(value, count) {
+        if (!count || count === 0) return "0.0";
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/ExportModal.svelte:159:17
+Warn: A11y: A form label must be associated with a control. (svelte)
+            <div class="form-control">
+                <label class="label"
+                    ><span class="label-text font-medium">Export Mode</span
+                    ></label
+                >
+                <div class="flex gap-4">
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/ExportModal.svelte:189:17
+Warn: A11y: A form label must be associated with a control. (svelte)
+            <div class="form-control">
+                <label class="label"
+                    ><span class="label-text font-medium">Source Directory</span
+                    ></label
+                >
+                <input
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/ExportModal.svelte:203:17
+Warn: A11y: A form label must be associated with a control. (svelte)
+            <div class="form-control">
+                <label class="label"
+                    ><span class="label-text font-medium">Output Directory</span
+                    ></label
+                >
+                <div class="join w-full">
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/ExportModal.svelte:228:21
+Warn: A11y: A form label must be associated with a control. (svelte)
+                <div class="form-control">
+                    <label class="label"
+                        ><span class="label-text font-medium">Shape Type</span
+                        ></label
+                    >
+                    <select
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/ExportModal.svelte:244:25
+Warn: A11y: A form label must be associated with a control. (svelte)
+                    <div class="form-control">
+                        <label class="label"
+                            ><span class="label-text">Train Ratio</span></label
+                        >
+                        <input
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/ExportModal.svelte:257:25
+Warn: A11y: A form label must be associated with a control. (svelte)
+                    <div class="form-control">
+                        <label class="label"
+                            ><span class="label-text">Val Ratio</span></label
+                        >
+                        <input
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/ExportModal.svelte:270:25
+Warn: A11y: A form label must be associated with a control. (svelte)
+                    <div class="form-control">
+                        <label class="label"
+                            ><span class="label-text">Test Ratio</span></label
+                        >
+                        <input
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/ExportModal.svelte:287:17
+Warn: A11y: A form label must be associated with a control. (svelte)
+            <div class="form-control">
+                <label class="label"
+                    ><span class="label-text font-medium"
+                        >Labels to Include</span
+                    ></label
+                >
+                {#if currentDatasetSummary?.label_counts && availableLabelsForSelection.length > 0}
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/ImageGallery.svelte:5:16
+Warn: Component has unused export property 'totalImages'. If it is for external reference only, please consider using `export const totalImages` (svelte)
+    export let images: any[] = [];
+    export let totalImages: number = 0;
+    export let currentPage: number = 1;
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/ImageGallery.svelte:16:29
+Error: Parameter 'bytes' implicitly has an 'any' type. (ts)
+
+    function formatFileSize(bytes) {
+        if (bytes === null || bytes === undefined) return "";
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/ImageGallery.svelte:23:34
+Error: Parameter 'current' implicitly has an 'any' type. (ts)
+
+    function generatePageNumbers(current, total) {
+        let pages: (number | string)[] = [];
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/ImageGallery.svelte:23:43
+Error: Parameter 'total' implicitly has an 'any' type. (ts)
+
+    function generatePageNumbers(current, total) {
+        let pages: (number | string)[] = [];
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/ImageViewerModal.svelte:13:29
+Error: Parameter 'bytes' implicitly has an 'any' type. (ts)
+
+    function formatFileSize(bytes) {
+        if (bytes === null || bytes === undefined) return "";
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/ImageViewerModal.svelte:55:44
+Error: Parameter 'annotation' implicitly has an 'any' type. (ts)
+
+        selectedImage.annotations.forEach((annotation, index) => {
+            if (!annotation.points || annotation.points.length === 0) return;
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/ImageViewerModal.svelte:55:56
+Error: Parameter 'index' implicitly has an 'any' type. (ts)
+
+        selectedImage.annotations.forEach((annotation, index) => {
+            if (!annotation.points || annotation.points.length === 0) return;
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/ImageViewerModal.svelte:127:70
+Error: Property 'complete' does not exist on type 'HTMLElement'. (ts)
+            setTimeout(() => {
+                if (document.getElementById("selected-image-modal")?.complete) {
+                    drawAnnotationsOnModal();
+
+
+/Users/admin/Desktop/code/dataset-app/src/lib/ImageViewerModal.svelte:141:70
+Error: Property 'complete' does not exist on type 'HTMLElement'. (ts)
+            setTimeout(() => {
+                if (document.getElementById("selected-image-modal")?.complete) {
+                    drawAnnotationsOnModal();
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/Sidebar.svelte:123:3
+Warn: Unknown at rule @apply (css)
+	.menu :global(.active) {
+		@apply bg-primary text-primary-content;
+	}
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/Sidebar.svelte:128:3
+Warn: Unknown at rule @apply (css)
+		height: 1px;
+		@apply bg-base-300;
+	}
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/Header.svelte:87:5
+Warn: A11y: noninteractive element cannot have nonnegative tabIndex value (svelte)
+				</div>
+				<ul
+					tabindex="0"
+					class="menu menu-sm dropdown-content mt-3 z-50 p-2 shadow bg-base-100 rounded-box w-52"
+				>
+					{#each navItems as item}
+						{@const active = isActive(
+							item.href,
+							$page.url.pathname,
+							item.prefix,
+						)}
+						<li>
+							<a href={item.href} class={active ? "active" : ""}>
+								<span class="material-symbols-rounded icon-sm"
+									>{item.icon}</span
+								>
+								{item.label}
+							</a>
+						</li>
+					{/each}
+				</ul>
+			</div>
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component/+page.svelte:289:17
+Warn: A11y: A form label must be associated with a control. (svelte)
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Source Directory</label>
+                <div class="flex items-center gap-2">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component/+page.svelte:309:17
+Warn: A11y: A form label must be associated with a control. (svelte)
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Dataset Analysis</label>
+                <div class="flex items-center gap-2">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component/+page.svelte:403:17
+Warn: A11y: A form label must be associated with a control. (svelte)
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Output Directory</label>
+                <div class="flex items-center gap-2">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component/+page.svelte:424:21
+Warn: A11y: A form label must be associated with a control. (svelte)
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Parent Label</label>
+                    <select 
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component/+page.svelte:440:21
+Warn: A11y: A form label must be associated with a control. (svelte)
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Required Child Labels</label>
+                    <div class="max-h-48 overflow-y-auto space-y-2 p-3 bg-gray-50 rounded-md border">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component/+page.svelte:567:9
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+    >
+        <div
+            class="bg-white rounded-lg shadow-xl max-w-4xl max-h-[90vh] overflow-hidden"
+            role="document"
+            on:click|stopPropagation
+        >
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 id="preview-modal-title" class="text-lg font-medium text-gray-900">{previewModalImage.name}</h3>
+                <button
+                    on:click={closePreviewModal}
+                    class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                >
+                    ×
+                </button>
+            </div>
+            <div class="p-4">
+                <div class="relative max-w-full max-h-[70vh] overflow-hidden rounded-lg">
+                    <img
+                        src={previewModalImage.previewUrl}
+                        alt={previewModalImage.name}
+                        class="max-w-full max-h-full object-contain block"
+                    />
+                    <!-- Preview badge -->
+                    <div class="absolute top-2 right-2 bg-purple-600 text-white text-sm px-3 py-1 rounded-full shadow z-10">
+                        Annotated Preview
+                    </div>
+                </div>
+                <div class="mt-4 text-sm text-gray-600 text-center">
+                    This preview shows the image with annotations already drawn on it
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component/+page.svelte:567:9
+Warn: A11y: Non-interactive element <div> should not be assigned mouse or keyboard event listeners. (svelte)
+    >
+        <div
+            class="bg-white rounded-lg shadow-xl max-w-4xl max-h-[90vh] overflow-hidden"
+            role="document"
+            on:click|stopPropagation
+        >
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 id="preview-modal-title" class="text-lg font-medium text-gray-900">{previewModalImage.name}</h3>
+                <button
+                    on:click={closePreviewModal}
+                    class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                >
+                    ×
+                </button>
+            </div>
+            <div class="p-4">
+                <div class="relative max-w-full max-h-[70vh] overflow-hidden rounded-lg">
+                    <img
+                        src={previewModalImage.previewUrl}
+                        alt={previewModalImage.name}
+                        class="max-w-full max-h-full object-contain block"
+                    />
+                    <!-- Preview badge -->
+                    <div class="absolute top-2 right-2 bg-purple-600 text-white text-sm px-3 py-1 rounded-full shadow z-10">
+                        Annotated Preview
+                    </div>
+                </div>
+                <div class="mt-4 text-sm text-gray-600 text-center">
+                    This preview shows the image with annotations already drawn on it
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component/+page.svelte:556:5
+Warn: A11y: Non-interactive element <div> should not be assigned mouse or keyboard event listeners. (svelte)
+{#if showPreviewModal && previewModalImage}
+    <div
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="preview-modal-title"
+        on:click={closePreviewModal}
+        on:keydown={(e) => {
+            if (e.key === 'Escape') closePreviewModal();
+        }}
+        tabindex="-1"
+    >
+        <div
+            class="bg-white rounded-lg shadow-xl max-w-4xl max-h-[90vh] overflow-hidden"
+            role="document"
+            on:click|stopPropagation
+        >
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 id="preview-modal-title" class="text-lg font-medium text-gray-900">{previewModalImage.name}</h3>
+                <button
+                    on:click={closePreviewModal}
+                    class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                >
+                    ×
+                </button>
+            </div>
+            <div class="p-4">
+                <div class="relative max-w-full max-h-[70vh] overflow-hidden rounded-lg">
+                    <img
+                        src={previewModalImage.previewUrl}
+                        alt={previewModalImage.name}
+                        class="max-w-full max-h-full object-contain block"
+                    />
+                    <!-- Preview badge -->
+                    <div class="absolute top-2 right-2 bg-purple-600 text-white text-sm px-3 py-1 rounded-full shadow z-10">
+                        Annotated Preview
+                    </div>
+                </div>
+                <div class="mt-4 text-sm text-gray-600 text-center">
+                    This preview shows the image with annotations already drawn on it
+                </div>
+            </div>
+        </div>
+    </div>
+{/if}
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component/+page.svelte:118:41
+Error: Argument of type 'unknown' is not assignable to parameter of type 'string'. (ts)
+            const result = await invoke("get_labelme_summary", { path: sourceDir as string });
+            datasetSummary = JSON.parse(result);
+            
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:951:17
+Warn: A11y: A form label must be associated with a control. (svelte)
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Source Directory</label>
+                <div class="flex items-center gap-2">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:1038:17
+Warn: A11y: A form label must be associated with a control. (svelte)
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Output Directory</label>
+                <div class="flex items-center gap-2">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:1059:21
+Warn: A11y: A form label must be associated with a control. (svelte)
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Parent Label</label>
+                    <select 
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:1075:21
+Warn: A11y: A form label must be associated with a control. (svelte)
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Required Child Labels</label>
+                    <div class="max-h-48 overflow-y-auto space-y-2 p-3 bg-gray-50 rounded-md border">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:1202:9
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+    >
+        <div
+            class="bg-white rounded-lg shadow-xl max-w-6xl max-h-[95vh] overflow-hidden"
+            role="document"
+            on:click|stopPropagation
+        >
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 id="preview-modal-title" class="text-lg font-medium text-gray-900">{previewModalImage.name}</h3>
+                <button
+                    on:click={closePreviewModal}
+                    class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                >
+                    ×
+                </button>
+            </div>
+            <div class="p-4">
+                <!-- Control Panel -->
+                <div class="flex flex-wrap items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
+                    <div class="text-sm text-gray-600 mr-4">Controls:</div>
+
+                    <!-- Zoom Controls -->
+                    <button
+                        on:click={zoomOut}
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                        title="Zoom Out (-)"
+                    >
+                        🔍-
+                    </button>
+                    <button
+                        on:click={resetZoom}
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                        title="Reset Zoom (0)"
+                    >
+                        100%
+                    </button>
+                    <button
+                        on:click={zoomIn}
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                        title="Zoom In (=)"
+                    >
+                        🔍+
+                    </button>
+
+                    <!-- Fit to Screen -->
+                    <button
+                        on:click={fitToScreen}
+                        class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded transition-colors ml-4"
+                        title="Fit to Screen (R)"
+                    >
+                        📐 Fit
+                    </button>
+
+                    <!-- Annotation Controls -->
+                    <div class="ml-4 flex items-center gap-2">
+                        <span class="text-sm text-gray-600">Annotations:</span>
+                        <button
+                            on:click={selectAllAnnotations}
+                            class="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white text-sm rounded transition-colors"
+                            title="Select All (Ctrl+A)"
+                        >
+                            Select All
+                        </button>
+                        <button
+                            on:click={deselectAnnotation}
+                            class="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded transition-colors"
+                            title="Deselect (Esc)"
+                        >
+                            Deselect
+                        </button>
+                        <button
+                            on:click={deleteSelectedAnnotation}
+                            class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded transition-colors"
+                            title="Delete Selected (Del)"
+                        >
+                            🗑️ Delete
+                        </button>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="ml-auto text-sm text-gray-600">
+                        Zoom: {Math.round(scale * 100)}% |
+                        Annotations: {annotationGroups.length}
+                        {#if selectedAnnotation}
+                            | Selected: {Array.isArray(selectedAnnotation) ? selectedAnnotation.length : 1}
+                        {/if}
+                    </div>
+                </div>
+
+                <!-- Keyboard Shortcuts Info -->
+                <div class="text-xs text-gray-500 mb-4 bg-blue-50 p-2 rounded">
+                    <strong>Keyboard Shortcuts:</strong> Zoom (+/-), Reset (0), Fit (R), Select All (Ctrl+A), Delete (Del), Deselect (Esc), Close (Esc)
+                </div>
+
+                <div class="relative max-w-full max-h-[70vh] overflow-hidden rounded-lg bg-gray-100">
+                    <!-- KonvaJS Container -->
+                    <div
+                        bind:this={konvaContainer}
+                        class="w-full h-full min-h-[600px] border-2 border-gray-300 bg-gray-50 flex items-center justify-center"
+                        style="width: 1000px; height: 700px;"
+                    >
+                        <div class="text-gray-500">Loading advanced canvas...</div>
+                    </div>
+                    <!-- Status Indicators -->
+                    <div class="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded shadow z-10">
+                        Enhanced KonvaJS
+                    </div>
+                    <div class="absolute bottom-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow z-10">
+                        {annotationGroups.length} annotations loaded
+                    </div>
+                </div>
+                <div class="mt-4 text-sm text-gray-600 text-center">
+                    Advanced interactive annotations with zoom, pan, selection, and editing capabilities
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:1202:9
+Warn: A11y: Non-interactive element <div> should not be assigned mouse or keyboard event listeners. (svelte)
+    >
+        <div
+            class="bg-white rounded-lg shadow-xl max-w-6xl max-h-[95vh] overflow-hidden"
+            role="document"
+            on:click|stopPropagation
+        >
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 id="preview-modal-title" class="text-lg font-medium text-gray-900">{previewModalImage.name}</h3>
+                <button
+                    on:click={closePreviewModal}
+                    class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                >
+                    ×
+                </button>
+            </div>
+            <div class="p-4">
+                <!-- Control Panel -->
+                <div class="flex flex-wrap items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
+                    <div class="text-sm text-gray-600 mr-4">Controls:</div>
+
+                    <!-- Zoom Controls -->
+                    <button
+                        on:click={zoomOut}
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                        title="Zoom Out (-)"
+                    >
+                        🔍-
+                    </button>
+                    <button
+                        on:click={resetZoom}
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                        title="Reset Zoom (0)"
+                    >
+                        100%
+                    </button>
+                    <button
+                        on:click={zoomIn}
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                        title="Zoom In (=)"
+                    >
+                        🔍+
+                    </button>
+
+                    <!-- Fit to Screen -->
+                    <button
+                        on:click={fitToScreen}
+                        class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded transition-colors ml-4"
+                        title="Fit to Screen (R)"
+                    >
+                        📐 Fit
+                    </button>
+
+                    <!-- Annotation Controls -->
+                    <div class="ml-4 flex items-center gap-2">
+                        <span class="text-sm text-gray-600">Annotations:</span>
+                        <button
+                            on:click={selectAllAnnotations}
+                            class="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white text-sm rounded transition-colors"
+                            title="Select All (Ctrl+A)"
+                        >
+                            Select All
+                        </button>
+                        <button
+                            on:click={deselectAnnotation}
+                            class="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded transition-colors"
+                            title="Deselect (Esc)"
+                        >
+                            Deselect
+                        </button>
+                        <button
+                            on:click={deleteSelectedAnnotation}
+                            class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded transition-colors"
+                            title="Delete Selected (Del)"
+                        >
+                            🗑️ Delete
+                        </button>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="ml-auto text-sm text-gray-600">
+                        Zoom: {Math.round(scale * 100)}% |
+                        Annotations: {annotationGroups.length}
+                        {#if selectedAnnotation}
+                            | Selected: {Array.isArray(selectedAnnotation) ? selectedAnnotation.length : 1}
+                        {/if}
+                    </div>
+                </div>
+
+                <!-- Keyboard Shortcuts Info -->
+                <div class="text-xs text-gray-500 mb-4 bg-blue-50 p-2 rounded">
+                    <strong>Keyboard Shortcuts:</strong> Zoom (+/-), Reset (0), Fit (R), Select All (Ctrl+A), Delete (Del), Deselect (Esc), Close (Esc)
+                </div>
+
+                <div class="relative max-w-full max-h-[70vh] overflow-hidden rounded-lg bg-gray-100">
+                    <!-- KonvaJS Container -->
+                    <div
+                        bind:this={konvaContainer}
+                        class="w-full h-full min-h-[600px] border-2 border-gray-300 bg-gray-50 flex items-center justify-center"
+                        style="width: 1000px; height: 700px;"
+                    >
+                        <div class="text-gray-500">Loading advanced canvas...</div>
+                    </div>
+                    <!-- Status Indicators -->
+                    <div class="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded shadow z-10">
+                        Enhanced KonvaJS
+                    </div>
+                    <div class="absolute bottom-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow z-10">
+                        {annotationGroups.length} annotations loaded
+                    </div>
+                </div>
+                <div class="mt-4 text-sm text-gray-600 text-center">
+                    Advanced interactive annotations with zoom, pan, selection, and editing capabilities
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:1191:5
+Warn: A11y: Non-interactive element <div> should not be assigned mouse or keyboard event listeners. (svelte)
+{#if showPreviewModal && previewModalImage}
+    <div
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="preview-modal-title"
+        on:click={closePreviewModal}
+        on:keydown={(e) => {
+            if (e.key === 'Escape') closePreviewModal();
+        }}
+        tabindex="-1"
+    >
+        <div
+            class="bg-white rounded-lg shadow-xl max-w-6xl max-h-[95vh] overflow-hidden"
+            role="document"
+            on:click|stopPropagation
+        >
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 id="preview-modal-title" class="text-lg font-medium text-gray-900">{previewModalImage.name}</h3>
+                <button
+                    on:click={closePreviewModal}
+                    class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                >
+                    ×
+                </button>
+            </div>
+            <div class="p-4">
+                <!-- Control Panel -->
+                <div class="flex flex-wrap items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
+                    <div class="text-sm text-gray-600 mr-4">Controls:</div>
+
+                    <!-- Zoom Controls -->
+                    <button
+                        on:click={zoomOut}
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                        title="Zoom Out (-)"
+                    >
+                        🔍-
+                    </button>
+                    <button
+                        on:click={resetZoom}
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                        title="Reset Zoom (0)"
+                    >
+                        100%
+                    </button>
+                    <button
+                        on:click={zoomIn}
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                        title="Zoom In (=)"
+                    >
+                        🔍+
+                    </button>
+
+                    <!-- Fit to Screen -->
+                    <button
+                        on:click={fitToScreen}
+                        class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded transition-colors ml-4"
+                        title="Fit to Screen (R)"
+                    >
+                        📐 Fit
+                    </button>
+
+                    <!-- Annotation Controls -->
+                    <div class="ml-4 flex items-center gap-2">
+                        <span class="text-sm text-gray-600">Annotations:</span>
+                        <button
+                            on:click={selectAllAnnotations}
+                            class="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white text-sm rounded transition-colors"
+                            title="Select All (Ctrl+A)"
+                        >
+                            Select All
+                        </button>
+                        <button
+                            on:click={deselectAnnotation}
+                            class="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded transition-colors"
+                            title="Deselect (Esc)"
+                        >
+                            Deselect
+                        </button>
+                        <button
+                            on:click={deleteSelectedAnnotation}
+                            class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded transition-colors"
+                            title="Delete Selected (Del)"
+                        >
+                            🗑️ Delete
+                        </button>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="ml-auto text-sm text-gray-600">
+                        Zoom: {Math.round(scale * 100)}% |
+                        Annotations: {annotationGroups.length}
+                        {#if selectedAnnotation}
+                            | Selected: {Array.isArray(selectedAnnotation) ? selectedAnnotation.length : 1}
+                        {/if}
+                    </div>
+                </div>
+
+                <!-- Keyboard Shortcuts Info -->
+                <div class="text-xs text-gray-500 mb-4 bg-blue-50 p-2 rounded">
+                    <strong>Keyboard Shortcuts:</strong> Zoom (+/-), Reset (0), Fit (R), Select All (Ctrl+A), Delete (Del), Deselect (Esc), Close (Esc)
+                </div>
+
+                <div class="relative max-w-full max-h-[70vh] overflow-hidden rounded-lg bg-gray-100">
+                    <!-- KonvaJS Container -->
+                    <div
+                        bind:this={konvaContainer}
+                        class="w-full h-full min-h-[600px] border-2 border-gray-300 bg-gray-50 flex items-center justify-center"
+                        style="width: 1000px; height: 700px;"
+                    >
+                        <div class="text-gray-500">Loading advanced canvas...</div>
+                    </div>
+                    <!-- Status Indicators -->
+                    <div class="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded shadow z-10">
+                        Enhanced KonvaJS
+                    </div>
+                    <div class="absolute bottom-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow z-10">
+                        {annotationGroups.length} annotations loaded
+                    </div>
+                </div>
+                <div class="mt-4 text-sm text-gray-600 text-center">
+                    Advanced interactive annotations with zoom, pan, selection, and editing capabilities
+                </div>
+            </div>
+        </div>
+    </div>
+{/if}
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:181:41
+Error: Argument of type 'unknown' is not assignable to parameter of type 'string'. (ts)
+            const result = await invoke("get_labelme_summary", { path: sourceDir as string });
+            datasetSummary = JSON.parse(result);
+            
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:380:29
+Error: 'stage' is possibly 'null'. (ts)
+
+            const pointer = stage.getPointerPosition();
+            if (!pointer) return;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:383:30
+Error: 'stage' is possibly 'null'. (ts)
+
+            const oldScale = stage.scaleX();
+            const newScale = e.evt.deltaY > 0 ? oldScale * 0.9 : oldScale * 1.1;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:390:33
+Error: 'stage' is possibly 'null'. (ts)
+            const mousePointTo = {
+                x: (pointer.x - stage.x()) / oldScale,
+                y: (pointer.y - stage.y()) / oldScale,
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:391:33
+Error: 'stage' is possibly 'null'. (ts)
+                x: (pointer.x - stage.x()) / oldScale,
+                y: (pointer.y - stage.y()) / oldScale,
+            };
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:394:13
+Error: 'stage' is possibly 'null'. (ts)
+
+            stage.scale({ x: clampedScale, y: clampedScale });
+
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:401:13
+Error: 'stage' is possibly 'null'. (ts)
+
+            stage.position(newPos);
+            stage.batchDraw();
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:402:13
+Error: 'stage' is possibly 'null'. (ts)
+            stage.position(newPos);
+            stage.batchDraw();
+
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:419:74
+Error: Argument of type 'Container<Node<NodeConfig>, ContainerConfig> | null' is not assignable to parameter of type 'Group'.
+  Type 'null' is not assignable to type 'Group'. (ts)
+                deselectAnnotation();
+            } else if (e.target.getParent() && annotationGroups.includes(e.target.getParent())) {
+                selectAnnotation(e.target.getParent());
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:426:43
+Error: Argument of type 'Container<Node<NodeConfig>, ContainerConfig> | null' is not assignable to parameter of type 'Group'.
+  Type 'null' is not assignable to type 'Group'. (ts)
+        stage.on('dragstart', (e) => {
+            if (annotationGroups.includes(e.target.getParent())) {
+                e.cancelBubble = true;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:447:9
+Error: 'stage' is possibly 'null'. (ts)
+        zoomToScale(1);
+        stage.position({ x: 0, y: 0 });
+        stageX = 0;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:749:50
+Error: Parameter 'p' implicitly has an 'any' type. (ts)
+                // Calculate bounds for polygon
+                const xs = annotation.points.map(p => p[0] * scale + offsetX);
+                const ys = annotation.points.map(p => p[1] * scale + offsetY);
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:750:50
+Error: Parameter 'p' implicitly has an 'any' type. (ts)
+                const xs = annotation.points.map(p => p[0] * scale + offsetX);
+                const ys = annotation.points.map(p => p[1] * scale + offsetY);
+                bounds = {
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:828:21
+Error: 'annotationLayer' is possibly 'null'. (ts)
+                    shape.opacity(0.4);
+                    annotationLayer.draw();
+
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:845:25
+Error: 'uiLayer' is possibly 'null'. (ts)
+                        tooltipBg.visible(true);
+                        uiLayer.draw();
+                    }
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:852:21
+Error: 'annotationLayer' is possibly 'null'. (ts)
+                    shape.opacity(0.25);
+                    annotationLayer.draw();
+
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/backup/backup-crop-remap-component-001/+page.svelte:857:21
+Error: 'uiLayer' is possibly 'null'. (ts)
+                    tooltipBg.visible(false);
+                    uiLayer.draw();
+                });
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap/components/DirectorySelector.svelte:13:5
+Warn: A11y: A form label must be associated with a control. (svelte)
+<div class="form-control">
+    <label class="label">
+        <span class="label-text font-medium">{label}</span>
+    </label>
+    <div class="join w-full">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap/components/DirectorySelector.svelte:32:9
+Warn: A11y: A form label must be associated with a control. (svelte)
+    {#if description}
+        <label class="label">
+            <span class="label-text-alt opacity-60">{description}</span>
+        </label>
+    {/if}
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap/components/AnalysisSection.svelte:12:5
+Warn: A11y: A form label must be associated with a control. (svelte)
+<div class="form-control">
+    <label class="label">
+        <span class="label-text font-medium">Dataset Analysis</span>
+    </label>
+    <div class="flex items-center gap-3">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap/components/AnalysisSection.svelte:38:5
+Warn: A11y: A form label must be associated with a control. (svelte)
+    </div>
+    <label class="label">
+        <span class="label-text-alt opacity-60"
+            >Analyze your dataset to discover available labels and get smart
+            suggestions.</span
+        >
+    </label>
+</div>
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap/components/LabelConfigurator.svelte:22:9
+Warn: A11y: A form label must be associated with a control. (svelte)
+    <div class="form-control">
+        <label class="label">
+            <span class="label-text font-medium">Parent Label</span>
+        </label>
+        <select
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap/components/LabelConfigurator.svelte:35:9
+Warn: A11y: A form label must be associated with a control. (svelte)
+        </select>
+        <label class="label">
+            <span class="label-text-alt opacity-60"
+                >The label of the object to crop around.</span
+            >
+        </label>
+    </div>
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap/components/LabelConfigurator.svelte:44:9
+Warn: A11y: A form label must be associated with a control. (svelte)
+    <div class="form-control">
+        <label class="label">
+            <span class="label-text font-medium">Required Child Labels</span>
+        </label>
+        <div
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap/components/LabelConfigurator.svelte:67:9
+Warn: A11y: A form label must be associated with a control. (svelte)
+        </div>
+        <label class="label">
+            <span class="label-text-alt opacity-60">
+                Only people wearing at least one of the selected items will be
+                processed.
+            </span>
+        </label>
+        {#if selectedChildLabels.length > 0}
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap/components/LabelConfigurator.svelte:84:9
+Warn: A11y: A form label must be associated with a control. (svelte)
+    <div class="form-control">
+        <label class="label">
+            <span class="label-text font-medium">Padding Factor</span>
+            <span class="label-text-alt badge badge-primary">
+                {((paddingFactor - 1) * 100).toFixed(0)}% {paddingFactor > 1
+                    ? "larger"
+                    : paddingFactor < 1
+                      ? "smaller"
+                      : "original"}
+            </span>
+        </label>
+        <div class="flex items-center gap-4">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap/+page.svelte:109:41
+Error: Argument of type 'unknown' is not assignable to parameter of type 'string'. (ts)
+            });
+            datasetSummary = JSON.parse(result);
+
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:951:17
+Warn: A11y: A form label must be associated with a control. (svelte)
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Source Directory</label>
+                <div class="flex items-center gap-2">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:1038:17
+Warn: A11y: A form label must be associated with a control. (svelte)
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Output Directory</label>
+                <div class="flex items-center gap-2">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:1059:21
+Warn: A11y: A form label must be associated with a control. (svelte)
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Parent Label</label>
+                    <select 
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:1075:21
+Warn: A11y: A form label must be associated with a control. (svelte)
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Required Child Labels</label>
+                    <div class="max-h-48 overflow-y-auto space-y-2 p-3 bg-gray-50 rounded-md border">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:1202:9
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+    >
+        <div
+            class="bg-white rounded-lg shadow-xl max-w-6xl max-h-[95vh] overflow-hidden"
+            role="document"
+            on:click|stopPropagation
+        >
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 id="preview-modal-title" class="text-lg font-medium text-gray-900">{previewModalImage.name}</h3>
+                <button
+                    on:click={closePreviewModal}
+                    class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                >
+                    ×
+                </button>
+            </div>
+            <div class="p-4">
+                <!-- Control Panel -->
+                <div class="flex flex-wrap items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
+                    <div class="text-sm text-gray-600 mr-4">Controls:</div>
+
+                    <!-- Zoom Controls -->
+                    <button
+                        on:click={zoomOut}
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                        title="Zoom Out (-)"
+                    >
+                        🔍-
+                    </button>
+                    <button
+                        on:click={resetZoom}
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                        title="Reset Zoom (0)"
+                    >
+                        100%
+                    </button>
+                    <button
+                        on:click={zoomIn}
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                        title="Zoom In (=)"
+                    >
+                        🔍+
+                    </button>
+
+                    <!-- Fit to Screen -->
+                    <button
+                        on:click={fitToScreen}
+                        class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded transition-colors ml-4"
+                        title="Fit to Screen (R)"
+                    >
+                        📐 Fit
+                    </button>
+
+                    <!-- Annotation Controls -->
+                    <div class="ml-4 flex items-center gap-2">
+                        <span class="text-sm text-gray-600">Annotations:</span>
+                        <button
+                            on:click={selectAllAnnotations}
+                            class="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white text-sm rounded transition-colors"
+                            title="Select All (Ctrl+A)"
+                        >
+                            Select All
+                        </button>
+                        <button
+                            on:click={deselectAnnotation}
+                            class="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded transition-colors"
+                            title="Deselect (Esc)"
+                        >
+                            Deselect
+                        </button>
+                        <button
+                            on:click={deleteSelectedAnnotation}
+                            class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded transition-colors"
+                            title="Delete Selected (Del)"
+                        >
+                            🗑️ Delete
+                        </button>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="ml-auto text-sm text-gray-600">
+                        Zoom: {Math.round(scale * 100)}% |
+                        Annotations: {annotationGroups.length}
+                        {#if selectedAnnotation}
+                            | Selected: {Array.isArray(selectedAnnotation) ? selectedAnnotation.length : 1}
+                        {/if}
+                    </div>
+                </div>
+
+                <!-- Keyboard Shortcuts Info -->
+                <div class="text-xs text-gray-500 mb-4 bg-blue-50 p-2 rounded">
+                    <strong>Keyboard Shortcuts:</strong> Zoom (+/-), Reset (0), Fit (R), Select All (Ctrl+A), Delete (Del), Deselect (Esc), Close (Esc)
+                </div>
+
+                <div class="relative max-w-full max-h-[70vh] overflow-hidden rounded-lg bg-gray-100">
+                    <!-- KonvaJS Container -->
+                    <div
+                        bind:this={konvaContainer}
+                        class="w-full h-full min-h-[600px] border-2 border-gray-300 bg-gray-50 flex items-center justify-center"
+                        style="width: 1000px; height: 700px;"
+                    >
+                        <div class="text-gray-500">Loading advanced canvas...</div>
+                    </div>
+                    <!-- Status Indicators -->
+                    <div class="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded shadow z-10">
+                        Enhanced KonvaJS
+                    </div>
+                    <div class="absolute bottom-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow z-10">
+                        {annotationGroups.length} annotations loaded
+                    </div>
+                </div>
+                <div class="mt-4 text-sm text-gray-600 text-center">
+                    Advanced interactive annotations with zoom, pan, selection, and editing capabilities
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:1202:9
+Warn: A11y: Non-interactive element <div> should not be assigned mouse or keyboard event listeners. (svelte)
+    >
+        <div
+            class="bg-white rounded-lg shadow-xl max-w-6xl max-h-[95vh] overflow-hidden"
+            role="document"
+            on:click|stopPropagation
+        >
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 id="preview-modal-title" class="text-lg font-medium text-gray-900">{previewModalImage.name}</h3>
+                <button
+                    on:click={closePreviewModal}
+                    class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                >
+                    ×
+                </button>
+            </div>
+            <div class="p-4">
+                <!-- Control Panel -->
+                <div class="flex flex-wrap items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
+                    <div class="text-sm text-gray-600 mr-4">Controls:</div>
+
+                    <!-- Zoom Controls -->
+                    <button
+                        on:click={zoomOut}
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                        title="Zoom Out (-)"
+                    >
+                        🔍-
+                    </button>
+                    <button
+                        on:click={resetZoom}
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                        title="Reset Zoom (0)"
+                    >
+                        100%
+                    </button>
+                    <button
+                        on:click={zoomIn}
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                        title="Zoom In (=)"
+                    >
+                        🔍+
+                    </button>
+
+                    <!-- Fit to Screen -->
+                    <button
+                        on:click={fitToScreen}
+                        class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded transition-colors ml-4"
+                        title="Fit to Screen (R)"
+                    >
+                        📐 Fit
+                    </button>
+
+                    <!-- Annotation Controls -->
+                    <div class="ml-4 flex items-center gap-2">
+                        <span class="text-sm text-gray-600">Annotations:</span>
+                        <button
+                            on:click={selectAllAnnotations}
+                            class="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white text-sm rounded transition-colors"
+                            title="Select All (Ctrl+A)"
+                        >
+                            Select All
+                        </button>
+                        <button
+                            on:click={deselectAnnotation}
+                            class="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded transition-colors"
+                            title="Deselect (Esc)"
+                        >
+                            Deselect
+                        </button>
+                        <button
+                            on:click={deleteSelectedAnnotation}
+                            class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded transition-colors"
+                            title="Delete Selected (Del)"
+                        >
+                            🗑️ Delete
+                        </button>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="ml-auto text-sm text-gray-600">
+                        Zoom: {Math.round(scale * 100)}% |
+                        Annotations: {annotationGroups.length}
+                        {#if selectedAnnotation}
+                            | Selected: {Array.isArray(selectedAnnotation) ? selectedAnnotation.length : 1}
+                        {/if}
+                    </div>
+                </div>
+
+                <!-- Keyboard Shortcuts Info -->
+                <div class="text-xs text-gray-500 mb-4 bg-blue-50 p-2 rounded">
+                    <strong>Keyboard Shortcuts:</strong> Zoom (+/-), Reset (0), Fit (R), Select All (Ctrl+A), Delete (Del), Deselect (Esc), Close (Esc)
+                </div>
+
+                <div class="relative max-w-full max-h-[70vh] overflow-hidden rounded-lg bg-gray-100">
+                    <!-- KonvaJS Container -->
+                    <div
+                        bind:this={konvaContainer}
+                        class="w-full h-full min-h-[600px] border-2 border-gray-300 bg-gray-50 flex items-center justify-center"
+                        style="width: 1000px; height: 700px;"
+                    >
+                        <div class="text-gray-500">Loading advanced canvas...</div>
+                    </div>
+                    <!-- Status Indicators -->
+                    <div class="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded shadow z-10">
+                        Enhanced KonvaJS
+                    </div>
+                    <div class="absolute bottom-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow z-10">
+                        {annotationGroups.length} annotations loaded
+                    </div>
+                </div>
+                <div class="mt-4 text-sm text-gray-600 text-center">
+                    Advanced interactive annotations with zoom, pan, selection, and editing capabilities
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:1191:5
+Warn: A11y: Non-interactive element <div> should not be assigned mouse or keyboard event listeners. (svelte)
+{#if showPreviewModal && previewModalImage}
+    <div
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="preview-modal-title"
+        on:click={closePreviewModal}
+        on:keydown={(e) => {
+            if (e.key === 'Escape') closePreviewModal();
+        }}
+        tabindex="-1"
+    >
+        <div
+            class="bg-white rounded-lg shadow-xl max-w-6xl max-h-[95vh] overflow-hidden"
+            role="document"
+            on:click|stopPropagation
+        >
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 id="preview-modal-title" class="text-lg font-medium text-gray-900">{previewModalImage.name}</h3>
+                <button
+                    on:click={closePreviewModal}
+                    class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                >
+                    ×
+                </button>
+            </div>
+            <div class="p-4">
+                <!-- Control Panel -->
+                <div class="flex flex-wrap items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
+                    <div class="text-sm text-gray-600 mr-4">Controls:</div>
+
+                    <!-- Zoom Controls -->
+                    <button
+                        on:click={zoomOut}
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                        title="Zoom Out (-)"
+                    >
+                        🔍-
+                    </button>
+                    <button
+                        on:click={resetZoom}
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                        title="Reset Zoom (0)"
+                    >
+                        100%
+                    </button>
+                    <button
+                        on:click={zoomIn}
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                        title="Zoom In (=)"
+                    >
+                        🔍+
+                    </button>
+
+                    <!-- Fit to Screen -->
+                    <button
+                        on:click={fitToScreen}
+                        class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded transition-colors ml-4"
+                        title="Fit to Screen (R)"
+                    >
+                        📐 Fit
+                    </button>
+
+                    <!-- Annotation Controls -->
+                    <div class="ml-4 flex items-center gap-2">
+                        <span class="text-sm text-gray-600">Annotations:</span>
+                        <button
+                            on:click={selectAllAnnotations}
+                            class="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white text-sm rounded transition-colors"
+                            title="Select All (Ctrl+A)"
+                        >
+                            Select All
+                        </button>
+                        <button
+                            on:click={deselectAnnotation}
+                            class="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded transition-colors"
+                            title="Deselect (Esc)"
+                        >
+                            Deselect
+                        </button>
+                        <button
+                            on:click={deleteSelectedAnnotation}
+                            class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded transition-colors"
+                            title="Delete Selected (Del)"
+                        >
+                            🗑️ Delete
+                        </button>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="ml-auto text-sm text-gray-600">
+                        Zoom: {Math.round(scale * 100)}% |
+                        Annotations: {annotationGroups.length}
+                        {#if selectedAnnotation}
+                            | Selected: {Array.isArray(selectedAnnotation) ? selectedAnnotation.length : 1}
+                        {/if}
+                    </div>
+                </div>
+
+                <!-- Keyboard Shortcuts Info -->
+                <div class="text-xs text-gray-500 mb-4 bg-blue-50 p-2 rounded">
+                    <strong>Keyboard Shortcuts:</strong> Zoom (+/-), Reset (0), Fit (R), Select All (Ctrl+A), Delete (Del), Deselect (Esc), Close (Esc)
+                </div>
+
+                <div class="relative max-w-full max-h-[70vh] overflow-hidden rounded-lg bg-gray-100">
+                    <!-- KonvaJS Container -->
+                    <div
+                        bind:this={konvaContainer}
+                        class="w-full h-full min-h-[600px] border-2 border-gray-300 bg-gray-50 flex items-center justify-center"
+                        style="width: 1000px; height: 700px;"
+                    >
+                        <div class="text-gray-500">Loading advanced canvas...</div>
+                    </div>
+                    <!-- Status Indicators -->
+                    <div class="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded shadow z-10">
+                        Enhanced KonvaJS
+                    </div>
+                    <div class="absolute bottom-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow z-10">
+                        {annotationGroups.length} annotations loaded
+                    </div>
+                </div>
+                <div class="mt-4 text-sm text-gray-600 text-center">
+                    Advanced interactive annotations with zoom, pan, selection, and editing capabilities
+                </div>
+            </div>
+        </div>
+    </div>
+{/if}
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:181:41
+Error: Argument of type 'unknown' is not assignable to parameter of type 'string'. (ts)
+            const result = await invoke("get_labelme_summary", { path: sourceDir as string });
+            datasetSummary = JSON.parse(result);
+            
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:380:29
+Error: 'stage' is possibly 'null'. (ts)
+
+            const pointer = stage.getPointerPosition();
+            if (!pointer) return;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:383:30
+Error: 'stage' is possibly 'null'. (ts)
+
+            const oldScale = stage.scaleX();
+            const newScale = e.evt.deltaY > 0 ? oldScale * 0.9 : oldScale * 1.1;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:390:33
+Error: 'stage' is possibly 'null'. (ts)
+            const mousePointTo = {
+                x: (pointer.x - stage.x()) / oldScale,
+                y: (pointer.y - stage.y()) / oldScale,
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:391:33
+Error: 'stage' is possibly 'null'. (ts)
+                x: (pointer.x - stage.x()) / oldScale,
+                y: (pointer.y - stage.y()) / oldScale,
+            };
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:394:13
+Error: 'stage' is possibly 'null'. (ts)
+
+            stage.scale({ x: clampedScale, y: clampedScale });
+
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:401:13
+Error: 'stage' is possibly 'null'. (ts)
+
+            stage.position(newPos);
+            stage.batchDraw();
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:402:13
+Error: 'stage' is possibly 'null'. (ts)
+            stage.position(newPos);
+            stage.batchDraw();
+
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:419:74
+Error: Argument of type 'Container<Node<NodeConfig>, ContainerConfig> | null' is not assignable to parameter of type 'Group'.
+  Type 'null' is not assignable to type 'Group'. (ts)
+                deselectAnnotation();
+            } else if (e.target.getParent() && annotationGroups.includes(e.target.getParent())) {
+                selectAnnotation(e.target.getParent());
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:426:43
+Error: Argument of type 'Container<Node<NodeConfig>, ContainerConfig> | null' is not assignable to parameter of type 'Group'.
+  Type 'null' is not assignable to type 'Group'. (ts)
+        stage.on('dragstart', (e) => {
+            if (annotationGroups.includes(e.target.getParent())) {
+                e.cancelBubble = true;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:447:9
+Error: 'stage' is possibly 'null'. (ts)
+        zoomToScale(1);
+        stage.position({ x: 0, y: 0 });
+        stageX = 0;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:749:50
+Error: Parameter 'p' implicitly has an 'any' type. (ts)
+                // Calculate bounds for polygon
+                const xs = annotation.points.map(p => p[0] * scale + offsetX);
+                const ys = annotation.points.map(p => p[1] * scale + offsetY);
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:750:50
+Error: Parameter 'p' implicitly has an 'any' type. (ts)
+                const xs = annotation.points.map(p => p[0] * scale + offsetX);
+                const ys = annotation.points.map(p => p[1] * scale + offsetY);
+                bounds = {
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:828:21
+Error: 'annotationLayer' is possibly 'null'. (ts)
+                    shape.opacity(0.4);
+                    annotationLayer.draw();
+
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:845:25
+Error: 'uiLayer' is possibly 'null'. (ts)
+                        tooltipBg.visible(true);
+                        uiLayer.draw();
+                    }
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:852:21
+Error: 'annotationLayer' is possibly 'null'. (ts)
+                    shape.opacity(0.25);
+                    annotationLayer.draw();
+
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/crop-remap-component/+page.svelte:857:21
+Error: 'uiLayer' is possibly 'null'. (ts)
+                    tooltipBg.visible(false);
+                    uiLayer.draw();
+                });
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery/+page.svelte:56:28
+Error: Parameter 'event' implicitly has an 'any' type. (ts)
+
+    function handleKeydown(event) {
+        if (event.key === "Escape" && selectedImage) {
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery/+page.svelte:88:34
+Error: Property 'message' does not exist on type '{}'. (ts)
+                    const errMsg =
+                        loadErr?.message || String(loadErr) || "Unknown error";
+                    error = `Failed to load images: ${errMsg}`;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery/+page.svelte:93:33
+Error: Property 'message' does not exist on type '{}'. (ts)
+        } catch (err) {
+            const errMsg = err?.message || String(err) || "Unknown error";
+            error = `Failed to select directory: ${errMsg}`;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery/+page.svelte:100:35
+Error: Parameter 'page' implicitly has an 'any' type. (ts)
+
+    async function loadImagesPage(page) {
+        try {
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery/+page.svelte:131:22
+Error: Property 'message' does not exist on type '{}'. (ts)
+            const errorMessage =
+                err?.message ||
+                (typeof err === "string" ? err : "Unknown error");
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery/+page.svelte:158:89
+Error: 'err' is of type 'unknown'. (ts)
+            } catch (err) {
+                error = `Failed to load full details for ${currentImageInState.name}: ${err.message}`;
+            }
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery/+page.svelte:169:29
+Error: Parameter 'mode' implicitly has an 'any' type. (ts)
+
+    function changeViewMode(mode) {
+        viewMode = mode;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery/+page.svelte:202:33
+Error: 'annotatedImgData.annotations.length' is possibly 'undefined'. (ts)
+                                annotatedImgData.has_json &&
+                                annotatedImgData.annotations?.length > 0
+                            ),
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery/+page.svelte:207:43
+Error: Property 'hasJson' does not exist on type 'ProcessedImage'. Did you mean 'has_json'? (ts)
+                                    ? annotatedImgData.has_json
+                                    : img.hasJson,
+                        };
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery/+page.svelte:215:22
+Error: Property 'message' does not exist on type '{}'. (ts)
+            const errorMessage =
+                err?.message ||
+                (typeof err === "string" ? err : "Unknown error");
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery/+page.svelte:286:22
+Error: Property 'message' does not exist on type '{}'. (ts)
+            const errMsg =
+                err?.message ||
+                (typeof err === "string" ? err : "Unknown error during export");
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery/+page.svelte:315:26
+Error: Property 'message' does not exist on type '{}'. (ts)
+            const errMsg =
+                loadErr?.message || String(loadErr) || "Unknown error";
+            error = `Failed to load images from cropped directory: ${errMsg}`;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery/+page.svelte:557:18
+Error: Type 'string' is not assignable to type '"grid" | "column" | undefined'. (ts)
+                {pageSize}
+                {viewMode}
+                {annotationType}
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/components/DatasetSummaryCard.svelte:5:31
+Error: Parameter 'value' implicitly has an 'any' type. (ts)
+    // Helper function, can be kept here or passed as prop if used elsewhere
+    function formatPercentage(value, total) {
+        if (!total || total === 0) return "0.0%";
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/components/DatasetSummaryCard.svelte:5:38
+Error: Parameter 'total' implicitly has an 'any' type. (ts)
+    // Helper function, can be kept here or passed as prop if used elsewhere
+    function formatPercentage(value, total) {
+        if (!total || total === 0) return "0.0%";
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/components/DatasetSummaryCard.svelte:10:28
+Error: Parameter 'value' implicitly has an 'any' type. (ts)
+
+    function formatAverage(value, count) {
+        if (!count || count === 0) return "0.0";
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/components/DatasetSummaryCard.svelte:10:35
+Error: Parameter 'count' implicitly has an 'any' type. (ts)
+
+    function formatAverage(value, count) {
+        if (!count || count === 0) return "0.0";
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/components/ModalAnnotationViewer.svelte:504:9
+Warn: A11y: Non-interactive element <div> should not be assigned mouse or keyboard event listeners. (svelte)
+        <!-- Modal Content -->
+        <div
+            class="relative z-10 max-w-6xl w-full bg-white/95 backdrop-blur rounded-2xl shadow-xl overflow-hidden flex flex-col border border-slate-200/60 max-h-[95vh]"
+            role="document"
+            aria-label="Annotation editor content"
+            on:click|stopPropagation
+            on:keydown|stopPropagation
+        >
+            <!-- Header -->
+            <div class="flex justify-between items-center p-4 border-b bg-slate-50">
+                <div class="flex items-center gap-3">
+                    <button
+                        on:click={handleClose}
+                        class="text-slate-600 hover:text-slate-800 p-2 -ml-2 rounded-md hover:bg-slate-200 transition-colors"
+                        aria-label="Close annotation viewer"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                        </svg>
+                    </button>
+                    <div>
+                        <h3 id="annotation-modal-title" class="text-lg font-semibold text-slate-800">
+                            Annotation Editor
+                        </h3>
+                        <p id="annotation-modal-description" class="text-sm text-slate-600">{selectedImage?.name || 'Image'}</p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-2">
+                    <button
+                        on:click={handleClose}
+                        class="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        on:click={handleSave}
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors flex items-center gap-2"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="flex-1 flex flex-col p-4 min-h-0">
+                {#if isInitialized}
+                    <!-- Control Panel -->
+                    <div class="flex flex-wrap items-center gap-2 mb-4 p-3 bg-slate-50 rounded-lg border">
+                        <div class="text-sm text-slate-600 mr-4">Tools:</div>
+
+                        <!-- Zoom Controls -->
+                        <button
+                            on:click={handleZoomOut}
+                            class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                            title="Zoom Out (-)"
+                            aria-label="Zoom out"
+                        >
+                            🔍-
+                        </button>
+                        <button
+                            on:click={handleResetZoom}
+                            class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                            title="Reset Zoom (0)"
+                            aria-label="Reset zoom"
+                        >
+                            100%
+                        </button>
+                        <button
+                            on:click={handleZoomIn}
+                            class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                            title="Zoom In (=)"
+                            aria-label="Zoom in"
+                        >
+                            🔍+
+                        </button>
+
+                        <!-- Fit to Screen -->
+                        <button
+                            on:click={handleFitToScreen}
+                            class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded transition-colors ml-4"
+                            title="Fit to Screen (R)"
+                            aria-label="Fit to screen"
+                        >
+                            📐 Fit
+                        </button>
+
+                        <!-- Annotation Controls -->
+                        <div class="ml-4 flex items-center gap-2">
+                            <span class="text-sm text-slate-600">Annotations:</span>
+                            <button
+                                on:click={handleSelectAll}
+                                class="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white text-sm rounded transition-colors"
+                                title="Select All (Ctrl+A)"
+                                aria-label="Select all annotations"
+                            >
+                                Select All
+                            </button>
+                            <button
+                                on:click={handleDeselect}
+                                class="px-3 py-1 bg-slate-500 hover:bg-slate-600 text-white text-sm rounded transition-colors"
+                                title="Deselect (Esc)"
+                                aria-label="Deselect annotations"
+                            >
+                                Deselect
+                            </button>
+                            <button
+                                on:click={handleDeleteSelected}
+                                class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded transition-colors"
+                                title="Delete Selected (Del)"
+                                aria-label="Delete selected annotations"
+                            >
+                                🗑️ Delete
+                            </button>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="ml-auto text-sm text-slate-600">
+                            {#if konvaManager}
+                                Zoom: {konvaManager.getZoomPercentage()}% |
+                                Annotations: {konvaManager.getAnnotationCount()}
+                                {#if konvaManager.getSelectedCount() > 0}
+                                    | Selected: {konvaManager.getSelectedCount()}
+                                {/if}
+                            {/if}
+                        </div>
+                    </div>
+
+                    <!-- Keyboard Shortcuts Info -->
+                    <div class="text-xs text-slate-500 mb-4 bg-blue-50 p-2 rounded">
+                        <strong>Keyboard Shortcuts:</strong> Zoom (+/-), Reset (0), Fit (R), Select All (Ctrl+A), Delete (Del), Save (Ctrl+S), Cancel (Esc)
+                    </div>
+
+                    <!-- Konva container is now always present below, outside the conditional blocks -->
+                {/if}
+                
+                <!-- Single Konva Container - Always Present -->
+                <div class="flex-1 relative bg-slate-100 rounded-lg overflow-hidden border-2 border-slate-300 min-h-[500px]">
+                    <div
+                        bind:this={konvaContainer}
+                        class="w-full h-full bg-slate-50"
+                        style="width: 1000px; height: 700px; min-width: 1000px; min-height: 700px;"
+                        role="img"
+                        aria-label="Interactive annotation editor for {selectedImage?.name || 'image'}"
+                    >
+                        <!-- KonvaJS will render here -->
+                    </div>
+                    
+                    <!-- Error Overlay -->
+                    {#if !isLoading && !isInitialized}
+                        <div class="absolute inset-0 bg-slate-50/90 backdrop-blur-sm flex flex-col justify-center items-center z-20">
+                            <div class="text-red-500 text-4xl mb-4">⚠️</div>
+                            <h3 class="text-lg font-semibold text-slate-800 mb-2">Failed to Load</h3>
+                            <p class="text-slate-600 mb-4">Unable to initialize the annotation editor.</p>
+                            <button
+                                on:click={handleClose}
+                                class="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-md"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    {/if}
+                    
+                    <!-- Loading Overlay -->
+                    {#if isLoading}
+                        <div class="absolute inset-0 bg-slate-50/90 backdrop-blur-sm flex flex-col justify-center items-center z-20">
+                            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                            <p class="text-slate-600 text-lg mb-2">Loading Annotation Editor...</p>
+                            <p class="text-sm text-slate-500">
+                                {#if autoAnnotationEnabled}
+                                    Loading annotation metadata from backend...
+                                {:else}
+                                    Preparing interactive canvas...
+                                {/if}
+                            </p>
+                        </div>
+                    {/if}
+                    
+                    <!-- Status Indicators -->
+                    {#if isInitialized}
+                        <div class="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded shadow z-10">
+                            {#if autoAnnotationEnabled}
+                                Backend Metadata
+                            {:else}
+                                Live Processing
+                            {/if}
+                        </div>
+                        <div class="absolute bottom-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow z-10">
+                            {konvaManager?.getAnnotationCount() || 0} annotations
+                        </div>
+                    {/if}
+                </div>
+                
+                <!-- Instructions -->
+                {#if isInitialized}
+                    <div class="mt-4 text-sm text-slate-600 text-center bg-slate-50 p-3 rounded">
+                        Use the tools above to edit annotations. Click and drag to select, use Delete key to remove, or click Save when done.
+                    </div>
+                {/if}
+            </div>
+        </div>
+    </div>
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/components/ModalAnnotationViewer.svelte:491:5
+Warn: A11y: Non-interactive element <div> should not be assigned mouse or keyboard event listeners. (svelte)
+    {console.log('🎨 Modal HTML is rendering, showModal:', showModal, 'selectedImage:', !!selectedImage)}
+    <div
+        class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="annotation-modal-title"
+        on:click={handleClose}
+        on:keydown={(e) => { if (e.key === 'Escape') handleClose(); }}
+        tabindex="-1"
+        aria-describedby="annotation-modal-description"
+    >
+        <button class="absolute inset-0 w-full h-full bg-transparent" aria-label="Close annotation viewer" on:click={handleClose} />
+
+        <!-- Modal Content -->
+        <div
+            class="relative z-10 max-w-6xl w-full bg-white/95 backdrop-blur rounded-2xl shadow-xl overflow-hidden flex flex-col border border-slate-200/60 max-h-[95vh]"
+            role="document"
+            aria-label="Annotation editor content"
+            on:click|stopPropagation
+            on:keydown|stopPropagation
+        >
+            <!-- Header -->
+            <div class="flex justify-between items-center p-4 border-b bg-slate-50">
+                <div class="flex items-center gap-3">
+                    <button
+                        on:click={handleClose}
+                        class="text-slate-600 hover:text-slate-800 p-2 -ml-2 rounded-md hover:bg-slate-200 transition-colors"
+                        aria-label="Close annotation viewer"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                        </svg>
+                    </button>
+                    <div>
+                        <h3 id="annotation-modal-title" class="text-lg font-semibold text-slate-800">
+                            Annotation Editor
+                        </h3>
+                        <p id="annotation-modal-description" class="text-sm text-slate-600">{selectedImage?.name || 'Image'}</p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-2">
+                    <button
+                        on:click={handleClose}
+                        class="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        on:click={handleSave}
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors flex items-center gap-2"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="flex-1 flex flex-col p-4 min-h-0">
+                {#if isInitialized}
+                    <!-- Control Panel -->
+                    <div class="flex flex-wrap items-center gap-2 mb-4 p-3 bg-slate-50 rounded-lg border">
+                        <div class="text-sm text-slate-600 mr-4">Tools:</div>
+
+                        <!-- Zoom Controls -->
+                        <button
+                            on:click={handleZoomOut}
+                            class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                            title="Zoom Out (-)"
+                            aria-label="Zoom out"
+                        >
+                            🔍-
+                        </button>
+                        <button
+                            on:click={handleResetZoom}
+                            class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                            title="Reset Zoom (0)"
+                            aria-label="Reset zoom"
+                        >
+                            100%
+                        </button>
+                        <button
+                            on:click={handleZoomIn}
+                            class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+                            title="Zoom In (=)"
+                            aria-label="Zoom in"
+                        >
+                            🔍+
+                        </button>
+
+                        <!-- Fit to Screen -->
+                        <button
+                            on:click={handleFitToScreen}
+                            class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded transition-colors ml-4"
+                            title="Fit to Screen (R)"
+                            aria-label="Fit to screen"
+                        >
+                            📐 Fit
+                        </button>
+
+                        <!-- Annotation Controls -->
+                        <div class="ml-4 flex items-center gap-2">
+                            <span class="text-sm text-slate-600">Annotations:</span>
+                            <button
+                                on:click={handleSelectAll}
+                                class="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white text-sm rounded transition-colors"
+                                title="Select All (Ctrl+A)"
+                                aria-label="Select all annotations"
+                            >
+                                Select All
+                            </button>
+                            <button
+                                on:click={handleDeselect}
+                                class="px-3 py-1 bg-slate-500 hover:bg-slate-600 text-white text-sm rounded transition-colors"
+                                title="Deselect (Esc)"
+                                aria-label="Deselect annotations"
+                            >
+                                Deselect
+                            </button>
+                            <button
+                                on:click={handleDeleteSelected}
+                                class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded transition-colors"
+                                title="Delete Selected (Del)"
+                                aria-label="Delete selected annotations"
+                            >
+                                🗑️ Delete
+                            </button>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="ml-auto text-sm text-slate-600">
+                            {#if konvaManager}
+                                Zoom: {konvaManager.getZoomPercentage()}% |
+                                Annotations: {konvaManager.getAnnotationCount()}
+                                {#if konvaManager.getSelectedCount() > 0}
+                                    | Selected: {konvaManager.getSelectedCount()}
+                                {/if}
+                            {/if}
+                        </div>
+                    </div>
+
+                    <!-- Keyboard Shortcuts Info -->
+                    <div class="text-xs text-slate-500 mb-4 bg-blue-50 p-2 rounded">
+                        <strong>Keyboard Shortcuts:</strong> Zoom (+/-), Reset (0), Fit (R), Select All (Ctrl+A), Delete (Del), Save (Ctrl+S), Cancel (Esc)
+                    </div>
+
+                    <!-- Konva container is now always present below, outside the conditional blocks -->
+                {/if}
+                
+                <!-- Single Konva Container - Always Present -->
+                <div class="flex-1 relative bg-slate-100 rounded-lg overflow-hidden border-2 border-slate-300 min-h-[500px]">
+                    <div
+                        bind:this={konvaContainer}
+                        class="w-full h-full bg-slate-50"
+                        style="width: 1000px; height: 700px; min-width: 1000px; min-height: 700px;"
+                        role="img"
+                        aria-label="Interactive annotation editor for {selectedImage?.name || 'image'}"
+                    >
+                        <!-- KonvaJS will render here -->
+                    </div>
+                    
+                    <!-- Error Overlay -->
+                    {#if !isLoading && !isInitialized}
+                        <div class="absolute inset-0 bg-slate-50/90 backdrop-blur-sm flex flex-col justify-center items-center z-20">
+                            <div class="text-red-500 text-4xl mb-4">⚠️</div>
+                            <h3 class="text-lg font-semibold text-slate-800 mb-2">Failed to Load</h3>
+                            <p class="text-slate-600 mb-4">Unable to initialize the annotation editor.</p>
+                            <button
+                                on:click={handleClose}
+                                class="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-md"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    {/if}
+                    
+                    <!-- Loading Overlay -->
+                    {#if isLoading}
+                        <div class="absolute inset-0 bg-slate-50/90 backdrop-blur-sm flex flex-col justify-center items-center z-20">
+                            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                            <p class="text-slate-600 text-lg mb-2">Loading Annotation Editor...</p>
+                            <p class="text-sm text-slate-500">
+                                {#if autoAnnotationEnabled}
+                                    Loading annotation metadata from backend...
+                                {:else}
+                                    Preparing interactive canvas...
+                                {/if}
+                            </p>
+                        </div>
+                    {/if}
+                    
+                    <!-- Status Indicators -->
+                    {#if isInitialized}
+                        <div class="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded shadow z-10">
+                            {#if autoAnnotationEnabled}
+                                Backend Metadata
+                            {:else}
+                                Live Processing
+                            {/if}
+                        </div>
+                        <div class="absolute bottom-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow z-10">
+                            {konvaManager?.getAnnotationCount() || 0} annotations
+                        </div>
+                    {/if}
+                </div>
+                
+                <!-- Instructions -->
+                {#if isInitialized}
+                    <div class="mt-4 text-sm text-slate-600 text-center bg-slate-50 p-3 rounded">
+                        Use the tools above to edit annotations. Click and drag to select, use Delete key to remove, or click Save when done.
+                    </div>
+                {/if}
+            </div>
+        </div>
+    </div>
+{/if}
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/components/ModalAnnotationViewer.svelte:336:54
+Error: 'konvaError' is of type 'unknown'. (ts)
+            console.error('❌ KonvaJS initialization failed:', konvaError);
+            throw new Error(`KonvaJS setup failed: ${konvaError.message}`);
+        }
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/components/ImageGallery.svelte:77:29
+Error: Parameter 'bytes' implicitly has an 'any' type. (ts)
+    // --- Helper Functions (can be moved from +page.svelte or kept if only used here) ---
+    function formatFileSize(bytes) {
+        if (bytes === null || bytes === undefined) return '';
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/components/ImageGallery.svelte:84:34
+Error: Parameter 'current' implicitly has an 'any' type. (ts)
+
+    function generatePageNumbers(current, total) {
+        let pages: (number | string)[] = [];
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/components/ImageGallery.svelte:84:43
+Error: Parameter 'total' implicitly has an 'any' type. (ts)
+
+    function generatePageNumbers(current, total) {
+        let pages: (number | string)[] = [];
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/components/ImageViewerModal.svelte:14:29
+Error: Parameter 'bytes' implicitly has an 'any' type. (ts)
+    // Helper function to format file size
+    function formatFileSize(bytes) {
+        if (bytes === null || bytes === undefined) return '';
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/components/ImageViewerModal.svelte:57:44
+Error: Parameter 'annotation' implicitly has an 'any' type. (ts)
+
+        selectedImage.annotations.forEach((annotation, index) => {
+            if (!annotation.points || annotation.points.length === 0) return;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/components/ImageViewerModal.svelte:57:56
+Error: Parameter 'index' implicitly has an 'any' type. (ts)
+
+        selectedImage.annotations.forEach((annotation, index) => {
+            if (!annotation.points || annotation.points.length === 0) return;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/components/ImageViewerModal.svelte:118:71
+Error: Property 'complete' does not exist on type 'HTMLElement'. (ts)
+            setTimeout(() => {
+                 if (document.getElementById("selected-image-modal")?.complete) {
+                    drawAnnotationsOnModal();
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/components/ImageViewerModal.svelte:129:70
+Error: Property 'complete' does not exist on type 'HTMLElement'. (ts)
+            setTimeout(() => {
+                if (document.getElementById("selected-image-modal")?.complete) {
+                    drawAnnotationsOnModal();
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/+page.svelte:74:28
+Error: Parameter 'event' implicitly has an 'any' type. (ts)
+    // Handle keyboard shortcuts
+    function handleKeydown(event) {
+        // Close image view when Escape key is pressed
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/+page.svelte:112:34
+Error: Property 'message' does not exist on type '{}'. (ts)
+                    const errMsg =
+                        loadErr?.message || String(loadErr) || "Unknown error";
+                    error = `Failed to load images: ${errMsg}`;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/+page.svelte:118:33
+Error: Property 'message' does not exist on type '{}'. (ts)
+            console.error("Error selecting directory:", err);
+            const errMsg = err?.message || String(err) || "Unknown error";
+            error = `Failed to select directory: ${errMsg}`;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/+page.svelte:125:35
+Error: Parameter 'page' implicitly has an 'any' type. (ts)
+
+    async function loadImagesPage(page) {
+        try {
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/+page.svelte:173:22
+Error: Property 'message' does not exist on type '{}'. (ts)
+            const errorMessage =
+                err?.message ||
+                (typeof err === "string" ? err : "Unknown error");
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/+page.svelte:177:22
+Error: Property 'stack' does not exist on type '{}'. (ts)
+
+            if (err?.stack) {
+                console.error("Stack trace:", err.stack);
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/+page.svelte:178:51
+Error: Property 'stack' does not exist on type '{}'. (ts)
+            if (err?.stack) {
+                console.error("Stack trace:", err.stack);
+            }
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/+page.svelte:216:89
+Error: 'err' is of type 'unknown'. (ts)
+                // Optionally set an error message for the user, though the modal will show what it has
+                error = `Failed to load full details for ${currentImageInState.name}: ${err.message}`;
+            }
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/+page.svelte:274:29
+Error: Parameter 'mode' implicitly has an 'any' type. (ts)
+    // Handle view mode change
+    function changeViewMode(mode) {
+        viewMode = mode;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/+page.svelte:279:32
+Error: Parameter 'type' implicitly has an 'any' type. (ts)
+    // Function for handling annotation type change
+    function setAnnotationType(type) {
+        annotationType = type;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/+page.svelte:334:43
+Error: Property 'hasJson' does not exist on type 'ProcessedImage'. Did you mean 'has_json'? (ts)
+                                    ? annotatedImgData.has_json
+                                    : img.hasJson,
+                        };
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/+page.svelte:361:22
+Error: Property 'message' does not exist on type '{}'. (ts)
+            const errorMessage =
+                err?.message ||
+                (typeof err === "string" ? err : "Unknown error");
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/+page.svelte:365:22
+Error: Property 'stack' does not exist on type '{}'. (ts)
+
+            if (err?.stack) {
+                console.error("Stack trace:", err.stack);
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/+page.svelte:366:51
+Error: Property 'stack' does not exist on type '{}'. (ts)
+            if (err?.stack) {
+                console.error("Stack trace:", err.stack);
+            }
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/+page.svelte:423:43
+Error: Property 'hasJson' does not exist on type 'ProcessedImage'. Did you mean 'has_json'? (ts)
+                                    ? annotatedImgData.has_json
+                                    : img.hasJson,
+                        };
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/+page.svelte:479:22
+Error: Property 'message' does not exist on type '{}'. (ts)
+            const errorMessage =
+                err?.message ||
+                (typeof err === "string" ? err : "Unknown error");
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/+page.svelte:555:22
+Error: Property 'message' does not exist on type '{}'. (ts)
+            const errMsg =
+                err?.message ||
+                (typeof err === "string" ? err : "Unknown error during export");
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/+page.svelte:736:26
+Error: Type 'string' is not assignable to type '"grid" | "column" | undefined'. (ts)
+                        {pageSize}
+                        {viewMode}
+                        {annotationType}
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/components/KonvaViewer.svelte:10:22
+Error: Cannot find name 'createEventDispatcher'. (ts)
+    // Event dispatcher for communication with parent
+    const dispatch = createEventDispatcher();
+
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/components/AdvancedCropRemapTool.svelte:138:41
+Error: Argument of type 'unknown' is not assignable to parameter of type 'string'. (ts)
+            const result = await invoke("get_labelme_summary", { path: sourceDir as string });
+            datasetSummary = JSON.parse(result);
+
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/dataset-gallery-advanced/components/AdvancedCropRemapTool.svelte:596:31
+Error: Object literal may only specify known properties, and 'previewModalImage' does not exist in type '{ showModal?: boolean | undefined; imageData?: KonvaImageData | null | undefined; }'. (ts)
+                <!-- Use KonvaViewer component for advanced annotation viewing -->
+                <KonvaViewer {previewModalImage} on:close={closePreviewModal} />
+            </div>
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:956:29
+Warn: A11y: A form label must be associated with a control. (svelte)
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Crop Source Directory</label>
+                            <div class="flex items-center gap-2">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:976:29
+Warn: A11y: A form label must be associated with a control. (svelte)
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Crop Output Directory</label>
+                            <div class="flex items-center gap-2">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:1703:21
+Warn: A11y: A form label must be associated with a control. (svelte)
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2 font-medium">Labels to Export</label>
+                    {#if datasetSummary?.label_counts && Object.keys(datasetSummary.label_counts).length > 0}
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:1817:21
+Warn: A11y: A form label must be associated with a control. (svelte)
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Labels to Extract (check to include)</label>
+                    <div class="max-h-60 overflow-y-auto border border-gray-200 rounded-md p-2 space-y-1">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:10:9
+Error: Variable 'images' implicitly has type 'any[]' in some locations where its type cannot be determined. (ts)
+    let directoryPath = "";
+    let images = [];
+    let loading = false;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:15:9
+Error: Variable 'selectedImage' implicitly has type 'any' in some locations where its type cannot be determined. (ts)
+    let viewMode = "grid"; // 'grid' or 'column'
+    let selectedImage = null;
+    let detailedImage = null;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:19:9
+Error: Variable 'datasetSummary' implicitly has type 'any' in some locations where its type cannot be determined. (ts)
+    let annotationType = "bounding_box"; // Default annotation type
+    let datasetSummary = null; // New variable for dataset summary
+
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:68:28
+Error: Parameter 'event' implicitly has an 'any' type. (ts)
+    // Handle keyboard shortcuts
+    function handleKeydown(event) {
+        // Close image view when Escape key is pressed
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:70:39
+Error: Variable 'selectedImage' implicitly has an 'any' type. (ts)
+        // Close image view when Escape key is pressed
+        if (event.key === "Escape" && selectedImage) {
+            closeImageView();
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:106:34
+Error: Property 'message' does not exist on type '{}'. (ts)
+                    const errMsg =
+                        loadErr?.message || String(loadErr) || "Unknown error";
+                    error = `Failed to load images: ${errMsg}`;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:112:33
+Error: Property 'message' does not exist on type '{}'. (ts)
+            console.error("Error selecting directory:", err);
+            const errMsg = err?.message || String(err) || "Unknown error";
+            error = `Failed to select directory: ${errMsg}`;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:120:28
+Error: Parameter 'newImages' implicitly has an 'any' type. (ts)
+    // Process images and prepare them for display
+    function processImages(newImages, isFirstPage) {
+        const processed = newImages.map((img, index) => {
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:120:39
+Error: Parameter 'isFirstPage' implicitly has an 'any' type. (ts)
+    // Process images and prepare them for display
+    function processImages(newImages, isFirstPage) {
+        const processed = newImages.map((img, index) => {
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:121:42
+Error: Parameter 'img' implicitly has an 'any' type. (ts)
+    function processImages(newImages, isFirstPage) {
+        const processed = newImages.map((img, index) => {
+            const actualIndex = isFirstPage ? index : images.length + index;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:121:47
+Error: Parameter 'index' implicitly has an 'any' type. (ts)
+    function processImages(newImages, isFirstPage) {
+        const processed = newImages.map((img, index) => {
+            const actualIndex = isFirstPage ? index : images.length + index;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:134:35
+Error: Parameter 'page' implicitly has an 'any' type. (ts)
+
+    async function loadImagesPage(page) {
+        try {
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:163:33
+Error: Property 'substring' does not exist on type '{}'. (ts)
+                "Raw result:",
+                result ? result.substring(0, 100) + "..." : "null or undefined",
+            );
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:167:41
+Error: Argument of type '{}' is not assignable to parameter of type 'string'. (ts)
+            if (result) {
+                const data = JSON.parse(result);
+                console.log(
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:204:22
+Error: Property 'message' does not exist on type '{}'. (ts)
+            const errorMessage =
+                err?.message ||
+                (typeof err === "string" ? err : "Unknown error");
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:208:22
+Error: Property 'stack' does not exist on type '{}'. (ts)
+
+            if (err?.stack) {
+                console.error("Stack trace:", err.stack);
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:209:51
+Error: Property 'stack' does not exist on type '{}'. (ts)
+            if (err?.stack) {
+                console.error("Stack trace:", err.stack);
+            }
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:230:48
+Error: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'. (ts)
+                        const img = entry.target;
+                        const index = parseInt(img.getAttribute("data-index"));
+                        const imageSrc = img.getAttribute("data-src");
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:235:33
+Error: Property 'src' does not exist on type 'Element'. (ts)
+                        if (imageSrc) {
+                            img.src = imageSrc;
+                        }
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:252:32
+Error: Parameter 'image' implicitly has an 'any' type. (ts)
+
+    async function selectImage(image, index) {
+        // If we don't have dimensions, fetch the full details
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:252:39
+Error: Parameter 'index' implicitly has an 'any' type. (ts)
+
+    async function selectImage(image, index) {
+        // If we don't have dimensions, fetch the full details
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:260:53
+Error: Argument of type '{}' is not assignable to parameter of type 'string'. (ts)
+                if (details) {
+                    const detailedData = JSON.parse(details);
+                    // Update the image with full details
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:263:28
+Error: Variable 'images' implicitly has an 'any[]' type. (ts)
+                    images[index] = {
+                        ...images[index],
+                        dimensions: detailedData.dimensions,
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:272:25
+Error: Variable 'images' implicitly has an 'any[]' type. (ts)
+
+        selectedImage = images[index];
+
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:286:29
+Error: Parameter 'bytes' implicitly has an 'any' type. (ts)
+
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + " B";
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:294:16
+Error: Variable 'images' implicitly has an 'any[]' type. (ts)
+        // Simple implementation - for a more advanced solution, calculate based on scroll position
+        return images;
+    }
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:298:29
+Error: Parameter 'mode' implicitly has an 'any' type. (ts)
+    // Handle view mode change
+    function changeViewMode(mode) {
+        viewMode = mode;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:303:34
+Error: Parameter 'current' implicitly has an 'any' type. (ts)
+    // Helper function to generate pagination page numbers
+    function generatePageNumbers(current, total) {
+        // Show first page, last page, current page, and one page before and after current
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:303:43
+Error: Parameter 'total' implicitly has an 'any' type. (ts)
+    // Helper function to generate pagination page numbers
+    function generatePageNumbers(current, total) {
+        // Show first page, last page, current page, and one page before and after current
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:345:32
+Error: Parameter 'type' implicitly has an 'any' type. (ts)
+    // Function for handling annotation type change
+    function setAnnotationType(type) {
+        annotationType = type;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:382:41
+Error: Argument of type '{}' is not assignable to parameter of type 'string'. (ts)
+            if (result) {
+                const data = JSON.parse(result);
+                console.log("Parsed annotation data:", data);
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:388:30
+Error: Variable 'images' implicitly has an 'any[]' type. (ts)
+                    // Merge annotation data with existing images
+                    images = images.map((img, index) => {
+                        const annotatedImg = data.annotated_images.find(
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:390:30
+Error: Parameter 'ai' implicitly has an 'any' type. (ts)
+                        const annotatedImg = data.annotated_images.find(
+                            (ai) => ai.path === img.path,
+                        );
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:411:26
+Error: Parameter 'img' implicitly has an 'any' type. (ts)
+                    const imagesWithJson = data.annotated_images.filter(
+                        (img) => img.has_json,
+                    ).length;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:414:26
+Error: Parameter 'img' implicitly has an 'any' type. (ts)
+                    const imagesWithAnnotations = data.annotated_images.filter(
+                        (img) => img.annotations.length > 0,
+                    ).length;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:427:22
+Error: Property 'message' does not exist on type '{}'. (ts)
+            const errorMessage =
+                err?.message ||
+                (typeof err === "string" ? err : "Unknown error");
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:431:22
+Error: Property 'stack' does not exist on type '{}'. (ts)
+
+            if (err?.stack) {
+                console.error("Stack trace:", err.stack);
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:432:51
+Error: Property 'stack' does not exist on type '{}'. (ts)
+            if (err?.stack) {
+                console.error("Stack trace:", err.stack);
+            }
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:441:14
+Error: Variable 'selectedImage' implicitly has an 'any' type. (ts)
+    function drawAnnotations() {
+        if (!selectedImage || !selectedImage.annotations) return;
+
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:449:27
+Error: Property 'complete' does not exist on type 'HTMLElement'. (ts)
+        // Wait for image to be loaded
+        if (!imageElement.complete) {
+            imageElement.onload = () => drawAnnotations();
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:466:43
+Error: Property 'naturalWidth' does not exist on type 'HTMLElement'. (ts)
+        // Calculate scale factors for the image
+        const naturalWidth = imageElement.naturalWidth;
+        const naturalHeight = imageElement.naturalHeight;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:467:44
+Error: Property 'naturalHeight' does not exist on type 'HTMLElement'. (ts)
+        const naturalWidth = imageElement.naturalWidth;
+        const naturalHeight = imageElement.naturalHeight;
+        const scaleX = canvas.width / naturalWidth;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:472:44
+Error: Parameter 'annotation' implicitly has an 'any' type. (ts)
+        // Draw each annotation
+        selectedImage.annotations.forEach((annotation, index) => {
+            if (!annotation.points) return;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:472:56
+Error: Parameter 'index' implicitly has an 'any' type. (ts)
+        // Draw each annotation
+        selectedImage.annotations.forEach((annotation, index) => {
+            if (!annotation.points) return;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:553:45
+Error: Argument of type '{}' is not assignable to parameter of type 'string'. (ts)
+            if (result) {
+                datasetSummary = JSON.parse(result);
+                console.log("Dataset summary:", datasetSummary);
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:559:22
+Error: Property 'message' does not exist on type '{}'. (ts)
+            const errorMessage =
+                err?.message ||
+                (typeof err === "string" ? err : "Unknown error");
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:635:31
+Error: Variable 'datasetSummary' implicitly has an 'any' type. (ts)
+            // Determine included labels
+            const allLabels = datasetSummary?.label_counts ? Object.keys(datasetSummary.label_counts) : [];
+            const includedLabels = allLabels.filter(label => !excludedLabels.has(label));
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:680:32
+Error: Property 'message' does not exist on type '{}'. (ts)
+            console.error("Error exporting to YOLO:", err);
+            exportError = err?.message || "Failed to export dataset";
+        } finally {
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:693:13
+Error: Variable 'datasetSummary' implicitly has an 'any' type. (ts)
+        // Initialize the Set, optionally pre-select all available labels
+        if (datasetSummary?.label_counts) {
+             // Start with all labels selected
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:783:33
+Error: Property 'message' does not exist on type '{}'. (ts)
+            console.error("Error extracting labels:", err);
+            extractError = err?.message || "Failed to extract labels.";
+        } finally {
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:1042:18
+Error: Variable 'datasetSummary' implicitly has an 'any' type. (ts)
+            <!-- Dataset Summary Card -->
+            {#if datasetSummary}
+                <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:1198:49
+Error: 'e.target' is possibly 'null'. (ts)
+                                            if (
+                                                e.target.src !==
+                                                "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E"
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:1198:58
+Error: Property 'src' does not exist on type 'EventTarget'. (ts)
+                                            if (
+                                                e.target.src !==
+                                                "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E"
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:1201:49
+Error: 'e.target' is possibly 'null'. (ts)
+                                            ) {
+                                                e.target.classList.add(
+                                                    "loaded",
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:1201:58
+Error: Property 'classList' does not exist on type 'EventTarget'. (ts)
+                                            ) {
+                                                e.target.classList.add(
+                                                    "loaded",
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:1276:53
+Error: 'e.target' is possibly 'null'. (ts)
+                                                if (
+                                                    e.target.src !==
+                                                    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E"
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:1276:62
+Error: Property 'src' does not exist on type 'EventTarget'. (ts)
+                                                if (
+                                                    e.target.src !==
+                                                    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E"
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:1279:53
+Error: 'e.target' is possibly 'null'. (ts)
+                                                ) {
+                                                    e.target.classList.add(
+                                                        "loaded",
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:1279:62
+Error: Property 'classList' does not exist on type 'EventTarget'. (ts)
+                                                ) {
+                                                    e.target.classList.add(
+                                                        "loaded",
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:1493:6
+Error: Variable 'selectedImage' implicitly has an 'any' type. (ts)
+<!-- Image Viewer Modal with Annotation Support -->
+{#if selectedImage}
+    <div
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:1704:26
+Error: Variable 'datasetSummary' implicitly has an 'any' type. (ts)
+                    <label class="block text-gray-700 mb-2 font-medium">Labels to Export</label>
+                    {#if datasetSummary?.label_counts && Object.keys(datasetSummary.label_counts).length > 0}
+                        <p class="text-sm text-gray-500 mb-3">Click on a label to exclude it from the export. By default, all labels are included.</p>
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:1722:31
+Error: Variable 'datasetSummary' implicitly has an 'any' type. (ts)
+                        </div>
+                    {:else if datasetSummary}
+                         <p class="text-sm text-gray-500">No labels found in the dataset summary.</p>
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:1742:78
+Error: Variable 'datasetSummary' implicitly has an 'any' type. (ts)
+                    on:click={exportToYolo}
+                    disabled={exportLoading || !exportSettings.outputDir || !datasetSummary?.label_counts}
+                >
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/imageViewer3/+page.svelte:1819:47
+Error: Variable 'datasetSummary' implicitly has an 'any' type. (ts)
+                    <div class="max-h-60 overflow-y-auto border border-gray-200 rounded-md p-2 space-y-1">
+                        {#each Object.entries(datasetSummary.label_counts) as [label, count]}
+                            <label class="flex items-center space-x-2 cursor-pointer text-sm p-1 hover:bg-gray-50 rounded">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:976:11
+Warn: A11y: A form label must be associated with a control. (svelte)
+									<div class="form-control">
+										<label class="label"
+											><span class="label-text"
+												>Aspect Ratio</span
+											></label
+										>
+										<select
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:1013:11
+Warn: A11y: A form label must be associated with a control. (svelte)
+									<div class="form-control">
+										<label class="label"
+											><span class="label-text">Zoom</span
+											></label
+										>
+										<div class="join">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:1042:11
+Warn: A11y: A form label must be associated with a control. (svelte)
+									<div class="form-control">
+										<label class="label"
+											><span class="label-text"
+												>Rotation</span
+											></label
+										>
+										<div class="join">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:283:5
+Error: 'ctx' is possibly 'null'. (ts)
+			if (isHovered) {
+				ctx.fillStyle = "#ef4444"; // Red for hovered handle
+				ctx.strokeStyle = "#ffffff";
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:284:5
+Error: 'ctx' is possibly 'null'. (ts)
+				ctx.fillStyle = "#ef4444"; // Red for hovered handle
+				ctx.strokeStyle = "#ffffff";
+				ctx.lineWidth = 2;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:285:5
+Error: 'ctx' is possibly 'null'. (ts)
+				ctx.strokeStyle = "#ffffff";
+				ctx.lineWidth = 2;
+			} else if (isHoveringHandle) {
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:287:5
+Error: 'ctx' is possibly 'null'. (ts)
+			} else if (isHoveringHandle) {
+				ctx.fillStyle = "#10b981"; // Green for other handles when hovering
+				ctx.strokeStyle = "#ffffff";
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:288:5
+Error: 'ctx' is possibly 'null'. (ts)
+				ctx.fillStyle = "#10b981"; // Green for other handles when hovering
+				ctx.strokeStyle = "#ffffff";
+				ctx.lineWidth = 1;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:289:5
+Error: 'ctx' is possibly 'null'. (ts)
+				ctx.strokeStyle = "#ffffff";
+				ctx.lineWidth = 1;
+			} else {
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:291:5
+Error: 'ctx' is possibly 'null'. (ts)
+			} else {
+				ctx.fillStyle = "#3b82f6"; // Blue for normal handles
+				ctx.strokeStyle = "#ffffff";
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:292:5
+Error: 'ctx' is possibly 'null'. (ts)
+				ctx.fillStyle = "#3b82f6"; // Blue for normal handles
+				ctx.strokeStyle = "#ffffff";
+				ctx.lineWidth = 1;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:293:5
+Error: 'ctx' is possibly 'null'. (ts)
+				ctx.strokeStyle = "#ffffff";
+				ctx.lineWidth = 1;
+			}
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:297:4
+Error: 'ctx' is possibly 'null'. (ts)
+			// Draw handle with stroke
+			ctx.fillRect(
+				handle.x - handleSize / 2,
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:303:4
+Error: 'ctx' is possibly 'null'. (ts)
+			);
+			ctx.strokeRect(
+				handle.x - handleSize / 2,
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:390:13
+Error: Property 'code' does not exist on type 'MouseEvent'. (ts)
+		// Check for spacebar + drag (panning mode)
+		if (event.code === "Space" || event.key === " ") {
+			isPanning = true;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:390:39
+Error: Property 'key' does not exist on type 'MouseEvent'. (ts)
+		// Check for spacebar + drag (panning mode)
+		if (event.code === "Space" || event.key === " ") {
+			isPanning = true;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:613:24
+Error: 'originalImage' is possibly 'null'. (ts)
+			const canvasAspect = canvas.width / canvas.height;
+			const imageAspect = originalImage.width / originalImage.height;
+
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:613:46
+Error: 'originalImage' is possibly 'null'. (ts)
+			const canvasAspect = canvas.width / canvas.height;
+			const imageAspect = originalImage.width / originalImage.height;
+
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:619:29
+Error: 'originalImage' is possibly 'null'. (ts)
+				// Canvas is wider, fit by height
+				scale = canvas.height / originalImage.height;
+				scaledWidth = originalImage.width * scale;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:620:19
+Error: 'originalImage' is possibly 'null'. (ts)
+				scale = canvas.height / originalImage.height;
+				scaledWidth = originalImage.width * scale;
+				scaledHeight = canvas.height;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:626:28
+Error: 'originalImage' is possibly 'null'. (ts)
+				// Canvas is taller, fit by width
+				scale = canvas.width / originalImage.width;
+				scaledWidth = canvas.width;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:628:20
+Error: 'originalImage' is possibly 'null'. (ts)
+				scaledWidth = canvas.width;
+				scaledHeight = originalImage.height * scale;
+				imageX = 0;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:643:21
+Error: 'originalImage' is possibly 'null'. (ts)
+			// Ensure crop doesn't exceed image boundaries
+			const maxCropX = originalImage.width - cropWidth;
+			const maxCropY = originalImage.height - cropHeight;
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:644:21
+Error: 'originalImage' is possibly 'null'. (ts)
+			const maxCropX = originalImage.width - cropWidth;
+			const maxCropY = originalImage.height - cropHeight;
+
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:650:5
+Error: 'originalImage' is possibly 'null'. (ts)
+				cropWidth,
+				originalImage.width - finalCropX,
+			);
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:654:5
+Error: 'originalImage' is possibly 'null'. (ts)
+				cropHeight,
+				originalImage.height - finalCropY,
+			);
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:666:9
+Error: 'originalImage' is possibly 'null'. (ts)
+				originalImage: {
+					w: originalImage.width,
+					h: originalImage.height,
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:667:9
+Error: 'originalImage' is possibly 'null'. (ts)
+					w: originalImage.width,
+					h: originalImage.height,
+				},
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:730:5
+Error: Argument of type 'HTMLImageElement | null' is not assignable to parameter of type 'CanvasImageSource'.
+  Type 'null' is not assignable to type 'CanvasImageSource'. (ts)
+			previewCtx.drawImage(
+				originalImage,
+				finalCropX,
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:984:28
+Error: 'e.target' is possibly 'null'. (ts)
+											on:change={(e) =>
+												setAspectRatio(e.target.value)}
+											class="select select-bordered select-sm w-full"
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/smart-tools/+page.svelte:984:37
+Error: Property 'value' does not exist on type 'EventTarget'. (ts)
+											on:change={(e) =>
+												setAspectRatio(e.target.value)}
+											class="select select-bordered select-sm w-full"
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/turbo-export/stores/exportStore.ts:172:54
+Error: Argument of type '{ totalAnnotations: number; skippedAnnotations: number; backgroundImages: number; backgroundFiles: never[]; skippedLabels: never[]; invalidAnnotations: never[]; }' is not assignable to parameter of type 'DetailedStats'.
+  Type '{ totalAnnotations: number; skippedAnnotations: number; backgroundImages: number; backgroundFiles: never[]; skippedLabels: never[]; invalidAnnotations: never[]; }' is missing the following properties from type 'DetailedStats': filteredEmptyImages, filteredEmptyFiles 
+});
+export const detailedStats = writable<DetailedStats>({
+	totalAnnotations: 0,
+	skippedAnnotations: 0,
+	backgroundImages: 0,
+	backgroundFiles: [],
+	skippedLabels: [],
+	invalidAnnotations: []
+});
+export const showInvalidDetails = writable<boolean>(false);
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/turbo-export/components/SourceOutputSection.svelte:62:4
+Warn: A11y: A form label must be associated with a control. (svelte)
+		>
+			<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">來源路徑</label>
+			<div class="flex gap-2 transition-all duration-200 {$isDraggingOver && $activeDropZone !== 'source' ? 'opacity-50' : ''}">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/turbo-export/components/SourceOutputSection.svelte:106:4
+Warn: A11y: A form label must be associated with a control. (svelte)
+		>
+			<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">輸出路徑 (選填)</label>
+			<div class="flex gap-2 transition-all duration-200 {$isDraggingOver && $activeDropZone !== 'output' ? 'opacity-50' : ''}">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/turbo-export/components/SourceOutputSection.svelte:146:3
+Warn: A11y: A form label must be associated with a control. (svelte)
+	<div class="mt-4">
+		<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+			輸出資料夾名稱 (選填)
+		</label>
+		<input
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/turbo-export/components/FormatSelector.svelte:55:4
+Warn: A11y: A form label must be associated with a control. (svelte)
+		<div class="{showAnnotationType || showLabelMeOutputFormat ? '' : 'md:col-span-2'}">
+			<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">目標格式</label>
+			<div class="flex gap-2">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/turbo-export/components/FormatSelector.svelte:75:5
+Warn: A11y: A form label must be associated with a control. (svelte)
+			<div>
+				<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">標註類型</label>
+				<div class="flex gap-2">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/turbo-export/components/FormatSelector.svelte:96:5
+Warn: A11y: A form label must be associated with a control. (svelte)
+			<div>
+				<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">輸出點格式</label>
+				<div class="flex gap-2">
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/turbo-export/components/SplitRatioSlider.svelte:33:4
+Warn: A11y: A form label must be associated with a control. (svelte)
+		<div class="flex items-center gap-4">
+			<label class="w-20 text-sm font-medium text-slate-700 dark:text-slate-300">Train</label>
+			<input
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/turbo-export/components/SplitRatioSlider.svelte:55:4
+Warn: A11y: A form label must be associated with a control. (svelte)
+		<div class="flex items-center gap-4">
+			<label class="w-20 text-sm font-medium text-slate-700 dark:text-slate-300">Val</label>
+			<input
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/turbo-export/components/SplitRatioSlider.svelte:77:4
+Warn: A11y: A form label must be associated with a control. (svelte)
+		<div class="flex items-center gap-4">
+			<label class="w-20 text-sm font-medium text-slate-700 dark:text-slate-300">Test</label>
+			<input
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/turbo-export/components/LabelManager.svelte:305:9
+Warn: A11y: <div> with mousedown handler must have an ARIA role (svelte)
+								<!-- 選取 checkbox -->
+								<div
+									class="flex justify-center"
+									on:mousedown|stopPropagation
+									on:touchstart|stopPropagation
+								>
+									<input
+										type="checkbox"
+										checked={label.selected}
+										on:change={() => toggleLabel(label.id)}
+										class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 cursor-pointer"
+									/>
+								</div>
+							</div>
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/turbo-export/components/AdvancedOptions.svelte:37:6
+Warn: A11y: A form label must be associated with a control. (svelte)
+				<div>
+					<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+						Worker 線程數
+					</label>
+					<input
+
+
+/Users/admin/Desktop/code/dataset-app/src/routes/turbo-export/components/AdvancedOptions.svelte:54:7
+Warn: A11y: A form label must be associated with a control. (svelte)
+					<div>
+						<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+							隨機種子
+						</label>
+						<input
+
+
+====================================
+svelte-check found 202 errors and 69 warnings in 33 files

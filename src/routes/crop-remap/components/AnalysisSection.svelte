@@ -9,9 +9,9 @@
 </script>
 
 <div class="form-control">
-    <label class="label">
+    <div class="label">
         <span class="label-text font-medium">Dataset Analysis</span>
-    </label>
+    </div>
     <div class="flex items-center gap-3">
         <button
             on:click={() => dispatch("analyze")}
@@ -35,10 +35,10 @@
             </span>
         {/if}
     </div>
-    <label class="label">
+    <div class="label">
         <span class="label-text-alt opacity-60"
             >Analyze your dataset to discover available labels and get smart
             suggestions.</span
         >
-    </label>
+    </div>
 </div>
