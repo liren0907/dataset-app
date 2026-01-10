@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+	// @ts-ignore - SvelteKit 內建模組，運行時正常
 	import { page } from '$app/stores';
 </script>
 

@@ -1,337 +1,435 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
-	import { open } from '@tauri-apps/plugin-dialog';
-	import { dndzone } from 'svelte-dnd-action';
-	import { flip } from 'svelte/animate';
-	// import { invoke } from '@tauri-apps/api/core';
+	import { onMount, onDestroy } from "svelte";
 
-	// ===== 來源與輸出設定 =====
-	let sourceDir: string = '';
-	let outputDir: string = '';
+	// ===== 匯入組件 =====
+	import SourceOutputSection from "./components/SourceOutputSection.svelte";
+	import FormatSelector from "./components/FormatSelector.svelte";
+	import SplitRatioSlider from "./components/SplitRatioSlider.svelte";
+	import LabelManager from "./components/LabelManager.svelte";
+	import AdvancedOptions from "./components/AdvancedOptions.svelte";
+	import ExportProgress from "./components/ExportProgress.svelte";
+	import ExportResult from "./components/ExportResult.svelte";
+
+	// ===== 匯入 Composables =====
+	import {
+		setupDragDropListener,
+		cleanupDragDropListeners,
+	} from "./composables/useTauriDragDrop";
+
+	// ===== 匯入 Services =====
+	import {
+		// 舊的同步 API 已不再使用，改用異步版本
+		// scanLabels as scanLabelsService,
+		// scanLabelsWithCounts,
+		// analyzeLabelMeDataset,
+		convertLabelMe,
+		getTotalAnnotationCount,
+		type ConvertLabelMeRequest,
+	} from "./services/exportService";
+
+	// ===== 匯入 Store =====
+	import {
+		// Stores
+		sourceDir,
+		outputDir,
+		outputTarget,
+		annotationType,
+		labelmeOutputFormat,
+		customDatasetName,
+		trainRatio,
+		valRatio,
+		testRatio,
+		useCustomLabels,
+		includeEmptyLabelImages,
+		labelList,
+		isScanning,
+		labelScanMessage,
+		isCalculatingCounts,
+		detectedFormat,
+		isDetectingFormat,
+		workerCount,
+		randomSeed,
+		removeImageData,
+		isProcessing,
+		progress,
+		statusMessage,
+		stats,
+		detailedStats,
+		showInvalidDetails,
+	} from "./stores/exportStore";
+
+	// ===== 來源與輸出設定（已移至 store）=====
+	// let sourceDir: string = '';
+	// let outputDir: string = '';
 
 	// ===== Tauri 拖放狀態 =====
-	let isDraggingOver: boolean = false;
 	let sourceDropZone: HTMLElement | null = null;
 	let outputDropZone: HTMLElement | null = null;
-	let activeDropZone: 'source' | 'output' | null = null;
 	let unlistenFns: Array<() => void> = [];
 
-	// 檢查物理座標是否在元素範圍內
-	// Tauri 給的是 PhysicalPosition（考慮 DPI 縮放），需要轉換為 CSS 座標
-	function isPointInElement(physicalX: number, physicalY: number, element: HTMLElement | null): boolean {
-		if (!element) return false;
-
-		// 將物理座標轉換為 CSS 座標（除以 DPI 縮放比例）
-		const scaleFactor = window.devicePixelRatio || 1;
-		const cssX = physicalX / scaleFactor;
-		const cssY = physicalY / scaleFactor;
-
-		const rect = element.getBoundingClientRect();
-		return cssX >= rect.left && cssX <= rect.right && cssY >= rect.top && cssY <= rect.bottom;
+	// ===== 設置拖放監聽器（使用 composable）=====
+	async function initDragDrop() {
+		const refs = { sourceDropZone, outputDropZone };
+		const callbacks = {
+			onSourceDrop: (path: string) => {
+				sourceDir.set(path);
+				scanLabels();
+			},
+			onOutputDrop: (path: string) => {
+				outputDir.set(path);
+			},
+		};
+		unlistenFns = await setupDragDropListener(refs, callbacks);
 	}
 
-	// 設置 Tauri 拖放監聽器
-	async function setupDragDropListener() {
-		if (typeof window === 'undefined' || !(window as any).__TAURI__) return;
-
-		try {
-			const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow');
-			const appWindow = getCurrentWebviewWindow();
-
-			const unlisten = await appWindow.onDragDropEvent((event) => {
-				handleDragDropEvent(event.payload);
-			});
-
-			unlistenFns.push(unlisten);
-		} catch (error) {
-			console.error('❌ 拖放監聽器設置失敗:', error);
-		}
-	}
-
-	// 處理拖放事件
-	function handleDragDropEvent(payload: any) {
-		const eventType = payload.type;
-
-		if (eventType === 'enter' || eventType === 'over') {
-			isDraggingOver = true;
-			const position = payload.position;
-
-			// 檢查滑鼠在哪個區域
-			if (position && sourceDropZone && isPointInElement(position.x, position.y, sourceDropZone)) {
-				activeDropZone = 'source';
-			} else if (position && outputDropZone && isPointInElement(position.x, position.y, outputDropZone)) {
-				activeDropZone = 'output';
-			} else {
-				activeDropZone = null;
-			}
-		} else if (eventType === 'drop') {
-			const paths = payload.paths;
-			const dropPosition = payload.position;
-
-			// 用 drop 事件的座標計算目標區域
-			let dropZone: 'source' | 'output' | null = null;
-			if (dropPosition && sourceDropZone && outputDropZone) {
-				if (isPointInElement(dropPosition.x, dropPosition.y, sourceDropZone)) {
-					dropZone = 'source';
-				} else if (isPointInElement(dropPosition.x, dropPosition.y, outputDropZone)) {
-					dropZone = 'output';
-				}
-			} else {
-				dropZone = activeDropZone;
-			}
-
-			if (paths && paths.length > 0 && dropZone) {
-				const droppedPath = paths[0];
-				if (dropZone === 'source') {
-					sourceDir = droppedPath;
-					scanLabels();
-				} else if (dropZone === 'output') {
-					outputDir = droppedPath;
-				}
-			}
-
-			isDraggingOver = false;
-			activeDropZone = null;
-		} else if (eventType === 'leave' || eventType === 'cancel') {
-			isDraggingOver = false;
-			activeDropZone = null;
-		}
+	// ===== 處理來源路徑選擇事件（由 SourceOutputSection 發出）=====
+	function handleSourceSelected() {
+		scanLabels();
 	}
 
 	onMount(() => {
-		setupDragDropListener();
+		// 需要等 bind:this 完成，所以用 setTimeout
+		setTimeout(() => initDragDrop(), 0);
 	});
 
 	onDestroy(() => {
-		unlistenFns.forEach((fn) => fn());
+		cleanupDragDropListeners(unlistenFns);
 	});
 
-	// ===== 輸出格式設定 =====
-	let outputTarget: 'yolo' | 'coco' = 'yolo';
-	let annotationType: 'bbox' | 'polygon' = 'bbox';
+	// ===== 輸出格式設定（已移至 store / FormatSelector）=====
+	// ===== 資料集分割設定（已移至 store / SplitRatioSlider）=====
+	// ===== 標籤設定（已移至 store / LabelManager）=====
 
-	// ===== 資料集分割設定 =====
-	let trainRatio: number = 70;
-	let valRatio: number = 20;
-	let testRatio: number = 10;
+	// 背景統計狀態（本地使用）
+	let countCalculationPromise: Promise<void> | null = null;
+	let labelScanAbortController: AbortController | null = null;
 
-	// 確保比例總和為 100，調整時自動分配剩餘空間
-	function adjustRatios(changed: 'train' | 'val' | 'test') {
-		// 計算當前變更的值佔用後，剩餘多少給其他兩個
-		if (changed === 'train') {
-			const remaining = 100 - trainRatio;
-			const otherTotal = valRatio + testRatio;
-			if (otherTotal === 0) {
-				valRatio = remaining;
-				testRatio = 0;
-			} else {
-				const scale = remaining / otherTotal;
-				valRatio = Math.round(valRatio * scale);
-				testRatio = 100 - trainRatio - valRatio;
-			}
-		} else if (changed === 'val') {
-			const remaining = 100 - valRatio;
-			const otherTotal = trainRatio + testRatio;
-			if (otherTotal === 0) {
-				trainRatio = remaining;
-				testRatio = 0;
-			} else {
-				const scale = remaining / otherTotal;
-				trainRatio = Math.round(trainRatio * scale);
-				testRatio = 100 - trainRatio - valRatio;
-			}
-		} else {
-			const remaining = 100 - testRatio;
-			const otherTotal = trainRatio + valRatio;
-			if (otherTotal === 0) {
-				trainRatio = remaining;
-				valRatio = 0;
-			} else {
-				const scale = remaining / otherTotal;
-				trainRatio = Math.round(trainRatio * scale);
-				valRatio = 100 - trainRatio - testRatio;
-			}
-		}
-		// 確保不會有負數
-		trainRatio = Math.max(0, trainRatio);
-		valRatio = Math.max(0, valRatio);
-		testRatio = Math.max(0, testRatio);
-	}
+	// ===== 進階選項（已移至 store）=====
+	// showAdvanced, workerCount, randomSeed 已移至 store
+	// includeEmptyLabelImages 已移至標籤管理區
 
-	// ===== 標籤設定 =====
-	let useCustomLabels: boolean = false;
+	// ===== 執行狀態（已移至 store）=====
+	// isProcessing, progress, statusMessage, stats, detailedStats, showInvalidDetails 已移至 store
+	// invalidReasonGroups 由 store 的 derived store 計算
+	let progressInterval: ReturnType<typeof setInterval> | null = null;
 
-	// 標籤資料結構：包含 id（必須）、名稱、數量、是否選中
-	interface LabelInfo {
-		id: number;      // svelte-dnd-action 必須要有 id
-		name: string;
-		count: number;
-		selected: boolean;
-	}
-	let labelList: LabelInfo[] = []; // 順序即為 class ID 映射
-	let isScanning: boolean = false;
-	let labelScanMessage: string = '';
-
-	// 拖拉動畫時間
-	const flipDurationMs = 200;
-
-	function toggleLabel(id: number) {
-		labelList = labelList.map(l =>
-			l.id === id ? { ...l, selected: !l.selected } : l
-		);
-	}
-
-	function selectAllLabels() {
-		labelList = labelList.map(l => ({ ...l, selected: true }));
-	}
-
-	function deselectAllLabels() {
-		labelList = labelList.map(l => ({ ...l, selected: false }));
-	}
-
-	// ===== svelte-dnd-action 事件處理 =====
-	function handleDndConsider(e: CustomEvent<{items: LabelInfo[]}>) {
-		labelList = e.detail.items;
-	}
-
-	function handleDndFinalize(e: CustomEvent<{items: LabelInfo[]}>) {
-		labelList = e.detail.items;
-	}
-
-	// 取得標籤 ID 映射表（順序就是 class ID）
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	function getLabelIdMapping(): Record<string, number> {
-		const mapping: Record<string, number> = {};
-		let classId = 0;
-		for (const label of labelList) {
-			if (label.selected) {
-				mapping[label.name] = classId++;
-			}
-		}
-		return mapping;
-	}
-
-	// ===== 進階選項 =====
-	let showAdvanced: boolean = false;
-	let includeBackground: boolean = false;
-	let workerCount: number = 0; // 0 = 自動
-	let randomSeed: number = 42;
-	// deterministic 已移除，因為排序就是映射
-
-	// ===== 執行狀態 =====
-	let isProcessing: boolean = false;
-	let progress: number = 0;
-	let statusMessage: string = '';
-	let stats = {
-		total: 0,
-		processed: 0,
-		success: 0,
-		skipped: 0,
-		failed: 0
-	};
-
-	// ===== 選擇資料夾 =====
-	async function selectSourceDir() {
-		const selected = await open({
-			directory: true,
-			multiple: false,
-			title: '選擇 LabelMe JSON 資料夾'
-		});
-		if (selected && typeof selected === 'string') {
-			sourceDir = selected;
-			// 自動掃描標籤
-			await scanLabels();
-		}
-	}
-
-	async function selectOutputDir() {
-		const selected = await open({
-			directory: true,
-			multiple: false,
-			title: '選擇輸出資料夾'
-		});
-		if (selected && typeof selected === 'string') {
-			outputDir = selected;
-		}
-	}
-
-	// ===== 掃描標籤 =====
+	// ===== 掃描標籤（核彈級優化版本：使用 Rust 異步+並行處理）=====
 	async function scanLabels() {
-		if (!sourceDir) return;
+		if (!$sourceDir) return;
 
-		isScanning = true;
-		statusMessage = '正在掃描標籤...';
+		// 取消之前的計算（如果有）
+		if (labelScanAbortController) {
+			labelScanAbortController.abort();
+		}
+		labelScanAbortController = new AbortController();
+		const signal = labelScanAbortController.signal;
+
+		isScanning.set(true);
+		isDetectingFormat.set(true);
+		statusMessage.set("正在掃描標籤並檢測格式...");
+
+		// 導入 Tauri 事件監聽
+		const { listen } = await import("@tauri-apps/api/event");
+		const { invoke } = await import("@tauri-apps/api/core");
+
+		// 進度事件監聽器
+		interface ScanProgress {
+			current: number;
+			total: number;
+			percentage: number;
+			message: string;
+		}
+
+		let labelUnlisten: (() => void) | null = null;
+		let countUnlisten: (() => void) | null = null;
+		let formatUnlisten: (() => void) | null = null;
 
 		try {
-			// TODO: 呼叫 Rust 後端掃描標籤
-			// const labels = await invoke('scan_labels', { sourceDir });
+			// 🎯 監聽標籤掃描進度
+			labelUnlisten = await listen<ScanProgress>(
+				"label-scan-progress",
+				(event) => {
+					console.log(`📊 標籤掃描: ${event.payload.message}`);
+					labelScanMessage.set(event.payload.message);
+				},
+			);
 
-			// 暫時用模擬資料
-			await new Promise(resolve => setTimeout(resolve, 500));
-			const mockLabels = [
-				{ name: 'person', count: 1234 },
-				{ name: 'car', count: 567 },
-				{ name: 'dog', count: 89 },
-				{ name: 'cat', count: 156 },
-				{ name: 'bicycle', count: 42 },
-				{ name: 'truck', count: 203 },
-				{ name: 'bus', count: 78 },
-				{ name: 'motorcycle', count: 31 }
-			];
-			// 加入 id（svelte-dnd-action 必須要有）
-			labelList = mockLabels.map((l, i) => ({ id: i + 1, ...l, selected: true }));
+			// 🎯 監聽數量統計進度
+			countUnlisten = await listen<ScanProgress>(
+				"count-scan-progress",
+				(event) => {
+					console.log(`📊 數量統計: ${event.payload.message}`);
+				},
+			);
 
-			labelScanMessage = `找到 ${labelList.length} 個標籤`;
-			statusMessage = '';
+			// 🎯 監聽格式檢測進度
+			formatUnlisten = await listen<ScanProgress>(
+				"format-analysis-progress",
+				(event) => {
+					console.log(`📊 格式分析: ${event.payload.message}`);
+				},
+			);
+
+			// 🚀 並行啟動三個異步任務（Rust 端使用 Tokio + Rayon 處理）
+			const labelPromise = invoke<string[]>("scan_labelme_labels_async", {
+				inputDir: $sourceDir,
+			});
+
+			const formatPromise = invoke<any>("analyze_labelme_dataset_async", {
+				inputDir: $sourceDir,
+			});
+
+			// 等待標籤掃描和格式檢測完成
+			const [result, formatAnalysis] = await Promise.all([
+				labelPromise,
+				formatPromise,
+			]);
+
+			if (signal.aborted) return;
+
+			// DEBUG: 輸出原始結果
+			console.log("🔍 scan_labelme_labels_async 原始回傳:", result);
+			console.log("🔍 format detection 結果:", formatAnalysis);
+
+			// 轉換為 labelList 格式，並加入 id
+			// 先設定 count 為 0，背景計算後再更新
+			labelList.set(
+				result.map((name: string, i: number) => ({
+					id: i + 1,
+					name,
+					count: 0,
+					selected: true,
+				})),
+			);
+
+			// 🆕 更新檢測到的格式
+			detectedFormat.set(formatAnalysis);
+
+			// DEBUG: 輸出轉換後結果
+			console.log("🔍 轉換後 labelList:", $labelList);
+
+			// 🆕 顯示標籤和格式資訊
+			labelScanMessage.set(
+				`找到 ${$labelList.length} 個標籤 | 格式：${formatAnalysis.format_description}`,
+			);
+			statusMessage.set("");
+
+			// 🚀 在背景啟動數量計算（完全非阻塞）
+			scheduleBackgroundCountCalculation($sourceDir, signal);
 		} catch (error) {
-			statusMessage = `掃描失敗: ${error}`;
+			if (signal.aborted) return;
+			console.error("掃描標籤失敗:", error);
+			statusMessage.set(`掃描失敗: ${error}`);
 		} finally {
-			isScanning = false;
+			// 清理事件監聽器
+			if (labelUnlisten) labelUnlisten();
+			if (countUnlisten) countUnlisten();
+			if (formatUnlisten) formatUnlisten();
+
+			if (!signal.aborted) {
+				isScanning.set(false);
+				isDetectingFormat.set(false);
+			}
+		}
+	}
+
+	// ===== 核彈級別：完全非阻塞的背景計算 =====
+	// 使用 Rust 異步函數，不再需要多層 JS 調度
+	function scheduleBackgroundCountCalculation(
+		sourceDir: string,
+		signal: AbortSignal,
+	) {
+		if ($isCalculatingCounts) return;
+
+		// 簡單的延遲啟動，給 UI 一點喘息時間
+		setTimeout(() => {
+			if (signal.aborted) return;
+			executeBackgroundCountCalculation(sourceDir, signal);
+		}, 100);
+	}
+
+	// ===== 實際執行背景計算（使用異步 Rust API）=====
+	async function executeBackgroundCountCalculation(
+		sourceDir: string,
+		signal: AbortSignal,
+	) {
+		if (signal.aborted || $isCalculatingCounts) return;
+
+		isCalculatingCounts.set(true);
+		console.log("📊 開始背景計算標籤數量...");
+
+		const { invoke } = await import("@tauri-apps/api/core");
+
+		try {
+			const counts = await invoke<Record<string, number>>(
+				"scan_labelme_labels_with_counts_async",
+				{ inputDir: sourceDir },
+			);
+
+			if (signal.aborted) return;
+
+			console.log("📊 標籤數量統計完成:", counts);
+
+			// 更新 labelList 中的 count
+			labelList.update((list) =>
+				list.map((label) => ({
+					...label,
+					count: counts[label.name] ?? 0,
+				})),
+			);
+
+			// 計算總數
+			const totalCount = getTotalAnnotationCount(counts);
+			labelScanMessage.set(
+				`找到 ${$labelList.length} 個標籤，共 ${totalCount.toLocaleString()} 個標註`,
+			);
+		} catch (error) {
+			if (signal.aborted) return;
+			console.error("📊 標籤數量計算失敗:", error);
+		} finally {
+			if (!signal.aborted) {
+				isCalculatingCounts.set(false);
+			}
 		}
 	}
 
 	// ===== 開始轉換 =====
 	async function startExport() {
-		if (!sourceDir) {
-			statusMessage = '請先選擇來源資料夾！';
+		if (!$sourceDir) {
+			statusMessage.set("請先選擇來源路徑！");
 			return;
 		}
 
-		isProcessing = true;
-		progress = 0;
-		stats = { total: 0, processed: 0, success: 0, skipped: 0, failed: 0 };
-		statusMessage = '開始處理...';
+		isProcessing.set(true);
+		progress.set(0);
+		stats.set({
+			total: 0,
+			processed: 0,
+			success: 0,
+			skipped: 0,
+			failed: 0,
+		});
+		detailedStats.set({
+			totalAnnotations: 0,
+			skippedAnnotations: 0,
+			backgroundImages: 0,
+			backgroundFiles: [],
+			filteredEmptyImages: 0,
+			filteredEmptyFiles: [],
+			skippedLabels: [],
+			invalidAnnotations: [],
+		});
+		showInvalidDetails.set(false);
+		statusMessage.set("開始處理...");
+
+		// 啟動模擬進度條（因為後端沒有即時回報進度）
+		startProgressSimulation();
 
 		try {
-			// TODO: 呼叫 Rust 後端
-			// const result = await invoke('turbo_export', {
-			// 	sourceDir,
-			// 	outputDir: outputDir || sourceDir,
-			// 	outputTarget,
-			// 	annotationType,
-			// 	trainRatio: trainRatio / 100,
-			// 	valRatio: valRatio / 100,
-			// 	testRatio: testRatio / 100,
-			// 	labelMapping: useCustomLabels ? getLabelIdMapping() : null,
-			// 	includeBackground,
-			// 	workerCount,
-			// 	randomSeed
-			// });
-
-			// 模擬進度
-			for (let i = 0; i <= 100; i += 5) {
-				await new Promise(resolve => setTimeout(resolve, 100));
-				progress = i;
-				stats.processed = Math.floor(i * 1.5);
-				stats.success = Math.floor(i * 1.4);
+			// 建立標籤列表（按順序）
+			let labelListForConvert: string[] = [];
+			if ($useCustomLabels && $labelList.length > 0) {
+				labelListForConvert = $labelList
+					.filter((l) => l.selected)
+					.map((l) => l.name);
 			}
 
-			stats.total = 150;
-			statusMessage = '✅ 轉換完成！';
+			// 組裝請求參數
+			const request: ConvertLabelMeRequest = {
+				input_dir: $sourceDir,
+				output_dir: $outputDir || null,
+				output_format: $outputTarget,
+				annotation_format: $annotationType,
+				val_size: $valRatio / 100,
+				test_size: $testRatio / 100,
+				seed: $randomSeed,
+				include_background: $useCustomLabels
+					? $includeEmptyLabelImages
+					: false,
+				label_list: labelListForConvert,
+				deterministic_labels: $useCustomLabels,
+				segmentation_mode:
+					$annotationType === "polygon" ? "polygon" : "bbox_only",
+				custom_dataset_name: $customDatasetName || null,
+				remove_image_data: $removeImageData,
+				labelme_output_format: $labelmeOutputFormat,
+			};
+
+			// 呼叫後端進行轉換
+			const result = await convertLabelMe(request);
+
+			// 停止模擬進度
+			stopProgressSimulation();
+
+			if (result.success) {
+				stats.set({
+					total: result.stats.total_files,
+					processed: result.stats.processed_files,
+					success:
+						result.stats.processed_files -
+						result.stats.failed_files,
+					skipped: result.stats.skipped_files,
+					failed: result.stats.failed_files,
+				});
+
+				// 詳細統計
+				detailedStats.set({
+					totalAnnotations: result.stats.total_annotations,
+					skippedAnnotations: result.stats.skipped_annotations,
+					backgroundImages: result.stats.background_images,
+					backgroundFiles: result.stats.background_files || [],
+					filteredEmptyImages:
+						result.stats.filtered_empty_images || 0,
+					filteredEmptyFiles: result.stats.filtered_empty_files || [],
+					skippedLabels: result.stats.skipped_labels || [],
+					invalidAnnotations: result.stats.invalid_annotations || [],
+				});
+
+				progress.set(100);
+
+				// 構建完成訊息
+				let message = `✅ 轉換完成！共處理 ${result.stats.total_annotations.toLocaleString()} 個標註`;
+				if (result.stats.skipped_annotations > 0) {
+					message += `，跳過 ${result.stats.skipped_annotations.toLocaleString()} 個`;
+				}
+				const totalEmptyImages =
+					result.stats.background_images +
+					(result.stats.filtered_empty_images || 0);
+				if (totalEmptyImages > 0) {
+					message += `，無標籤圖片 ${totalEmptyImages} 張`;
+				}
+				statusMessage.set(message);
+			} else {
+				statusMessage.set(`❌ 轉換失敗: ${result.errors.join(", ")}`);
+			}
 		} catch (error) {
-			statusMessage = `❌ 轉換失敗: ${error}`;
+			stopProgressSimulation();
+			console.error("轉換失敗:", error);
+			statusMessage.set(`❌ 轉換失敗: ${error}`);
 		} finally {
-			isProcessing = false;
+			isProcessing.set(false);
+		}
+	}
+
+	// ===== 模擬進度條 =====
+	function startProgressSimulation() {
+		// 模擬進度：快速到 30%，然後慢慢到 90%
+		progress.set(0);
+		progressInterval = setInterval(() => {
+			progress.update((p) => {
+				if (p < 30) return p + 5;
+				else if (p < 60) return p + 2;
+				else if (p < 90) return p + 0.5;
+				return p;
+			});
+			// 最多到 90%，剩下的等實際完成
+		}, 100);
+	}
+
+	function stopProgressSimulation() {
+		if (progressInterval) {
+			clearInterval(progressInterval);
+			progressInterval = null;
 		}
 	}
 </script>
@@ -340,14 +438,18 @@
 	<title>Turbo Export - Dataset App</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 px-4 py-8">
+<div
+	class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 px-4 py-8"
+>
 	<div class="max-w-4xl mx-auto">
 		<!-- 標題 -->
 		<div class="text-center mb-8">
-			<h1 class="text-4xl font-bold text-slate-800 mb-2">
+			<h1
+				class="text-4xl font-bold text-slate-800 dark:text-slate-100 mb-2"
+			>
 				⚡ Turbo Export
 			</h1>
-			<p class="text-slate-600">
+			<p class="text-slate-600 dark:text-slate-400">
 				高效能 LabelMe 轉換工具 — 比 Python 快 100 倍
 			</p>
 		</div>
@@ -355,496 +457,40 @@
 		<!-- 主要設定區塊 -->
 		<div class="space-y-6">
 			<!-- 來源與輸出 -->
-			<section class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-				<h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-					📁 來源與輸出
-				</h2>
-
-				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-					<!-- 來源資料夾 -->
-					<div
-						bind:this={sourceDropZone}
-						class="relative group"
-						role="button"
-						tabindex="0"
-					>
-						<label class="block text-sm font-medium text-slate-700 mb-1">來源資料夾</label>
-						<div class="flex gap-2 transition-all duration-200 {isDraggingOver && activeDropZone !== 'source' ? 'opacity-50' : ''}">
-							<input
-								type="text"
-								bind:value={sourceDir}
-								placeholder="選擇或拖放包含 LabelMe JSON 的資料夾"
-								class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200
-									{activeDropZone === 'source' ? 'border-indigo-400 ring-2 ring-indigo-200' : ''}"
-								readonly
-							/>
-							<button
-								on:click={selectSourceDir}
-								class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
-							>
-								瀏覽
-							</button>
-						</div>
-						<!-- 磨砂玻璃拖放覆蓋層 -->
-						{#if activeDropZone === 'source'}
-							<div class="absolute inset-0 rounded-lg overflow-hidden z-10 animate-pulse-subtle">
-								<div class="absolute inset-0 bg-gradient-to-br from-indigo-500/30 via-indigo-400/20 to-purple-500/30 backdrop-blur-md"></div>
-								<div class="absolute inset-0 border-2 border-dashed border-indigo-400 rounded-lg"></div>
-								<div class="absolute inset-0 flex items-center justify-center">
-									<div class="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
-										<svg class="w-5 h-5 text-indigo-600 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-										</svg>
-										<span class="text-indigo-700 font-semibold text-sm">放開以設定來源</span>
-									</div>
-								</div>
-							</div>
-						{:else if isDraggingOver && activeDropZone !== 'output'}
-							<!-- 拖動中但不在此區域 - 顯示提示邊框 -->
-							<div class="absolute inset-0 rounded-lg border-2 border-dashed border-slate-300 z-10 pointer-events-none"></div>
-						{/if}
-					</div>
-
-					<!-- 輸出資料夾 -->
-					<div
-						bind:this={outputDropZone}
-						class="relative group"
-						role="button"
-						tabindex="0"
-					>
-						<label class="block text-sm font-medium text-slate-700 mb-1">輸出資料夾 (選填)</label>
-						<div class="flex gap-2 transition-all duration-200 {isDraggingOver && activeDropZone !== 'output' ? 'opacity-50' : ''}">
-							<input
-								type="text"
-								bind:value={outputDir}
-								placeholder="預設為來源資料夾"
-								class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200
-									{activeDropZone === 'output' ? 'border-emerald-400 ring-2 ring-emerald-200' : ''}"
-								readonly
-							/>
-							<button
-								on:click={selectOutputDir}
-								class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors text-sm font-medium"
-							>
-								瀏覽
-							</button>
-						</div>
-						<!-- 磨砂玻璃拖放覆蓋層 -->
-						{#if activeDropZone === 'output'}
-							<div class="absolute inset-0 rounded-lg overflow-hidden z-10 animate-pulse-subtle">
-								<div class="absolute inset-0 bg-gradient-to-br from-emerald-500/30 via-emerald-400/20 to-teal-500/30 backdrop-blur-md"></div>
-								<div class="absolute inset-0 border-2 border-dashed border-emerald-400 rounded-lg"></div>
-								<div class="absolute inset-0 flex items-center justify-center">
-									<div class="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
-										<svg class="w-5 h-5 text-emerald-600 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-										</svg>
-										<span class="text-emerald-700 font-semibold text-sm">放開以設定輸出</span>
-									</div>
-								</div>
-							</div>
-						{:else if isDraggingOver && activeDropZone !== 'source'}
-							<!-- 拖動中但不在此區域 - 顯示提示邊框 -->
-							<div class="absolute inset-0 rounded-lg border-2 border-dashed border-slate-300 z-10 pointer-events-none"></div>
-						{/if}
-					</div>
-				</div>
-			</section>
+			<SourceOutputSection
+				bind:sourceDropZone
+				bind:outputDropZone
+				on:sourceSelected={handleSourceSelected}
+			/>
 
 			<!-- 輸出格式 -->
-			<section class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-				<h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-					🎯 輸出格式
-				</h2>
+			<FormatSelector />
 
-				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-					<!-- 目標格式 -->
-					<div>
-						<label class="block text-sm font-medium text-slate-700 mb-2">目標格式</label>
-						<div class="flex gap-2">
-							<button
-								on:click={() => outputTarget = 'yolo'}
-								class="flex-1 px-4 py-3 rounded-lg border-2 transition-all text-sm font-medium
-									{outputTarget === 'yolo'
-										? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-										: 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}"
-							>
-								<div class="font-bold">YOLO</div>
-								<div class="text-xs opacity-75">YOLOv5 / v8 / v11</div>
-							</button>
-							<button
-								on:click={() => outputTarget = 'coco'}
-								class="flex-1 px-4 py-3 rounded-lg border-2 transition-all text-sm font-medium
-									{outputTarget === 'coco'
-										? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-										: 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}"
-							>
-								<div class="font-bold">COCO</div>
-								<div class="text-xs opacity-75">instances.json</div>
-							</button>
-						</div>
-					</div>
-
-					<!-- 標註類型 -->
-					<div>
-						<label class="block text-sm font-medium text-slate-700 mb-2">標註類型</label>
-						<div class="flex gap-2">
-							<button
-								on:click={() => annotationType = 'bbox'}
-								class="flex-1 px-4 py-3 rounded-lg border-2 transition-all text-sm font-medium
-									{annotationType === 'bbox'
-										? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-										: 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}"
-							>
-								<div class="font-bold">Bounding Box</div>
-								<div class="text-xs opacity-75">物件偵測</div>
-							</button>
-							<button
-								on:click={() => annotationType = 'polygon'}
-								class="flex-1 px-4 py-3 rounded-lg border-2 transition-all text-sm font-medium
-									{annotationType === 'polygon'
-										? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-										: 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}"
-							>
-								<div class="font-bold">Polygon</div>
-								<div class="text-xs opacity-75">實例分割</div>
-							</button>
-						</div>
-					</div>
-				</div>
-			</section>
-
-			<!-- 資料集分割 -->
-			<section class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-				<h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-					📊 資料集分割
-				</h2>
-
-				<div class="space-y-4">
-					<!-- Train -->
-					<div class="flex items-center gap-4">
-						<label class="w-20 text-sm font-medium text-slate-700">Train</label>
-						<input
-							type="range"
-							bind:value={trainRatio}
-							on:change={() => adjustRatios('train')}
-							min="0"
-							max="100"
-							class="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-						/>
-						<input
-							type="number"
-							bind:value={trainRatio}
-							on:change={() => adjustRatios('train')}
-							min="0"
-							max="100"
-							class="w-20 px-3 py-1.5 text-right text-sm font-mono border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-						/>
-						<span class="text-sm text-slate-500">%</span>
-					</div>
-
-					<!-- Val -->
-					<div class="flex items-center gap-4">
-						<label class="w-20 text-sm font-medium text-slate-700">Val</label>
-						<input
-							type="range"
-							bind:value={valRatio}
-							on:change={() => adjustRatios('val')}
-							min="0"
-							max="100"
-							class="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
-						/>
-						<input
-							type="number"
-							bind:value={valRatio}
-							on:change={() => adjustRatios('val')}
-							min="0"
-							max="100"
-							class="w-20 px-3 py-1.5 text-right text-sm font-mono border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-						/>
-						<span class="text-sm text-slate-500">%</span>
-					</div>
-
-					<!-- Test -->
-					<div class="flex items-center gap-4">
-						<label class="w-20 text-sm font-medium text-slate-700">Test</label>
-						<input
-							type="range"
-							bind:value={testRatio}
-							on:change={() => adjustRatios('test')}
-							min="0"
-							max="100"
-							class="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-rose-500"
-						/>
-						<input
-							type="number"
-							bind:value={testRatio}
-							on:change={() => adjustRatios('test')}
-							min="0"
-							max="100"
-							class="w-20 px-3 py-1.5 text-right text-sm font-mono border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
-						/>
-						<span class="text-sm text-slate-500">%</span>
-					</div>
-
-					<!-- 視覺化比例條 -->
-					<div class="flex h-3 rounded-full overflow-hidden mt-2">
-						<div class="bg-blue-500" style="width: {trainRatio}%"></div>
-						<div class="bg-amber-500" style="width: {valRatio}%"></div>
-						<div class="bg-rose-500" style="width: {testRatio}%"></div>
-					</div>
-					<div class="flex text-xs text-slate-500">
-						<span class="flex-1">🔵 Train {trainRatio}%</span>
-						<span class="flex-1 text-center">🟡 Val {valRatio}%</span>
-						<span class="flex-1 text-right">🔴 Test {testRatio}%</span>
-					</div>
-				</div>
-			</section>
+			<!-- 資料集分割（LabelMe 輸出時不需要分割）-->
+			{#if $outputTarget !== "labelme"}
+				<SplitRatioSlider />
+			{/if}
 
 			<!-- 標籤選擇 -->
-			<section class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-				<div class="flex items-center justify-between mb-4">
-					<h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
-						🏷️ 標籤選擇
-					</h2>
-					{#if labelScanMessage}
-						<span class="text-sm text-emerald-600 font-medium">{labelScanMessage}</span>
-					{/if}
-				</div>
-
-				<!-- 切換開關 -->
-				<div class="flex items-center gap-3 mb-4">
-					<label class="relative inline-flex items-center cursor-pointer">
-						<input type="checkbox" bind:checked={useCustomLabels} class="sr-only peer" />
-						<div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-					</label>
-					<span class="text-sm text-slate-700">只匯出選定的類別</span>
-				</div>
-
-				{#if useCustomLabels}
-					<div class="space-y-3">
-						<!-- 快速操作 -->
-						<div class="flex gap-2 flex-wrap">
-							<button
-								on:click={selectAllLabels}
-								class="px-3 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition-colors"
-							>
-								全選
-							</button>
-							<button
-								on:click={deselectAllLabels}
-								class="px-3 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition-colors"
-							>
-								全不選
-							</button>
-							<button
-								on:click={scanLabels}
-								disabled={isScanning || !sourceDir}
-								class="px-3 py-1 text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-md transition-colors disabled:opacity-50"
-							>
-								{isScanning ? '掃描中...' : '重新掃描'}
-							</button>
-							<span class="ml-auto text-xs text-slate-500">
-								已選 {labelList.filter(l => l.selected).length} / {labelList.length}
-							</span>
-						</div>
-
-						<!-- 可拖拉排序的標籤表格 -->
-						{#if labelList.length > 0}
-							<div class="border border-slate-200 rounded-lg overflow-hidden">
-								<!-- 表頭 -->
-								<div class="grid grid-cols-[50px_1fr_80px_50px] gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200 text-xs font-medium text-slate-600">
-									<span class="text-center">ID</span>
-									<span>標籤名稱</span>
-									<span class="text-right">數量</span>
-									<span class="text-center">選取</span>
-								</div>
-								<!-- 拖拉提示 -->
-								<div class="px-3 py-1.5 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-1">
-									<span>💡</span>
-									<span>直接拖拉標籤列調整順序 = 調整輸出的 class ID</span>
-								</div>
-								<!-- 標籤列表（可拖拉排序）-->
-								<div
-									class="divide-y divide-slate-100"
-									use:dndzone="{{ items: labelList, flipDurationMs, dropTargetStyle: {} }}"
-									on:consider={handleDndConsider}
-									on:finalize={handleDndFinalize}
-								>
-									{#each labelList as label, index (label.id)}
-										<div
-											animate:flip="{{ duration: flipDurationMs }}"
-											class="grid grid-cols-[50px_1fr_80px_50px] gap-2 px-3 py-2 items-center bg-white cursor-grab active:cursor-grabbing hover:bg-slate-50
-												{label.selected ? '' : 'text-slate-400 bg-slate-50'}"
-										>
-											<!-- ID -->
-											<span class="text-center font-mono text-sm {label.selected ? 'text-indigo-600 font-bold' : ''}">
-												{label.selected ? labelList.slice(0, index + 1).filter(l => l.selected).length - 1 : '-'}
-											</span>
-											<!-- 拖拉手把 + 標籤名稱 -->
-											<div class="flex items-center gap-2 select-none">
-												<span class="text-slate-400">⋮⋮</span>
-												<span class="text-sm font-medium">{label.name}</span>
-											</div>
-											<!-- 數量 -->
-											<span class="text-right text-sm text-slate-500">{label.count.toLocaleString()}</span>
-											<!-- 選取 checkbox -->
-											<div class="flex justify-center" on:mousedown|stopPropagation on:touchstart|stopPropagation>
-												<input
-													type="checkbox"
-													checked={label.selected}
-													on:change={() => toggleLabel(label.id)}
-													class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 cursor-pointer"
-												/>
-											</div>
-										</div>
-									{/each}
-								</div>
-							</div>
-						{:else}
-							<div class="text-center py-8 text-slate-500">
-								{#if !sourceDir}
-									請先選擇來源資料夾以掃描可用標籤
-								{:else if isScanning}
-									<div class="flex items-center justify-center gap-2">
-										<svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
-											<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
-											<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-										</svg>
-										正在掃描標籤...
-									</div>
-								{:else}
-									點擊「重新掃描」以取得標籤列表
-								{/if}
-							</div>
-						{/if}
-					</div>
-				{:else}
-					<p class="text-sm text-slate-500">
-						將自動匯出所有標籤，ID 按照首次出現順序分配
-					</p>
-				{/if}
-			</section>
+			<LabelManager on:rescan={scanLabels} />
 
 			<!-- 進階選項 -->
-			<section class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-				<button
-					on:click={() => showAdvanced = !showAdvanced}
-					class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-slate-50 transition-colors"
-				>
-					<h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
-						⚙️ 進階選項
-					</h2>
-					<svg
-						class="w-5 h-5 text-slate-400 transition-transform {showAdvanced ? 'rotate-180' : ''}"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-					>
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-					</svg>
-				</button>
-
-				{#if showAdvanced}
-					<div class="px-6 pb-6 space-y-4 border-t border-slate-100 pt-4">
-						<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-							<!-- 包含背景圖 -->
-							<label class="flex items-center gap-3 cursor-pointer">
-								<input type="checkbox" bind:checked={includeBackground} class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500" />
-								<div>
-									<div class="text-sm font-medium text-slate-700">包含背景圖片</div>
-									<div class="text-xs text-slate-500">將無標註的圖片也複製到輸出</div>
-								</div>
-							</label>
-
-							<!-- Worker 數量 -->
-							<div>
-								<label class="block text-sm font-medium text-slate-700 mb-1">Worker 線程數</label>
-								<input
-									type="number"
-									bind:value={workerCount}
-									min="0"
-									max="32"
-									class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-								/>
-								<p class="text-xs text-slate-500 mt-1">0 = 自動 (CPU 核心數)</p>
-							</div>
-						</div>
-
-						<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-							<!-- 隨機種子 -->
-							<div>
-								<label class="block text-sm font-medium text-slate-700 mb-1">隨機種子</label>
-								<input
-									type="number"
-									bind:value={randomSeed}
-									min="0"
-									class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-								/>
-								<p class="text-xs text-slate-500 mt-1">用於資料集分割的隨機性</p>
-							</div>
-						</div>
-					</div>
-				{/if}
-			</section>
+			<AdvancedOptions />
 
 			<!-- 執行區塊 -->
-			<section class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-				{#if isProcessing}
-					<!-- 進度顯示 -->
-					<div class="space-y-4">
-						<div class="flex items-center justify-between">
-							<span class="text-sm font-medium text-slate-700">處理進度</span>
-							<span class="text-sm text-slate-500">{progress}%</span>
-						</div>
-						<div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
-							<div
-								class="bg-gradient-to-r from-indigo-500 to-indigo-600 h-3 rounded-full transition-all duration-300"
-								style="width: {progress}%"
-							></div>
-						</div>
-						<div class="grid grid-cols-4 gap-4 text-center text-sm">
-							<div>
-								<div class="text-2xl font-bold text-slate-800">{stats.processed}</div>
-								<div class="text-slate-500">已處理</div>
-							</div>
-							<div>
-								<div class="text-2xl font-bold text-emerald-600">{stats.success}</div>
-								<div class="text-slate-500">成功</div>
-							</div>
-							<div>
-								<div class="text-2xl font-bold text-amber-600">{stats.skipped}</div>
-								<div class="text-slate-500">跳過</div>
-							</div>
-							<div>
-								<div class="text-2xl font-bold text-rose-600">{stats.failed}</div>
-								<div class="text-slate-500">失敗</div>
-							</div>
-						</div>
-					</div>
-				{:else}
-					<!-- 開始按鈕 -->
-					<button
-						on:click={startExport}
-						disabled={!sourceDir}
-						class="w-full py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl font-bold text-lg hover:from-indigo-700 hover:to-indigo-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/25"
-					>
-						🚀 開始轉換
-					</button>
+			<ExportProgress on:startExport={startExport}>
+				{#if $progress === 100 && $stats.processed > 0}
+					<ExportResult />
 				{/if}
-
-				{#if statusMessage}
-					<div class="mt-4 text-center text-sm {statusMessage.includes('✅') ? 'text-emerald-600' : statusMessage.includes('❌') ? 'text-rose-600' : 'text-slate-600'}">
-						{statusMessage}
-					</div>
-				{/if}
-			</section>
+			</ExportProgress>
 		</div>
 
 		<!-- 返回按鈕 -->
 		<div class="mt-8 text-center">
-			<a href="/" class="text-sm text-slate-500 hover:text-slate-700 transition-colors">
+			<a
+				href="/"
+				class="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+			>
 				← 返回首頁
 			</a>
 		</div>
@@ -854,7 +500,8 @@
 <style>
 	/* 微妙的脈動動畫 */
 	@keyframes pulse-subtle {
-		0%, 100% {
+		0%,
+		100% {
 			opacity: 1;
 		}
 		50% {

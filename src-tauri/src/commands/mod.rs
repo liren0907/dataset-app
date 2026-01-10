@@ -5,6 +5,7 @@ pub mod drawing;
 pub mod export;
 pub mod file_ops;
 pub mod labels;
+pub mod labelme_convert;
 pub mod media;
 
 // Re-export all command functions for easy access
@@ -22,5 +23,7 @@ pub use export::*;
 pub use file_ops::*;
 #[allow(unused_imports)]
 pub use labels::*;
+#[allow(unused_imports)]
+pub use labelme_convert::*;
 #[allow(unused_imports)]
 pub use media::*;
