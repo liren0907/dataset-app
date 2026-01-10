@@ -1,5 +1,4 @@
 use chrono::{DateTime, Utc};
-use image::GenericImageView;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -270,11 +269,9 @@ impl DirectoryHandler {
     fn get_image_dimensions(path: &Path) -> Option<ImageDimensions> {
         // Use imagesize to read dimensions from header only (much faster!)
         // This avoids decoding the entire image just to get width/height
-        imagesize::size(path).ok().map(|size| {
-            ImageDimensions {
-                width: size.width as u32,
-                height: size.height as u32,
-            }
+        imagesize::size(path).ok().map(|size| ImageDimensions {
+            width: size.width as u32,
+            height: size.height as u32,
         })
     }
 }

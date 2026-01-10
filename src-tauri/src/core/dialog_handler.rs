@@ -15,25 +15,3 @@ impl DialogHandler {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::path::PathBuf;
-
-    // For testing, we can create a mock dialog handler
-    #[cfg(test)]
-    impl DialogHandler {
-        pub fn select_video_file_test(mock_path: &str) -> Result<String, String> {
-            Ok(mock_path.to_string())
-        }
-    }
-
-    #[test]
-    fn test_select_video_file() {
-        let mock_path = "/path/to/video.mp4";
-        let result = DialogHandler::select_video_file_test(mock_path);
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), mock_path);
-    }
-}

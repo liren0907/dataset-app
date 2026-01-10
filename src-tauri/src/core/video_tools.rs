@@ -1,13 +1,10 @@
-use std::path::{Path, PathBuf};
+#![allow(dead_code)]
+
+use anyhow::Result;
+use opencv::{core::Vector, imgcodecs, prelude::*, videoio};
 use serde::Deserialize;
 use std::fs;
-use opencv::{
-    prelude::*,
-    videoio,
-    imgcodecs,
-    core::Vector,
-};
-use anyhow::{Result, Context};
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -68,10 +65,7 @@ pub fn process_single_video(
     fs::create_dir_all(&video_output_path)?;
 
     // Open video file
-    let mut cap = videoio::VideoCapture::from_file(
-        video_path.to_str().unwrap(),
-        videoio::CAP_ANY
-    )?;
+    let mut cap = videoio::VideoCapture::from_file(video_path.to_str().unwrap(), videoio::CAP_ANY)?;
 
     if !cap.is_opened()? {
         println!("Error: Could not open video {:?}", video_path);
@@ -85,9 +79,16 @@ pub fn process_single_video(
     };
 
     if total_frames > 0 {
-        println!("Processing video: {:?} (Total frames: {})", video_path.file_name().unwrap(), total_frames);
+        println!(
+            "Processing video: {:?} (Total frames: {})",
+            video_path.file_name().unwrap(),
+            total_frames
+        );
     } else {
-        println!("Processing video: {:?} (Frame count unknown)", video_path.file_name().unwrap());
+        println!(
+            "Processing video: {:?} (Frame count unknown)",
+            video_path.file_name().unwrap()
+        );
     }
 
     let mut frame = Mat::default();
@@ -109,25 +110,31 @@ pub fn process_single_video(
             width = config.extraction.frame_digits
         ));
 
-        imgcodecs::imwrite(
-            frame_filename.to_str().unwrap(),
-            &frame,
-            params
-        )?;
+        imgcodecs::imwrite(frame_filename.to_str().unwrap(), &frame, params)?;
         frame_count += 1;
 
         // Print progress every 100 frames
         if frame_count % 100 == 0 {
             if total_frames > 0 {
                 let progress = (frame_count as f32 / total_frames as f32 * 100.0) as i32;
-                println!("  Progress: {} frames extracted from {} ({}%)", frame_count, video_name, progress);
+                println!(
+                    "  Progress: {} frames extracted from {} ({}%)",
+                    frame_count, video_name, progress
+                );
             } else {
-                println!("  Progress: {} frames extracted from {}", frame_count, video_name);
+                println!(
+                    "  Progress: {} frames extracted from {}",
+                    frame_count, video_name
+                );
             }
         }
     }
 
-    println!("Completed {:?} - Extracted {} frames", video_path.file_name().unwrap(), frame_count);
+    println!(
+        "Completed {:?} - Extracted {} frames",
+        video_path.file_name().unwrap(),
+        frame_count
+    );
     Ok(frame_count)
 }
 
@@ -151,7 +158,11 @@ pub fn extract_frames_from_videos(config: &Config) -> Result<()> {
         .collect();
 
     if video_files.is_empty() {
-        println!("No {} files found in {}", config.file_format.input, input_path.display());
+        println!(
+            "No {} files found in {}",
+            config.file_format.input,
+            input_path.display()
+        );
         return Ok(());
     }
 
@@ -176,4 +187,4 @@ pub fn extract_frames_from_videos(config: &Config) -> Result<()> {
     println!("Total videos processed: {}", video_files.len());
     println!("Total frames extracted: {}", total_frame_count);
     Ok(())
-} 
+}
