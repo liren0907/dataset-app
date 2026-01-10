@@ -1,7 +1,6 @@
 <script lang="ts">
-    export let datasetSummary: any; // Or a more specific type if you have one defined
+    export let datasetSummary: any;
 
-    // Helper function, can be kept here or passed as prop if used elsewhere
     function formatPercentage(value, total) {
         if (!total || total === 0) return "0.0%";
         return ((value / total) * 100).toFixed(1) + "%";
@@ -14,81 +13,107 @@
 </script>
 
 {#if datasetSummary}
-    <div class="bg-white/80 backdrop-blur rounded-xl border border-slate-200/60 shadow-sm p-4 mb-6">
-        <h2 class="text-xl font-semibold text-gray-800 mb-3">
-            Dataset Summary
-        </h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-blue-50/80 backdrop-blur p-3 rounded-md border border-blue-200">
-                <h3 class="text-sm font-medium text-blue-800">
-                    File Statistics
-                </h3>
-                <p class="text-sm mt-1">
-                    Total Images: <span class="font-medium"
-                        >{datasetSummary.total_images}</span
-                    >
-                </p>
-                <p class="text-sm mt-1">
-                    Images with Annotations: <span
-                        class="font-medium"
-                        >{datasetSummary.images_with_annotations}</span
-                    >
-                </p>
-                <p class="text-sm mt-1">
-                    Annotation Coverage: <span class="font-medium"
-                        >{formatPercentage(datasetSummary.images_with_annotations, datasetSummary.total_images)}</span
-                    >
-                </p>
-            </div>
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title">
+                <span class="material-symbols-rounded text-primary"
+                    >analytics</span
+                >
+                Dataset Summary
+            </h2>
 
-            <div class="bg-green-50/80 backdrop-blur p-3 rounded-md border border-green-200">
-                <h3 class="text-sm font-medium text-green-800">
-                    Annotation Statistics
-                </h3>
-                <p class="text-sm mt-1">
-                    Total Annotations: <span class="font-medium"
-                        >{datasetSummary.total_annotations}</span
-                    >
-                </p>
-                <p class="text-sm mt-1">
-                    Average per Annotated Image: <span class="font-medium"
-                        >{formatAverage(datasetSummary.total_annotations, datasetSummary.images_with_annotations)}</span
-                    >
-                </p>
-                {#if datasetSummary.annotation_types && datasetSummary.annotation_types.length > 0}
-                <p class="text-sm mt-1">
-                    Annotation Types: <span class="font-medium"
-                        >{datasetSummary.annotation_types.join(
-                            ", ",
-                        )}</span
-                    >
-                </p>
-                {/if}
-            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                <!-- File Statistics -->
+                <div class="stats stats-vertical bg-info/10 shadow">
+                    <div class="stat">
+                        <div class="stat-figure text-info">
+                            <span class="material-symbols-rounded text-2xl"
+                                >image</span
+                            >
+                        </div>
+                        <div class="stat-title">Total Images</div>
+                        <div class="stat-value text-info text-2xl">
+                            {datasetSummary.total_images}
+                        </div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-title">With Annotations</div>
+                        <div class="stat-value text-lg">
+                            {datasetSummary.images_with_annotations}
+                        </div>
+                        <div class="stat-desc">
+                            {formatPercentage(
+                                datasetSummary.images_with_annotations,
+                                datasetSummary.total_images,
+                            )} coverage
+                        </div>
+                    </div>
+                </div>
 
-            <div class="bg-purple-50/80 backdrop-blur p-3 rounded-md border border-purple-200">
-                <h3 class="text-sm font-medium text-purple-800">
-                    Label Statistics
-                </h3>
-                <p class="text-sm mt-1">
-                    Unique Labels: <span class="font-medium"
-                        >{datasetSummary.unique_labels}</span
-                    >
-                </p>
-                {#if datasetSummary.label_counts && Object.keys(datasetSummary.label_counts).length > 0}
-                    <p class="text-sm mt-1">Label Counts:</p>
-                    <ul class="text-xs mt-1 space-y-1 max-h-32 overflow-y-auto pr-2"> 
-                        {#each Object.entries(datasetSummary.label_counts) as [label, count] (label)}
-                            <li class="flex justify-between">
-                                <span class="font-medium truncate pr-2">{label}</span>
-                                <span>{count}</span>
-                            </li>
-                        {/each}
-                    </ul>
-                {:else}
-                    <p class="text-xs text-gray-500 mt-1 italic">No labels found.</p>
-                {/if}
+                <!-- Annotation Statistics -->
+                <div class="stats stats-vertical bg-success/10 shadow">
+                    <div class="stat">
+                        <div class="stat-figure text-success">
+                            <span class="material-symbols-rounded text-2xl"
+                                >edit_note</span
+                            >
+                        </div>
+                        <div class="stat-title">Total Annotations</div>
+                        <div class="stat-value text-success text-2xl">
+                            {datasetSummary.total_annotations}
+                        </div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-title">Avg per Image</div>
+                        <div class="stat-value text-lg">
+                            {formatAverage(
+                                datasetSummary.total_annotations,
+                                datasetSummary.images_with_annotations,
+                            )}
+                        </div>
+                        {#if datasetSummary.annotation_types?.length > 0}
+                            <div class="stat-desc">
+                                Types: {datasetSummary.annotation_types.join(
+                                    ", ",
+                                )}
+                            </div>
+                        {/if}
+                    </div>
+                </div>
+
+                <!-- Label Statistics -->
+                <div class="stats stats-vertical bg-secondary/10 shadow">
+                    <div class="stat">
+                        <div class="stat-figure text-secondary">
+                            <span class="material-symbols-rounded text-2xl"
+                                >label</span
+                            >
+                        </div>
+                        <div class="stat-title">Unique Labels</div>
+                        <div class="stat-value text-secondary text-2xl">
+                            {datasetSummary.unique_labels}
+                        </div>
+                    </div>
+                    {#if datasetSummary.label_counts && Object.keys(datasetSummary.label_counts).length > 0}
+                        <div class="stat">
+                            <div class="stat-title">Label Distribution</div>
+                            <ul
+                                class="text-xs mt-2 space-y-1 max-h-24 overflow-y-auto"
+                            >
+                                {#each Object.entries(datasetSummary.label_counts) as [label, count] (label)}
+                                    <li class="flex justify-between">
+                                        <span
+                                            class="badge badge-sm badge-ghost truncate max-w-[120px]"
+                                            >{label}</span
+                                        >
+                                        <span class="font-mono">{count}</span>
+                                    </li>
+                                {/each}
+                            </ul>
+                        </div>
+                    {/if}
+                </div>
             </div>
         </div>
     </div>
-{/if} 
+{/if}

@@ -42,6 +42,7 @@
     "@tsconfig/svelte": "^5.0.4",
     "@types/eslint": "^9.6.0",
     "autoprefixer": "^10.4.20",
+    "daisyui": "^5.5.14",
     "eslint": "^9.0.0",
     "eslint-plugin-svelte": "^2.36.0",
     "flowbite-svelte": "^0.48.6",

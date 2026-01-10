@@ -1,66 +1,110 @@
 <script lang="ts">
 	// @ts-ignore - SvelteKit 內建模組，運行時正常
-	import { page } from '$app/stores';
+	import { page } from "$app/stores";
+
+	const navItems = [
+		{ href: "/", label: "Home", icon: "home" },
+		{
+			href: "/smart-tools",
+			label: "Smart Tools",
+			icon: "construction",
+			prefix: true,
+		},
+		{
+			href: "/dataset-gallery",
+			label: "Dataset Gallery",
+			icon: "photo_library",
+		},
+		{ href: "/crop-remap", label: "Crop & Remap", icon: "crop" },
+		{
+			href: "/crop-remap-component",
+			label: "Crop Component",
+			icon: "crop_free",
+			prefix: true,
+		},
+		{
+			href: "/dataset-gallery-advanced",
+			label: "Gallery Advanced",
+			icon: "auto_awesome",
+		},
+		{
+			href: "/imageViewer3",
+			label: "Image Viewer 3",
+			icon: "visibility",
+			prefix: true,
+		},
+	];
+
+	function isActive(
+		href: string,
+		pathname: string,
+		prefix?: boolean,
+	): boolean {
+		return prefix ? pathname.startsWith(href) : pathname === href;
+	}
 </script>
 
 <header class="sticky top-0 z-40">
-	<nav class="backdrop-blur supports-[backdrop-filter]:bg-white/60 bg-white/80 border-b border-slate-200/60">
-		<div class="max-w-7xl mx-auto px-4">
-			<div class="h-16 flex justify-between items-center">
-				<div class="flex items-center gap-3">
-					<span class="text-lg font-semibold tracking-tight text-slate-800">Dataset App</span>
+	<nav class="navbar bg-base-100/80 backdrop-blur border-b border-base-200">
+		<div class="navbar-start">
+			<span
+				class="text-lg font-semibold tracking-tight flex items-center gap-2"
+			>
+				<span class="material-symbols-rounded text-primary"
+					>database</span
+				>
+				Dataset App
+			</span>
+		</div>
+		<div class="navbar-center hidden lg:flex">
+			<ul class="menu menu-horizontal px-1">
+				{#each navItems as item}
+					{@const active = isActive(
+						item.href,
+						$page.url.pathname,
+						item.prefix,
+					)}
+					<li>
+						<a href={item.href} class={active ? "active" : ""}>
+							<span class="material-symbols-rounded icon-sm"
+								>{item.icon}</span
+							>
+							{item.label}
+						</a>
+					</li>
+				{/each}
+			</ul>
+		</div>
+		<div class="navbar-end lg:hidden">
+			<div class="dropdown dropdown-end">
+				<div
+					tabindex="0"
+					role="button"
+					class="btn btn-ghost btn-circle"
+				>
+					<span class="material-symbols-rounded">menu</span>
 				</div>
-				<div class="hidden sm:flex sm:items-center sm:space-x-1">
-					<a
-						href="/"
-						class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:text-slate-900 hover:bg-slate-100 no-underline {$page.url.pathname === '/' ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-300' : 'text-slate-600'}"
-					>
-						Home
-					</a>
-					<a
-						href="/smart-tools"
-						class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:text-slate-900 hover:bg-slate-100 no-underline {$page.url.pathname.startsWith('/smart-tools') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-300' : 'text-slate-600'}"
-					>
-						Smart Tools
-					</a>
-					<a
-						href="/dataset-gallery"
-						class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:text-slate-900 hover:bg-slate-100 no-underline {$page.url.pathname === '/dataset-gallery' ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-300' : 'text-slate-600'}"
-					>
-						Dataset Gallery
-					</a>
-					<a
-						href="/crop-remap"
-						class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:text-slate-900 hover:bg-slate-100 no-underline {$page.url.pathname === '/crop-remap' ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-300' : 'text-slate-600'}"
-					>
-						Crop & Remap
-					</a>
-					<a
-						href="/crop-remap-component"
-						class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:text-slate-900 hover:bg-slate-100 no-underline {$page.url.pathname.startsWith('/crop-remap-component') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-300' : 'text-slate-600'}"
-					>
-						Crop & Remap Component
-					</a>
-					<a
-						href="/dataset-gallery-advanced"
-						class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:text-slate-900 hover:bg-slate-100 no-underline {$page.url.pathname === '/dataset-gallery-advanced' ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-300' : 'text-slate-600'}"
-					>
-						Dataset Gallery Advanced
-					</a>
-					<a
-						href="/imageViewer3"
-						class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:text-slate-900 hover:bg-slate-100 no-underline {$page.url.pathname.startsWith('/imageViewer3') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-300' : 'text-slate-600'}"
-					>
-						Image Viewer 3
-					</a>
-				</div>
+				<ul
+					tabindex="0"
+					class="menu menu-sm dropdown-content mt-3 z-50 p-2 shadow bg-base-100 rounded-box w-52"
+				>
+					{#each navItems as item}
+						{@const active = isActive(
+							item.href,
+							$page.url.pathname,
+							item.prefix,
+						)}
+						<li>
+							<a href={item.href} class={active ? "active" : ""}>
+								<span class="material-symbols-rounded icon-sm"
+									>{item.icon}</span
+								>
+								{item.label}
+							</a>
+						</li>
+					{/each}
+				</ul>
 			</div>
 		</div>
 	</nav>
 </header>
-
-<style>
-	:global(a) {
-		text-decoration: none !important;
-	}
-</style>

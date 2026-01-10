@@ -3,60 +3,48 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Google Material Symbols base styles */
+.material-symbols-outlined,
+.material-symbols-rounded {
+	font-variation-settings:
+		'FILL' 0,
+		'wght' 400,
+		'GRAD' 0,
+		'opsz' 24;
+	user-select: none;
+	vertical-align: middle;
+}
+
+/* Filled variant */
+.material-symbols-outlined.filled,
+.material-symbols-rounded.filled {
+	font-variation-settings:
+		'FILL' 1,
+		'wght' 400,
+		'GRAD' 0,
+		'opsz' 24;
+}
+
+/* Icon sizes */
+.icon-sm { font-size: 18px; }
+.icon-md { font-size: 24px; }
+.icon-lg { font-size: 32px; }
+.icon-xl { font-size: 48px; }
+
 :root {
 	--font-body: 'Inter', Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
 		Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 	--font-mono: 'Fira Mono', monospace;
-	--color-bg-0: #f8fafc;
-	--color-bg-1: #f1f5f9;
-	--color-bg-2: #e2e8f0;
-	--color-theme-1: #3b82f6;
-	--color-theme-2: #1d4ed8;
-	--color-accent: #8b5cf6;
-	--color-text: #1e293b;
-	--color-text-light: #64748b;
 	--column-width: 42rem;
 	--column-margin-top: 4rem;
 	font-family: var(--font-body);
-	color: var(--color-text);
-}
-
-/* Dark Mode Variables */
-.dark {
-	--color-bg-0: #0f172a;
-	--color-bg-1: #1e293b;
-	--color-bg-2: #334155;
-	--color-theme-1: #60a5fa;
-	--color-theme-2: #3b82f6;
-	--color-accent: #a78bfa;
-	--color-text: #f1f5f9;
-	--color-text-light: #94a3b8;
 }
 
 body {
 	min-height: 100vh;
 	margin: 0;
-	background-attachment: fixed;
-	background-color: var(--color-bg-1);
-	background-size: 100vw 100vh;
-	background-image: radial-gradient(
-			50% 50% at 50% 50%,
-			rgba(255, 255, 255, 0.75) 0%,
-			rgba(255, 255, 255, 0) 100%
-		),
-		linear-gradient(180deg, var(--color-bg-0) 0%, var(--color-bg-1) 15%, var(--color-bg-2) 50%);
+	background-color: oklch(var(--b1));
 	transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* Dark mode body background */
-.dark body,
-:root.dark body {
-	background-image: radial-gradient(
-			50% 50% at 50% 50%,
-			rgba(30, 41, 59, 0.75) 0%,
-			rgba(15, 23, 42, 0) 100%
-		),
-		linear-gradient(180deg, var(--color-bg-0) 0%, var(--color-bg-1) 15%, var(--color-bg-2) 50%);
 }
 
 h1,
@@ -70,7 +58,7 @@ p {
 }
 
 a {
-	color: var(--color-theme-1);
+	color: oklch(var(--p));
 	text-decoration: none;
 }
 
@@ -90,12 +78,10 @@ h2 {
 pre {
 	font-size: 16px;
 	font-family: var(--font-mono);
-	background-color: rgba(255, 255, 255, 0.45);
-	border-radius: 3px;
-	box-shadow: 2px 2px 6px rgb(255 255 255 / 25%);
+	background-color: oklch(var(--b2));
+	border-radius: 0.5rem;
 	padding: 0.5em;
 	overflow-x: auto;
-	color: var(--color-text);
 }
 
 .text-column {
@@ -115,32 +101,6 @@ button {
 
 button:focus:not(:focus-visible) {
 	outline: none;
-}
-
-/* Global button styles */
-.btn {
-	@apply px-4 py-2 rounded-md font-medium transition-all duration-200 ease-in-out;
-	background: var(--color-theme-1);
-	color: white;
-}
-
-.btn:hover {
-	@apply transform scale-105;
-	background: var(--color-theme-2);
-}
-
-.btn-secondary {
-	@apply bg-gray-200 text-gray-800;
-}
-
-.btn-secondary:hover {
-	@apply bg-gray-300;
-}
-
-/* Card styles */
-.card {
-	@apply bg-white rounded-lg shadow-md p-6;
-	border: 1px solid var(--color-bg-2);
 }
 
 /* Container styles */
@@ -166,7 +126,7 @@ button:focus:not(:focus-visible) {
 	white-space: nowrap;
 }
 
-/* 隱藏全域滾動條 */
+/* Hide scrollbars globally */
 ::-webkit-scrollbar {
 	width: 0;
 	height: 0;
