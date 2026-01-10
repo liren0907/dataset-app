@@ -1,6 +1,11 @@
 <script lang="ts">
     import { invoke } from "@tauri-apps/api/core";
     import { open } from "@tauri-apps/plugin-dialog";
+    import DirectorySelector from "./components/DirectorySelector.svelte";
+    import AnalysisSection from "./components/AnalysisSection.svelte";
+    import StatsDisplay from "./components/StatsDisplay.svelte";
+    import LabelConfigurator from "./components/LabelConfigurator.svelte";
+    import StatusAlerts from "./components/StatusAlerts.svelte";
 
     let sourceDir: string | null = null;
     let outputDir: string | null = null;
@@ -137,10 +142,6 @@
         return null;
     }
 
-    function getFilteredChildLabels(): string[] {
-        return availableLabels.filter((label) => label !== selectedParentLabel);
-    }
-
     async function runProcessing() {
         if (!sourceDir || !outputDir) {
             errorMessage =
@@ -189,348 +190,159 @@
 </svelte:head>
 
 <div class="container mx-auto px-4 py-8">
-    <div class="max-w-2xl mx-auto">
-        <div class="card bg-base-100 shadow-xl">
-            <div class="card-body">
-                <h1 class="card-title text-2xl flex items-center gap-3">
-                    <span class="material-symbols-rounded text-primary"
-                        >crop</span
-                    >
-                    Crop and Remap Tool
-                </h1>
-                <p class="text-sm opacity-70 mb-6">
-                    Advanced annotation processing with dynamic multi-label
-                    detection based on your dataset
-                </p>
+    <div class="max-w-7xl mx-auto">
+        <!-- Page Header -->
+        <div class="mb-10 text-center">
+            <h1
+                class="text-3xl font-bold mb-2 flex items-center justify-center gap-3"
+            >
+                <span class="material-symbols-rounded text-primary">crop</span>
+                Crop and Remap Tool
+            </h1>
+            <p class="text-opacity-60 max-w-2xl mx-auto">
+                Advanced annotation processing with dynamic multi-label
+                detection based on your dataset
+            </p>
+        </div>
 
-                <div class="space-y-6">
-                    <!-- Source Directory -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-medium"
-                                >Source Directory</span
-                            >
-                        </label>
-                        <div class="join w-full">
-                            <input
-                                type="text"
-                                readonly
-                                placeholder="Select source directory..."
-                                value={sourceDir || ""}
-                                class="input input-bordered join-item flex-1"
-                            />
-                            <button
-                                on:click={() => selectDirectory("source")}
-                                class="btn btn-ghost join-item"
-                            >
-                                <span class="material-symbols-rounded"
-                                    >folder_open</span
-                                >
-                            </button>
-                        </div>
-                    </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Block 1: Source & Analysis (Top Left - Wide) -->
+            <div
+                class="card bg-base-100 border border-base-content/40 col-span-1 lg:col-span-2 shadow-none rounded-2xl"
+            >
+                <div class="card-body">
+                    <h2 class="card-title text-lg mb-4 flex items-center gap-2">
+                        <span class="material-symbols-rounded text-secondary"
+                            >folder_open</span
+                        >
+                        Dataset Source
+                    </h2>
+                    <DirectorySelector
+                        label="Source Directory"
+                        placeholder="Select source directory..."
+                        value={sourceDir}
+                        on:browse={() => selectDirectory("source")}
+                    />
 
-                    <!-- Dataset Analysis -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-medium"
-                                >Dataset Analysis</span
-                            >
-                        </label>
-                        <div class="flex items-center gap-3">
-                            <button
-                                on:click={analyzeDataset}
-                                disabled={!sourceDir || analyzing}
-                                class="btn btn-primary btn-sm"
-                            >
-                                {#if analyzing}
-                                    <span
-                                        class="loading loading-spinner loading-sm"
-                                    ></span>
-                                    Analyzing...
-                                {:else}
-                                    <span
-                                        class="material-symbols-rounded icon-sm"
-                                        >analytics</span
-                                    >
-                                    Analyze Dataset
-                                {/if}
-                            </button>
-                            {#if datasetLoaded}
-                                <span class="badge badge-success gap-1">
-                                    <span
-                                        class="material-symbols-rounded icon-sm"
-                                        >check_circle</span
-                                    >
-                                    Dataset analyzed
-                                </span>
-                            {/if}
-                        </div>
-                        <label class="label">
-                            <span class="label-text-alt opacity-60"
-                                >Analyze your dataset to discover available
-                                labels and get smart suggestions.</span
-                            >
-                        </label>
-                    </div>
+                    <div class="divider my-2">Analysis</div>
 
-                    <!-- Dataset Summary -->
+                    <AnalysisSection
+                        {analyzing}
+                        {datasetLoaded}
+                        disabled={!sourceDir || analyzing}
+                        on:analyze={analyzeDataset}
+                    />
+                </div>
+            </div>
+
+            <!-- Block 2: Statistics (Top Right - Narrow) -->
+            <div
+                class="card bg-base-100 border border-base-content/40 col-span-1 shadow-none rounded-2xl"
+            >
+                <div class="card-body">
+                    <h2 class="card-title text-lg mb-4 flex items-center gap-2">
+                        <span class="material-symbols-rounded text-secondary"
+                            >analytics</span
+                        >
+                        Statistics
+                    </h2>
                     {#if datasetSummary}
+                        <StatsDisplay {datasetSummary} />
+                    {:else}
                         <div
-                            class="stats stats-vertical lg:stats-horizontal shadow w-full bg-primary/10"
+                            class="flex flex-col items-center justify-center h-48 opacity-40 text-center"
                         >
-                            <div class="stat">
-                                <div class="stat-figure text-primary">
-                                    <span
-                                        class="material-symbols-rounded text-2xl"
-                                        >image</span
-                                    >
-                                </div>
-                                <div class="stat-title">Images</div>
-                                <div class="stat-value text-primary text-2xl">
-                                    {datasetSummary.total_images}
-                                </div>
-                            </div>
-                            <div class="stat">
-                                <div class="stat-figure text-secondary">
-                                    <span
-                                        class="material-symbols-rounded text-2xl"
-                                        >edit_note</span
-                                    >
-                                </div>
-                                <div class="stat-title">Annotations</div>
-                                <div class="stat-value text-secondary text-2xl">
-                                    {datasetSummary.total_annotations}
-                                </div>
-                            </div>
-                            <div class="stat">
-                                <div class="stat-figure text-accent">
-                                    <span
-                                        class="material-symbols-rounded text-2xl"
-                                        >label</span
-                                    >
-                                </div>
-                                <div class="stat-title">Labels</div>
-                                <div class="stat-value text-accent text-2xl">
-                                    {datasetSummary.unique_labels}
-                                </div>
-                            </div>
+                            <span class="material-symbols-rounded text-4xl mb-2"
+                                >bar_chart</span
+                            >
+                            <span class="text-sm"
+                                >Load dataset to view stats</span
+                            >
                         </div>
                     {/if}
+                </div>
+            </div>
 
-                    <!-- Output Directory -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-medium"
-                                >Output Directory</span
-                            >
-                        </label>
-                        <div class="join w-full">
-                            <input
-                                type="text"
-                                readonly
-                                placeholder="Select output directory..."
-                                value={outputDir || ""}
-                                class="input input-bordered join-item flex-1"
-                            />
-                            <button
-                                on:click={() => selectDirectory("output")}
-                                class="btn btn-ghost join-item"
-                            >
+            <!-- Block 3: Configuration (Bottom Left - Wide) -->
+            <div
+                class="card bg-base-100 border border-base-content/40 col-span-1 lg:col-span-2 shadow-none rounded-2xl"
+            >
+                <div class="card-body">
+                    <h2 class="card-title text-lg mb-4 flex items-center gap-2">
+                        <span class="material-symbols-rounded text-secondary"
+                            >tune</span
+                        >
+                        Configuration
+                    </h2>
+
+                    <LabelConfigurator
+                        {datasetLoaded}
+                        {availableLabels}
+                        {datasetSummary}
+                        bind:selectedParentLabel
+                        bind:selectedChildLabels
+                        bind:paddingFactor
+                    />
+
+                    <div class="divider my-4">Output</div>
+
+                    <DirectorySelector
+                        label="Output Directory"
+                        placeholder="Select output directory..."
+                        value={outputDir}
+                        on:browse={() => selectDirectory("output")}
+                    />
+                </div>
+            </div>
+
+            <!-- Block 4: Actions (Bottom Right - Narrow) -->
+            <div
+                class="card bg-base-100 border border-base-content/40 col-span-1 flex flex-col shadow-none rounded-2xl"
+            >
+                <div class="card-body">
+                    <h2 class="card-title text-lg mb-4 flex items-center gap-2">
+                        <span class="material-symbols-rounded text-secondary"
+                            >rocket_launch</span
+                        >
+                        Actions
+                    </h2>
+
+                    <div class="flex-1 flex flex-col justify-center">
+                        <button
+                            on:click={runProcessing}
+                            disabled={loading ||
+                                !sourceDir ||
+                                !outputDir ||
+                                !datasetLoaded ||
+                                !selectedParentLabel ||
+                                selectedChildLabels.length === 0}
+                            class="btn btn-primary btn-block btn-lg"
+                        >
+                            {#if loading}
+                                <span class="loading loading-spinner"></span>
+                                Processing...
+                            {:else}
                                 <span class="material-symbols-rounded"
-                                    >folder_open</span
+                                    >play_arrow</span
                                 >
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Dynamic Label Selection -->
-                    {#if datasetLoaded && availableLabels.length > 0}
-                        <!-- Parent Label -->
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text font-medium"
-                                    >Parent Label</span
-                                >
-                            </label>
-                            <select
-                                bind:value={selectedParentLabel}
-                                class="select select-bordered w-full"
-                            >
-                                {#each availableLabels as label}
-                                    <option value={label}>
-                                        {label} ({datasetSummary?.label_counts[
-                                            label
-                                        ] || 0} annotations)
-                                    </option>
-                                {/each}
-                            </select>
-                            <label class="label">
-                                <span class="label-text-alt opacity-60"
-                                    >The label of the object to crop around.</span
-                                >
-                            </label>
-                        </div>
-
-                        <!-- Child Labels -->
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text font-medium"
-                                    >Required Child Labels</span
-                                >
-                            </label>
-                            <div
-                                class="max-h-48 overflow-y-auto space-y-2 p-4 bg-base-200 rounded-lg"
-                            >
-                                {#each getFilteredChildLabels() as label}
-                                    <label
-                                        class="flex items-center cursor-pointer gap-3"
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            bind:group={selectedChildLabels}
-                                            value={label}
-                                            class="checkbox checkbox-primary checkbox-sm"
-                                        />
-                                        <span class="label-text">
-                                            {label}
-                                            <span
-                                                class="badge badge-ghost badge-sm ml-2"
-                                            >
-                                                {datasetSummary?.label_counts[
-                                                    label
-                                                ] || 0}
-                                            </span>
-                                        </span>
-                                    </label>
-                                {/each}
-                            </div>
-                            <label class="label">
-                                <span class="label-text-alt opacity-60">
-                                    Only people wearing at least one of the
-                                    selected items will be processed.
-                                </span>
-                            </label>
-                            {#if selectedChildLabels.length > 0}
-                                <div class="flex flex-wrap gap-1 mt-2">
-                                    {#each selectedChildLabels as label}
-                                        <span
-                                            class="badge badge-primary badge-sm"
-                                            >{label}</span
-                                        >
-                                    {/each}
-                                </div>
+                                Run Crop & Remap
                             {/if}
-                        </div>
+                        </button>
 
-                        <!-- Padding Factor -->
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text font-medium"
-                                    >Padding Factor</span
+                        {#if datasetLoaded && validateSelection()}
+                            <div class="alert alert-error mt-4 text-sm">
+                                <span class="material-symbols-rounded"
+                                    >warning</span
                                 >
-                                <span
-                                    class="label-text-alt badge badge-primary"
-                                >
-                                    {((paddingFactor - 1) * 100).toFixed(0)}% {paddingFactor >
-                                    1
-                                        ? "larger"
-                                        : paddingFactor < 1
-                                          ? "smaller"
-                                          : "original"}
-                                </span>
-                            </label>
-                            <div class="flex items-center gap-4">
-                                <input
-                                    type="range"
-                                    bind:value={paddingFactor}
-                                    min="0.5"
-                                    max="2.0"
-                                    step="0.1"
-                                    class="range range-primary flex-1"
-                                />
-                                <input
-                                    type="number"
-                                    bind:value={paddingFactor}
-                                    min="0.5"
-                                    max="2.0"
-                                    step="0.1"
-                                    class="input input-bordered input-sm w-20 text-center"
-                                />
+                                <span>{validateSelection()}</span>
                             </div>
-                            <div
-                                class="flex justify-between text-xs opacity-50 mt-1"
-                            >
-                                <span>0.5x (50% smaller)</span>
-                                <span>1.0x (original)</span>
-                                <span>2.0x (100% larger)</span>
-                            </div>
-                        </div>
-                    {:else if !datasetLoaded}
-                        <div class="alert alert-warning">
-                            <span class="material-symbols-rounded">info</span>
-                            <span
-                                >Please analyze your dataset first to see
-                                available labels and configure processing
-                                options.</span
-                            >
-                        </div>
-                    {/if}
-                </div>
-
-                <!-- Run Button -->
-                <div class="card-actions mt-6">
-                    <button
-                        on:click={runProcessing}
-                        disabled={loading ||
-                            !sourceDir ||
-                            !outputDir ||
-                            !datasetLoaded ||
-                            !selectedParentLabel ||
-                            selectedChildLabels.length === 0}
-                        class="btn btn-primary btn-block"
-                    >
-                        {#if loading}
-                            <span class="loading loading-spinner"></span>
-                            Processing...
-                        {:else}
-                            <span class="material-symbols-rounded"
-                                >play_arrow</span
-                            >
-                            Run Crop & Remap
                         {/if}
-                    </button>
+                    </div>
 
-                    {#if datasetLoaded && validateSelection()}
-                        <div class="alert alert-error mt-2">
-                            <span class="material-symbols-rounded">warning</span
-                            >
-                            <span>{validateSelection()}</span>
-                        </div>
-                    {/if}
+                    <div class="mt-4">
+                        <StatusAlerts {successMessage} {errorMessage} />
+                    </div>
                 </div>
-
-                <!-- Status Messages -->
-                {#if successMessage}
-                    <div class="alert alert-success mt-4">
-                        <span class="material-symbols-rounded"
-                            >check_circle</span
-                        >
-                        <div>
-                            <h3 class="font-bold">Success!</h3>
-                            <p class="text-sm">{successMessage}</p>
-                        </div>
-                    </div>
-                {/if}
-                {#if errorMessage}
-                    <div class="alert alert-error mt-4">
-                        <span class="material-symbols-rounded">error</span>
-                        <div>
-                            <h3 class="font-bold">Error!</h3>
-                            <p class="text-sm">{errorMessage}</p>
-                        </div>
-                    </div>
-                {/if}
             </div>
         </div>
     </div>
