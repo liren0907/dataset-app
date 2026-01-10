@@ -7,8 +7,7 @@
 		<div class="max-w-7xl mx-auto px-4">
 			<div class="h-16 flex justify-between items-center">
 				<div class="flex items-center gap-3">
-					<div class="h-8 w-8 rounded-lg bg-indigo-600 shadow-sm shadow-indigo-300"></div>
-					<span class="text-lg font-semibold tracking-tight text-slate-800">Dataset Viewer</span>
+					<span class="text-lg font-semibold tracking-tight text-slate-800">Dataset App</span>
 				</div>
 				<div class="hidden sm:flex sm:items-center sm:space-x-1">
 					<a

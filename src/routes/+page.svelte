@@ -28,8 +28,8 @@
 </script>
 
 <svelte:head>
-	<title>Dataset Viewer</title>
-	<meta name="description" content="A modern dataset viewer application" />
+	<title>Dataset App</title>
+	<meta name="description" content="A modern dataset application" />
 </svelte:head>
 
 <div class="px-4 py-10">
@@ -83,22 +83,16 @@
 						<p class="text-sm text-slate-600">Advanced annotation processing with smart label detection.</p>
 					</div>
 				</a>
-				<a href="/optimizedGallery" class="group no-underline">
+				<a href="/dataset-gallery-advanced" class="group no-underline">
 					<div class="h-full rounded-xl border border-slate-200/60 bg-white/70 backdrop-blur p-6 shadow-sm transition-all duration-200 group-hover:shadow-md group-hover:-translate-y-0.5">
 						<h3 class="text-lg font-semibold text-indigo-600 mb-1">Optimized Gallery</h3>
 						<p class="text-sm text-slate-600">Performance-focused gallery for large collections.</p>
 					</div>
 				</a>
-				<a href="/imageViewer" class="group no-underline">
+				<a href="/imageViewer3" class="group no-underline">
 					<div class="h-full rounded-xl border border-slate-200/60 bg-white/70 backdrop-blur p-6 shadow-sm transition-all duration-200 group-hover:shadow-md group-hover:-translate-y-0.5">
 						<h3 class="text-lg font-semibold text-indigo-600 mb-1">Image Viewer</h3>
 						<p class="text-sm text-slate-600">View single images with metadata.</p>
-					</div>
-				</a>
-				<a href="/imageViewer3" class="group no-underline">
-					<div class="h-full rounded-xl border border-slate-200/60 bg-white/70 backdrop-blur p-6 shadow-sm transition-all duration-200 group-hover:shadow-md group-hover:-translate-y-0.5">
-						<h3 class="text-lg font-semibold text-indigo-600 mb-1">Image Viewer 3</h3>
-						<p class="text-sm text-slate-600">Alternate viewer implementation.</p>
 					</div>
 				</a>
 			</div>
