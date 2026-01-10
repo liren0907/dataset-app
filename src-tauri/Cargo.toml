@@ -38,4 +38,7 @@ chrono = "0.4.34"
 lazy_static = "1.4.0"
 imageproc = "0.25.0"
 base64 = "0.22.0"
+imagesize = "0.13"  # Fast image dimension reading without decoding
+tokio = { version = "1", features = ["full"] }  # Async runtime
+rayon = "1.10"  # Parallel processing
 

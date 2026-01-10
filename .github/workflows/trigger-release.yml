@@ -1,0 +1,84 @@
+name: Version Bump & Tag
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'README.md'
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # ============================================================
+          # IMPORTANT: PAT_TOKEN Setup Required
+          # ============================================================
+          # We use a Personal Access Token (PAT) instead of GITHUB_TOKEN
+          # because events triggered by GITHUB_TOKEN do NOT trigger other
+          # workflows. This is a GitHub security measure to prevent
+          # infinite workflow loops.
+          #
+          # Our release flow:
+          #   README version change → This workflow creates tag → build-release.yml builds
+          #
+          # If we used GITHUB_TOKEN, the tag push would NOT trigger build-release.yml!
+          #
+          # Setup Instructions:
+          # 1. Create a PAT at: GitHub → Settings → Developer settings → Personal access tokens
+          # 2. Required permissions: repo (full control of private repositories)
+          # 3. Add as repository secret: Settings → Secrets → Actions → New repository secret
+          #    Name: PAT_TOKEN
+          #    Value: <your-personal-access-token>
+          # ============================================================
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Extract Version from README
+        id: readme_version
+        run: |
+          # Extract version using grep and sed. Assumes format "**Version**: x.x.x"
+          VERSION=$(grep -oP '\*\*Version\*\*: \K[0-9]+\.[0-9]+\.[0-9]+' README.md)
+          echo "Detected version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check if Tag Exists
+        id: check_tag
+        run: |
+          if git rev-parse "v${{ steps.readme_version.outputs.version }}" >/dev/null 2>&1; then
+            echo "Tag v${{ steps.readme_version.outputs.version }} already exists. Skipping."
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update Config Files & Push Tag
+        if: steps.check_tag.outputs.exists == 'false' && steps.readme_version.outputs.version != ''
+        run: |
+          VERSION="${{ steps.readme_version.outputs.version }}"
+
+          # Configure Git
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Update package.json using jq (or sed if jq is annoying with files)
+          # Using a temporary file for sed to be safe
+          sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" package.json
+
+          # Update tauri.conf.json
+          # Tauri v2 config structure: "version": "x.x.x" is at the top level
+          sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" src-tauri/tauri.conf.json
+
+          # Commit changes
+          git add package.json src-tauri/tauri.conf.json
+          git commit -m "chore(release): bump version to $VERSION"
+
+          # Create Tag
+          git tag "v$VERSION"
+
+          # Push changes and tag
+          git push origin main
+          git push origin "v$VERSION"
