@@ -6,6 +6,7 @@
     import AnnotationPanel from "./components/AnnotationPanel.svelte";
     import ImageGallery from "./components/ImageGallery.svelte";
     import ExportModal from "./components/ExportModal.svelte";
+    import ModalAnnotationViewer from "./components/ModalAnnotationViewer.svelte";
     import {
         fetchPaginatedImages,
         fetchImageDetails,
@@ -35,6 +36,8 @@
     let annotationType = "bounding_box";
     let datasetSummary: DatasetSummary | null = null;
     let autoAnnotationEnabled = true;
+    let editMode: "modal" | "sidebar" = "modal";
+    let showAnnotationModal = false;
 
     // Export Modal State
     let showActualExportModal = false;
@@ -570,6 +573,33 @@
                             >
                         </button>
                     </div>
+
+                    <!-- Divider -->
+                    <div class="divider divider-horizontal mx-0 h-6"></div>
+
+                    <!-- Edit Mode Toggle -->
+                    <div class="join">
+                        <button
+                            class={`btn btn-sm join-item gap-2 border-0 ${editMode === "modal" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/60"}`}
+                            on:click={() => (editMode = "modal")}
+                            title="Pop-out Editor Mode"
+                        >
+                            <span class="material-symbols-rounded text-lg"
+                                >open_in_new</span
+                            >
+                            <span class="hidden 2xl:inline">Pop-out</span>
+                        </button>
+                        <button
+                            class={`btn btn-sm join-item gap-2 border-0 ${editMode === "sidebar" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/60"}`}
+                            on:click={() => (editMode = "sidebar")}
+                            title="Sidebar Editor Mode"
+                        >
+                            <span class="material-symbols-rounded text-lg"
+                                >view_sidebar</span
+                            >
+                            <span class="hidden 2xl:inline">Sidebar</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -672,9 +702,14 @@
                                 {selectedImage}
                                 on:pageChange={handlePageChange}
                                 on:imageClick={(e) => {
-                                    // Toggle selection: if clicking same image, deselect it (optional, maybe keep it open?)
-                                    // Let's keep it simple: click opens/replaces sidebar
-                                    selectedImage = e.detail.image;
+                                    // Handle click based on Edit Mode
+                                    if (editMode === "modal") {
+                                        selectedImage = e.detail.image;
+                                        showAnnotationModal = true;
+                                    } else {
+                                        // Sidebar mode: just select it
+                                        selectedImage = e.detail.image;
+                                    }
                                 }}
                             />
                         </div>
@@ -711,6 +746,21 @@
     }}
     on:runExport={(event) => runUnifiedExport(event.detail)}
 />
+
+<!-- Modal Annotation Viewer (Pop-out Mode) -->
+{#if showAnnotationModal && selectedImage}
+    <ModalAnnotationViewer
+        bind:showModal={showAnnotationModal}
+        {selectedImage}
+        {autoAnnotationEnabled}
+        on:close={() => {
+            showAnnotationModal = false;
+        }}
+        on:save={(e) => {
+            console.log("Annotation retained/saved via modal");
+        }}
+    />
+{/if}
 
 <style>
 </style>
