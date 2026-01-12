@@ -38,6 +38,7 @@ fn main() {
             directory::get_paginated_images,
             directory::get_image_details,
             directory::auto_annotate_images,
+            dataset::save_annotation,
             // Advanced processing
             advanced::crop_and_remap_annotations,
             advanced::generate_annotated_previews,

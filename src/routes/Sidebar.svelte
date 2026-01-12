@@ -24,6 +24,12 @@
 			description: "智能工具集",
 		},
 		{
+			href: "/gallery",
+			label: "Unified Gallery",
+			icon: "collections_bookmark",
+			description: "資料集管理與標註",
+		},
+		{
 			href: "/dataset-gallery",
 			label: "Dataset Gallery",
 			icon: "photo_library",

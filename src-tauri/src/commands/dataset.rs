@@ -103,3 +103,70 @@ pub fn get_labelme_summary(path: &str) -> Result<String, String> {
 
     Ok(summary.to_string())
 }
+
+#[derive(Debug, serde::Deserialize)]
+pub struct AnnotationData {
+    pub label: String,
+    pub shape_type: String,
+    pub points: Vec<Vec<f32>>,
+}
+
+#[tauri::command]
+pub fn save_annotation(
+    image_path: String,
+    annotations: Vec<AnnotationData>,
+) -> Result<String, String> {
+    println!("Saving annotations for: {}", image_path);
+
+    let path = std::path::Path::new(&image_path);
+    let parent = path.parent().ok_or("Invalid image path")?;
+    let stem = path.file_stem().ok_or("Invalid filename")?;
+    let json_path = parent.join(format!("{}.json", stem.to_string_lossy()));
+
+    // 1. Read existing JSON or create basic structure
+    let mut json_data: serde_json::Value = if json_path.exists() {
+        let content = std::fs::read_to_string(&json_path)
+            .map_err(|e| format!("Failed to read existing JSON: {}", e))?;
+        serde_json::from_str(&content)
+            .map_err(|e| format!("Failed to parse existing JSON: {}", e))?
+    } else {
+        serde_json::json!({
+            "version": "5.0.1",
+            "flags": {},
+            "shapes": [],
+            "imagePath": path.file_name().unwrap().to_string_lossy(),
+            "imageData": null,
+            "imageHeight": 0, // Should ideally be updated if known
+            "imageWidth": 0
+        })
+    };
+
+    // 2. Convert annotations to LabelMe shapes
+    let new_shapes: Vec<serde_json::Value> = annotations
+        .into_iter()
+        .map(|ann| {
+            serde_json::json!({
+                "label": ann.label,
+                "points": ann.points,
+                "group_id": null,
+                "description": "",
+                "shape_type": ann.shape_type,
+                "flags": {}
+            })
+        })
+        .collect();
+
+    // 3. Update shapes in JSON
+    if let Some(obj) = json_data.as_object_mut() {
+        obj.insert("shapes".to_string(), serde_json::Value::Array(new_shapes));
+    }
+
+    // 4. Write back to file
+    let new_content = serde_json::to_string_pretty(&json_data)
+        .map_err(|e| format!("Failed to serialize JSON: {}", e))?;
+
+    std::fs::write(&json_path, new_content)
+        .map_err(|e| format!("Failed to write JSON file: {}", e))?;
+
+    Ok("Annotations saved successfully".to_string())
+}
