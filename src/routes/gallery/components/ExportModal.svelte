@@ -137,230 +137,373 @@
         aria-modal="true"
         aria-labelledby="export-modal-title"
     >
-        <div class="modal-box max-w-2xl">
+        <div
+            class="modal-box max-w-2xl bg-base-100 p-0 overflow-hidden relative"
+        >
+            <!-- Header Background Accent -->
+            <div
+                class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary opacity-50"
+            ></div>
+
             <!-- Header -->
-            <div class="flex justify-between items-center mb-4">
-                <h3
-                    id="export-modal-title"
-                    class="text-xl font-bold text-base-content"
-                >
-                    Export Dataset
-                </h3>
+            <div class="px-8 pt-8 pb-4 flex justify-between items-center">
+                <div>
+                    <h3
+                        id="export-modal-title"
+                        class="text-2xl font-bold text-base-content flex items-center gap-2"
+                    >
+                        Export Dataset
+                    </h3>
+                    <p class="text-sm text-base-content/60 mt-1">
+                        Configure export settings and format
+                    </p>
+                </div>
                 <button
                     on:click={closeModalEvent}
-                    class="btn btn-sm btn-circle btn-ghost"
+                    class="btn btn-sm btn-circle btn-ghost text-base-content/50 hover:text-base-content hover:bg-base-200 transition-colors"
                     aria-label="Close export modal">✕</button
                 >
             </div>
 
-            <!-- Content -->
-            <div class="space-y-6">
+            <!-- Content Scroll Area -->
+            <div
+                class="px-8 py-2 space-y-8 max-h-[65vh] overflow-y-auto custom-scrollbar"
+            >
                 {#if localError}
-                    <div class="alert alert-error">
+                    <div
+                        class="alert alert-error rounded-xl shadow-sm border border-error/10"
+                    >
                         <span class="material-symbols-rounded">error</span>
                         <span>{localError}</span>
                     </div>
                 {/if}
 
-                <!-- Export Mode -->
+                <!-- Export Mode: Card Selection -->
                 <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium">Export Mode</span>
+                    <label
+                        class="label font-bold text-sm text-base-content/40 uppercase tracking-wider mb-2"
+                    >
+                        Export Format
                     </label>
-                    <div class="flex gap-4">
-                        <label class="label cursor-pointer gap-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- YOLO Card -->
+                        <label class="cursor-pointer group relative">
                             <input
                                 type="radio"
                                 name="exportModeModal"
                                 value="yolo"
                                 bind:group={exportMode}
-                                class="radio radio-primary"
+                                class="peer sr-only"
                             />
-                            <span class="label-text">YOLO Format</span>
+                            <div
+                                class="p-4 rounded-xl border-2 border-base-200 bg-base-100 hover:border-primary/50 peer-checked:border-primary peer-checked:bg-primary/5 transition-all duration-200 h-full flex flex-col gap-2"
+                            >
+                                <div class="flex justify-between items-start">
+                                    <div
+                                        class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center"
+                                    >
+                                        <span class="font-bold text-sm"
+                                            >YOLO</span
+                                        >
+                                    </div>
+                                    <div
+                                        class="w-5 h-5 rounded-full border-2 border-base-300 peer-checked:border-primary peer-checked:bg-primary flex items-center justify-center transition-all"
+                                    >
+                                        <div
+                                            class="w-2 h-2 rounded-full bg-white opacity-0 peer-checked:opacity-100 transition-opacity"
+                                        ></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span
+                                        class="font-bold text-base-content block"
+                                        >YOLO Format</span
+                                    >
+                                    <span class="text-xs text-base-content/60"
+                                        >For object detection & segmentation
+                                        models</span
+                                    >
+                                </div>
+                            </div>
                         </label>
-                        <label class="label cursor-pointer gap-2">
+
+                        <!-- LabelMe Card -->
+                        <label class="cursor-pointer group relative">
                             <input
                                 type="radio"
                                 name="exportModeModal"
                                 value="labelme"
                                 bind:group={exportMode}
-                                class="radio radio-primary"
+                                class="peer sr-only"
                             />
-                            <span class="label-text"
-                                >LabelMe JSON (Extract)</span
+                            <div
+                                class="p-4 rounded-xl border-2 border-base-200 bg-base-100 hover:border-primary/50 peer-checked:border-primary peer-checked:bg-primary/5 transition-all duration-200 h-full flex flex-col gap-2"
                             >
+                                <div class="flex justify-between items-start">
+                                    <div
+                                        class="w-10 h-10 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center"
+                                    >
+                                        <span
+                                            class="material-symbols-rounded text-xl"
+                                            >data_object</span
+                                        >
+                                    </div>
+                                    <div
+                                        class="w-5 h-5 rounded-full border-2 border-base-300 peer-checked:border-primary peer-checked:bg-primary flex items-center justify-center transition-all"
+                                    >
+                                        <div
+                                            class="w-2 h-2 rounded-full bg-white opacity-0 peer-checked:opacity-100 transition-opacity"
+                                        ></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span
+                                        class="font-bold text-base-content block"
+                                        >LabelMe JSON</span
+                                    >
+                                    <span class="text-xs text-base-content/60"
+                                        >Raw annotation extraction</span
+                                    >
+                                </div>
+                            </div>
                         </label>
                     </div>
                 </div>
 
-                <!-- Source Directory -->
-                <div class="form-control">
-                    <label class="label" for="sourceDirInputModal">
-                        <span class="label-text font-medium"
-                            >Source Directory</span
-                        >
+                <!-- Directories Section -->
+                <div class="space-y-4">
+                    <label
+                        class="label font-bold text-sm text-base-content/40 uppercase tracking-wider"
+                    >
+                        Paths Configuration
                     </label>
-                    <input
-                        type="text"
-                        id="sourceDirInputModal"
-                        value={currentDirectoryPath}
-                        readonly
-                        class="input input-bordered bg-base-200 text-base-content/70"
-                    />
-                </div>
 
-                <!-- Output Directory -->
-                <div class="form-control">
-                    <label class="label" for="outputDirInputModal">
-                        <span class="label-text font-medium"
-                            >Output Directory</span
+                    <!-- Source Directory (Read-only aesthetic) -->
+                    <div class="relative group">
+                        <div
+                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
                         >
-                    </label>
-                    <div class="join w-full">
+                            <span
+                                class="material-symbols-rounded text-base-content/30 text-lg"
+                                >folder_open</span
+                            >
+                        </div>
                         <input
                             type="text"
-                            id="outputDirInputModal"
+                            value={currentDirectoryPath}
+                            readonly
+                            class="input input-bordered w-full pl-10 bg-base-200/50 text-base-content/60 cursor-not-allowed rounded-lg focus:outline-none border-transparent"
+                        />
+                        <div
+                            class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+                        >
+                            <span
+                                class="text-xs text-base-content/40 font-medium bg-base-200 px-2 py-0.5 rounded"
+                                >Source</span
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Output Directory (Seamless Input Group) -->
+                    <!-- Flex container acting as a single input box -->
+                    <div
+                        class="flex items-center w-full px-1 py-1 rounded-xl border border-base-300 bg-base-100 hover:border-base-content/30 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all shadow-sm"
+                    >
+                        <div class="pl-3 text-primary">
+                            <span class="material-symbols-rounded">output</span>
+                        </div>
+                        <input
+                            type="text"
                             bind:value={outputDir}
                             readonly
-                            placeholder="Select output directory..."
-                            class="input input-bordered join-item flex-1 bg-base-200 text-base-content/70"
+                            placeholder="Select output destination..."
+                            class="input input-ghost w-full focus:outline-none border-none bg-transparent h-10 text-sm"
                         />
                         <button
                             on:click={selectOutputDirectory}
-                            class="btn btn-neutral join-item"
+                            class="btn btn-sm btn-ghost bg-base-200/80 hover:bg-base-300 text-base-content/70 mr-1 rounded-lg font-medium"
                         >
-                            Browse...
+                            Browse
                         </button>
                     </div>
                 </div>
 
                 {#if exportMode === "yolo"}
-                    <!-- Shape Type -->
-                    <div class="form-control">
-                        <label class="label" for="shapeTypeSelectModal">
-                            <span class="label-text font-medium"
-                                >Shape Type (for YOLO conversion)</span
+                    <div
+                        class="p-5 bg-base-200/30 rounded-2xl border border-base-200"
+                    >
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="material-symbols-rounded text-primary"
+                                >settings_suggest</span
                             >
-                        </label>
-                        <select
-                            id="shapeTypeSelectModal"
-                            bind:value={shapeType}
-                            class="select select-bordered"
-                        >
-                            <option value="polygon">Polygon</option>
-                            <option value="bounding_box">Bounding Box</option>
-                        </select>
-                    </div>
+                            <span
+                                class="font-bold text-sm uppercase tracking-wide opacity-80"
+                                >YOLO Configuration</span
+                            >
+                        </div>
 
-                    <!-- Split Ratios -->
-                    <div class="grid grid-cols-3 gap-4">
-                        <div class="form-control">
-                            <label class="label" for="trainRatioInputModal">
-                                <span class="label-text font-medium"
-                                    >Train Ratio</span
+                        <!-- Shape Type -->
+                        <div class="form-control mb-4">
+                            <label
+                                class="label text-xs font-bold text-base-content/50 uppercase"
+                                >Annotation Type</label
+                            >
+                            <select
+                                id="shapeTypeSelectModal"
+                                bind:value={shapeType}
+                                class="select select-bordered w-full bg-base-100 rounded-lg"
+                            >
+                                <option value="polygon"
+                                    >Polygon (Segmentation)</option
                                 >
-                            </label>
-                            <input
-                                type="number"
-                                id="trainRatioInputModal"
-                                bind:value={trainRatio}
-                                min="0"
-                                max="1"
-                                step="0.01"
-                                class="input input-bordered"
-                            />
+                                <option value="bounding_box"
+                                    >Bounding Box (Detection)</option
+                                >
+                            </select>
                         </div>
-                        <div class="form-control">
-                            <label class="label" for="valRatioInputModal">
-                                <span class="label-text font-medium"
-                                    >Validation Ratio</span
+
+                        <!-- Split Ratios -->
+                        <div>
+                            <label
+                                class="label text-xs font-bold text-base-content/50 uppercase mb-1"
+                                >Dataset Split</label
+                            >
+                            <div class="flex gap-2">
+                                <div
+                                    class="flex-1 p-3 bg-base-100 rounded-lg border border-base-200 flex flex-col gap-1 items-center relative overflow-hidden group"
                                 >
-                            </label>
-                            <input
-                                type="number"
-                                id="valRatioInputModal"
-                                bind:value={valRatio}
-                                min="0"
-                                max="1"
-                                step="0.01"
-                                class="input input-bordered"
-                            />
-                        </div>
-                        <div class="form-control">
-                            <label class="label" for="testRatioInputModal">
-                                <span class="label-text font-medium"
-                                    >Test Ratio</span
+                                    <div
+                                        class="absolute bottom-0 left-0 h-1 bg-green-500 w-full opacity-50"
+                                    ></div>
+                                    <span
+                                        class="text-xs text-base-content/50 font-bold"
+                                        >TRAIN</span
+                                    >
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        max="1"
+                                        bind:value={trainRatio}
+                                        class="w-full text-center font-mono font-bold bg-transparent focus:outline-none"
+                                    />
+                                </div>
+                                <div
+                                    class="flex-1 p-3 bg-base-100 rounded-lg border border-base-200 flex flex-col gap-1 items-center relative overflow-hidden group"
                                 >
-                            </label>
-                            <input
-                                type="number"
-                                id="testRatioInputModal"
-                                bind:value={testRatio}
-                                min="0"
-                                max="1"
-                                step="0.01"
-                                class="input input-bordered"
-                            />
+                                    <div
+                                        class="absolute bottom-0 left-0 h-1 bg-blue-500 w-full opacity-50"
+                                    ></div>
+                                    <span
+                                        class="text-xs text-base-content/50 font-bold"
+                                        >VAL</span
+                                    >
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        max="1"
+                                        bind:value={valRatio}
+                                        class="w-full text-center font-mono font-bold bg-transparent focus:outline-none"
+                                    />
+                                </div>
+                                <div
+                                    class="flex-1 p-3 bg-base-100 rounded-lg border border-base-200 flex flex-col gap-1 items-center relative overflow-hidden group"
+                                >
+                                    <div
+                                        class="absolute bottom-0 left-0 h-1 bg-purple-500 w-full opacity-50"
+                                    ></div>
+                                    <span
+                                        class="text-xs text-base-content/50 font-bold"
+                                        >TEST</span
+                                    >
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        max="1"
+                                        bind:value={testRatio}
+                                        class="w-full text-center font-mono font-bold bg-transparent focus:outline-none"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 {/if}
 
                 <!-- Label Selection -->
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium"
-                            >Labels to Include in Export</span
+                <div class="form-control pb-4">
+                    <div class="flex justify-between items-end mb-2">
+                        <label
+                            class="label font-bold text-sm text-base-content/40 uppercase tracking-wider p-0"
                         >
-                    </label>
+                            Class Filtering
+                        </label>
+                        {#if currentDatasetSummary?.label_counts}
+                            <span class="text-xs text-base-content/40">
+                                {effectivelyIncludedLabelsCount} / {availableLabelsForSelection.length}
+                                classes included
+                            </span>
+                        {/if}
+                    </div>
+
                     {#if currentDatasetSummary?.label_counts && availableLabelsForSelection.length > 0}
-                        <p class="text-xs text-base-content/60 mb-2">
-                            Select labels to include. By default, all are
-                            included.
-                        </p>
                         <div
-                            class="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-3 border border-base-300 rounded-lg bg-base-200"
+                            class="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-1"
                         >
                             {#each Object.entries(currentDatasetSummary.label_counts) as [label, count] (label)}
                                 <button
                                     type="button"
-                                    class={`badge badge-lg cursor-pointer transition-all
+                                    class={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border
                                         ${
                                             !internalExcludedLabels.has(label)
-                                                ? "badge-info"
-                                                : "badge-ghost opacity-60 line-through"
+                                                ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 hover:border-primary/40"
+                                                : "bg-base-200 text-base-content/30 border-transparent decoration-slice line-through hover:bg-base-300"
                                         }`}
                                     on:click={() => toggleLabelExclusion(label)}
                                 >
-                                    {label} ({count})
+                                    {label}
+                                    <span class="opacity-60 ml-1 font-normal"
+                                        >#{count}</span
+                                    >
                                 </button>
                             {/each}
                         </div>
                     {:else if currentDatasetSummary && availableLabelsForSelection.length === 0}
-                        <p class="text-sm text-base-content/60 italic">
-                            No labels found in the dataset summary.
-                        </p>
+                        <div
+                            class="p-8 text-center border-2 border-dashed border-base-300 rounded-xl bg-base-100/50 text-base-content/50"
+                        >
+                            <span
+                                class="material-symbols-rounded text-3xl mb-2 block opacity-50"
+                                >data_array</span
+                            >
+                            <span>No classes found in dataset</span>
+                        </div>
                     {:else}
-                        <p class="text-sm text-base-content/60 italic">
-                            Dataset summary not yet available. Load a directory
-                            first.
-                        </p>
+                        <div
+                            class="p-8 flex justify-center items-center border border-base-200 rounded-xl bg-base-100/50"
+                        >
+                            <span class="loading loading-spinner text-primary"
+                            ></span>
+                        </div>
                     {/if}
                 </div>
             </div>
 
             <!-- Footer -->
-            <div class="modal-action">
+            <div
+                class="px-8 py-5 bg-base-100 border-t border-base-100 flex justify-end gap-3 sticky bottom-0 z-10 w-full"
+            >
                 <button
                     type="button"
-                    class="btn btn-ghost"
+                    class="btn btn-ghost hover:bg-base-200 font-medium text-base-content/70"
                     on:click={closeModalEvent}
-                    disabled={localLoading}
                 >
                     Cancel
                 </button>
                 <button
                     type="button"
-                    class="btn btn-ghost border border-neutral"
+                    class="btn btn-primary min-w-[140px] shadow-lg shadow-primary/20 border-none hover:bg-primary-focus hover:scale-[1.02] active:scale-[0.98] transition-all"
                     on:click={handleRunExport}
                     disabled={localLoading ||
                         !outputDir ||
@@ -368,15 +511,22 @@
                             effectivelyIncludedLabelsCount === 0)}
                 >
                     {#if localLoading}
-                        <span class="loading loading-spinner loading-sm"></span>
-                        Processing...
+                        <span
+                            class="loading loading-spinner loading-sm text-primary-content"
+                        ></span>
                     {:else}
-                        Run Export
+                        <span>Export</span>
+                        <span class="material-symbols-rounded text-lg"
+                            >arrow_forward</span
+                        >
                     {/if}
                 </button>
             </div>
         </div>
-        <form method="dialog" class="modal-backdrop">
+        <form
+            method="dialog"
+            class="modal-backdrop bg-base-300/50 backdrop-blur-sm"
+        >
             <button on:click={closeModalEvent}>close</button>
         </form>
     </dialog>

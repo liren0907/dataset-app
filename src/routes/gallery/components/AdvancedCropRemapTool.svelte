@@ -325,61 +325,75 @@
 
 <svelte:window on:keydown={handleKeydown} on:resize={handleResize} />
 
-<div class="advanced-crop-remap-tool">
+<div class="advanced-crop-remap-tool p-1">
     <div class="space-y-4">
         <!-- Source Directory -->
-        <div>
+        <div class="form-control">
             <label
                 for="sourceDirectoryInput"
-                class="block text-sm font-medium text-gray-700 mb-1"
+                class="label font-medium text-base-content/80 pt-0"
                 >Source Directory</label
             >
-            <div class="flex items-center gap-2">
+            <div class="join w-full">
                 <input
                     id="sourceDirectoryInput"
                     type="text"
                     readonly
                     placeholder="Select source directory..."
                     value={sourceDir || ""}
-                    class="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm truncate"
+                    class="input input-bordered join-item flex-1 bg-base-200 text-base-content/70 text-sm"
                 />
                 <button
                     on:click={() => selectDirectory("source")}
-                    class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md border border-gray-300 text-sm"
+                    class="btn btn-neutral join-item border-base-300"
                     disabled={analyzing}
                 >
                     Browse...
                 </button>
             </div>
             {#if currentDirectory && !sourceDir}
-                <p class="text-xs text-indigo-600 mt-1">
-                    💡 Using current gallery directory: {currentDirectory}
+                <p class="text-xs text-info mt-1 flex items-center gap-1">
+                    <span class="material-symbols-rounded text-sm">info</span>
+                    Using current gallery directory: {currentDirectory}
                 </p>
             {/if}
         </div>
 
         <!-- Dataset Summary -->
         {#if datasetSummary}
-            <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                <h4 class="font-medium text-blue-900 mb-2">
-                    📊 Dataset Summary
-                </h4>
-                <div class="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <span class="font-medium">Total Images:</span>
-                        {datasetSummary.total_images}
-                    </div>
-                    <div>
-                        <span class="font-medium">With Annotations:</span>
-                        {datasetSummary.images_with_annotations}
-                    </div>
-                    <div>
-                        <span class="font-medium">Total Annotations:</span>
-                        {datasetSummary.total_annotations}
-                    </div>
-                    <div>
-                        <span class="font-medium">Unique Labels:</span>
-                        {datasetSummary.unique_labels}
+            <div class="alert alert-info shadow-sm py-3">
+                <div class="flex flex-col w-full">
+                    <h4
+                        class="font-bold text-sm mb-2 opacity-80 flex items-center gap-2"
+                    >
+                        <span class="material-symbols-rounded">analytics</span>
+                        Dataset Summary
+                    </h4>
+                    <div class="grid grid-cols-2 gap-x-8 gap-y-1 text-sm">
+                        <div class="flex justify-between">
+                            <span class="opacity-70">Total Images:</span>
+                            <span class="font-mono font-medium"
+                                >{datasetSummary.total_images}</span
+                            >
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="opacity-70">With Annotations:</span>
+                            <span class="font-mono font-medium"
+                                >{datasetSummary.images_with_annotations}</span
+                            >
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="opacity-70">Total Annotations:</span>
+                            <span class="font-mono font-medium"
+                                >{datasetSummary.total_annotations}</span
+                            >
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="opacity-70">Unique Labels:</span>
+                            <span class="font-mono font-medium"
+                                >{datasetSummary.unique_labels}</span
+                            >
+                        </div>
                     </div>
                 </div>
             </div>
@@ -387,23 +401,29 @@
 
         <!-- Auto Preview Section -->
         {#if datasetLoaded}
-            <div class="bg-purple-50 p-4 rounded-md border border-purple-200">
-                <h4 class="font-medium text-purple-900 mb-3 flex items-center">
-                    <span class="mr-2">👁️</span>
+            <div
+                class="card bg-base-200 border border-base-300 shadow-inner p-4"
+            >
+                <h4
+                    class="font-medium text-base-content mb-3 flex items-center gap-2"
+                >
+                    <span class="material-symbols-rounded text-primary"
+                        >visibility</span
+                    >
                     Dataset Preview
                     {#if previewLoading}
-                        <div
-                            class="ml-2 animate-spin h-4 w-4 border-2 border-purple-600 border-t-transparent rounded-full"
-                        ></div>
+                        <span
+                            class="loading loading-spinner loading-xs text-primary"
+                        ></span>
                     {/if}
                 </h4>
 
                 {#if previewLoading}
-                    <div class="text-sm text-purple-700">
+                    <div class="text-sm text-base-content/60 py-4 text-center">
                         Loading preview images...
                     </div>
                 {:else if previewImages.length > 0}
-                    <div class="text-sm text-purple-700 mb-3">
+                    <div class="text-xs text-base-content/60 mb-3">
                         Here are {previewImages.length} random annotated images from
                         your dataset with annotations already drawn on them:
                     </div>
@@ -412,243 +432,280 @@
                     >
                         {#each previewImages as image, index (image.path)}
                             <div
-                                class="bg-white rounded-lg shadow-sm overflow-hidden border border-purple-200"
+                                class="card card-compact bg-base-100 shadow-sm border border-base-200 overflow-hidden hover:shadow-md transition-all cursor-pointer group"
+                                on:click={() => openPreviewModal(image)}
+                                on:keydown={(e) =>
+                                    e.key === "Enter" &&
+                                    openPreviewModal(image)}
+                                role="button"
+                                tabindex="0"
                             >
-                                <div class="relative pb-[75%]">
-                                    <button
-                                        type="button"
-                                        class="absolute inset-0 w-full h-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-                                        on:click={() => openPreviewModal(image)}
-                                        aria-label={`View full size image: ${image.name}`}
-                                    >
-                                        <img
-                                            src={image.previewUrl}
-                                            alt={image.name}
-                                            class="w-full h-full object-cover hover:opacity-90 transition-opacity"
-                                        />
-                                    </button>
-                                    <div
-                                        class="absolute top-1 right-1 bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full"
-                                    >
-                                        Preview
-                                    </div>
-                                </div>
-                                <div class="p-2">
-                                    <p
-                                        class="text-xs text-gray-600 truncate"
-                                        title={image.name}
-                                    >
-                                        {image.name}
-                                    </p>
-                                </div>
-                            </div>
-                        {/each}
+                                <figure class="relative pb-[75%] bg-base-300">
+                                    <img
+    <!-- Main Tool Card -->
+    <div class="card bg-base-100 shadow-xl border border-base-200 overflow-hidden">
+        <!-- Header Gradient -->
+        <div class="h-1 w-full bg-gradient-to-r from-primary/50 to-secondary/50"></div>
+
+        <div class="card-body p-6 gap-6">
+            <!-- Source Directory Section -->
+            <div class="space-y-3">
+                <label class="label font-bold text-xs text-base-content/40 uppercase tracking-wider pl-1">
+                    Input Source
+                </label>
+
+                <!-- Seamless Input Group: Source Dir -->
+                <div class="flex items-center w-full px-1 py-1 rounded-xl border border-base-300 bg-base-100 hover:border-base-content/30 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all shadow-sm">
+                    <div class="pl-3 text-base-content/40">
+                        <span class="material-symbols-rounded">folder</span>
                     </div>
-                    <div class="text-xs text-purple-600 mt-2">
-                        Click any image to view full size (annotations are
-                        already drawn on the images)
-                    </div>
-                {:else}
-                    <div class="text-sm text-purple-700">
-                        No annotated images found for preview
+                    <input
+                        type="text"
+                        bind:value={sourceDir}
+                        readonly
+                        placeholder="Select source directory..."
+                        class="input input-ghost w-full focus:outline-none border-none bg-transparent h-10 text-sm"
+                    />
+                    <button
+                        on:click={selectSourceDirectory}
+                        class="btn btn-sm btn-ghost bg-base-200/80 hover:bg-base-300 text-base-content/70 mr-1 rounded-lg font-medium"
+                    >
+                        Browse
+                    </button>
+                </div>
+
+                <!-- Dataset Stats (Mini-dashboard) -->
+                {#if datasetSummary}
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+                        <div class="flex flex-col items-center p-2 rounded-lg bg-base-200/30 border border-base-200">
+                            <span class="text-xs text-base-content/50 uppercase font-bold">Total</span>
+                            <span class="font-bold text-lg">{datasetSummary.total_images}</span>
+                        </div>
+                        <div class="flex flex-col items-center p-2 rounded-lg bg-base-200/30 border border-base-200">
+                            <span class="text-xs text-base-content/50 uppercase font-bold">Classes</span>
+                            <span class="font-bold text-lg">{Object.keys(datasetSummary.label_counts).length}</span>
+                        </div>
+                        <!-- Add more stats if needed -->
                     </div>
                 {/if}
             </div>
-        {/if}
 
-        <!-- Output Directory -->
-        <div>
-            <label
-                for="outputDirectoryInput"
-                class="block text-sm font-medium text-gray-700 mb-1"
-                >Output Directory</label
-            >
-            <div class="flex items-center gap-2">
-                <input
-                    id="outputDirectoryInput"
-                    type="text"
-                    readonly
-                    placeholder="Select output directory..."
-                    value={outputDir || ""}
-                    class="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm truncate"
-                />
-                <button
-                    on:click={() => selectDirectory("output")}
-                    class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md border border-gray-300 text-sm"
-                >
-                    Browse...
-                </button>
-            </div>
-        </div>
+            {#if datasetLoaded}
+                <div class="divider my-0 opacity-50"></div>
 
-        <!-- Dynamic Parent Label Selection -->
-        {#if datasetLoaded && availableLabels.length > 0}
-            <div>
-                <label
-                    for="parentLabelSelect"
-                    class="block text-sm font-medium text-gray-700 mb-1"
-                    >Parent Label</label
-                >
-                <select
-                    id="parentLabelSelect"
-                    bind:value={selectedParentLabel}
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-                >
-                    {#each availableLabels as label}
-                        <option value={label}>
-                            {label} ({datasetSummary?.label_counts[label] || 0} annotations)
-                        </option>
-                    {/each}
-                </select>
-                <p class="text-xs text-gray-500 mt-1">
-                    The label of the object to crop around.
-                </p>
-            </div>
+                <!-- Label Configuration Section -->
+                <div class="space-y-6">
+                    <!-- Parent Label Selection -->
+                    <div>
+                        <label class="label font-bold text-xs text-base-content/40 uppercase tracking-wider pl-1 mb-2">
+                            Target Class (Parent)
+                        </label>
+                        {#if availableLabels.length > 0}
+                            <div class="flex flex-wrap gap-2">
+                                {#each availableLabels as label}
+                                    <button
+                                        on:click={() => selectParent(label)}
+                                        class={`px-4 py-2 rounded-xl border transition-all duration-200 flex items-center gap-2
+                                            ${
+                                                selectedParentLabel === label
+                                                    ? "bg-primary text-primary-content border-primary shadow-md shadow-primary/20 scale-[1.02]"
+                                                    : "bg-base-100 text-base-content/70 border-base-300 hover:border-base-content/30 hover:bg-base-200/50"
+                                            }`}
+                                    >
+                                        <span class="font-bold">{label}</span>
+                                        {#if datasetSummary?.label_counts[label]}
+                                            <span class="badge badge-sm bg-base-100/20 border-0 text-current opacity-80">
+                                                {datasetSummary.label_counts[label]}
+                                            </span>
+                                        {/if}
+                                    </button>
+                                {/each}
+                            </div>
+                        {:else}
+                            <div class="p-8 text-center border-2 border-dashed border-base-300 rounded-xl bg-base-100/50 text-base-content/50">
+                                No labels found.
+                            </div>
+                        {/if}
+                    </div>
 
-            <!-- Dynamic Child Labels Selection -->
-            <div>
-                <div class="block text-sm font-medium text-gray-700 mb-2">
-                    Required Child Labels
-                </div>
-                <div
-                    class="max-h-48 overflow-y-auto space-y-2 p-3 bg-gray-50 rounded-md border"
-                >
-                    {#each getFilteredChildLabels() as label}
-                        <div class="flex items-center">
-                            <input
-                                type="checkbox"
-                                bind:group={selectedChildLabels}
-                                value={label}
-                                id="childLabel_{label}"
-                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                            />
-                            <label
-                                for="childLabel_{label}"
-                                class="ml-2 text-sm text-gray-700 cursor-pointer"
-                            >
-                                {label} ({datasetSummary?.label_counts[label] ||
-                                    0} annotations)
+                    <!-- Child Label Selection -->
+                    {#if selectedParentLabel}
+                        <div class="animate-fadeIn">
+                            <label class="label font-bold text-xs text-base-content/40 uppercase tracking-wider pl-1 mb-2 flex justify-between">
+                                <span>Children Classes (Sub-components)</span>
+                                <span class="text-xs font-normal opacity-60">Select at least one</span>
                             </label>
+
+                            <div class="p-4 rounded-2xl bg-base-200/30 border border-base-200">
+                                <div class="flex flex-wrap gap-2">
+                                    {#each availableLabels.filter((l) => l !== selectedParentLabel) as label}
+                                        <button
+                                            on:click={() => toggleChild(label)}
+                                            class={`px-3 py-1.5 rounded-lg text-sm border transition-all duration-200 flex items-center gap-2
+                                                ${
+                                                    selectedChildLabels.includes(label)
+                                                        ? "bg-secondary/10 text-secondary border-secondary/50 font-bold"
+                                                        : "bg-base-100 text-base-content/60 border-base-200 hover:border-base-300"
+                                                }`}
+                                        >
+                                            <!-- Checkbox visual -->
+                                            <div class={`w-4 h-4 rounded border flex items-center justify-center transition-colors
+                                                ${selectedChildLabels.includes(label) ? 'bg-secondary border-secondary' : 'border-base-content/30'}`}>
+                                                {#if selectedChildLabels.includes(label)}
+                                                    <span class="material-symbols-rounded text-[10px] text-white font-bold">check</span>
+                                                {/if}
+                                            </div>
+                                            {label}
+                                        </button>
+                                    {/each}
+                                </div>
+                                {#if availableLabels.length < 2}
+                                    <div class="text-sm text-base-content/50 italic py-2 text-center">
+                                        Not enough classes to create a hierarchy.
+                                    </div>
+                                {/if}
+                            </div>
                         </div>
-                    {/each}
-                </div>
-                <p class="text-xs text-gray-500 mt-1">
-                    Only people wearing at least one of the selected items will
-                    be processed.
-                    {#if selectedChildLabels.length > 0}
-                        <br /><strong>Selected:</strong>
-                        {selectedChildLabels.join(", ")}
-                    {:else}
-                        <br /><strong>Selected:</strong> None
                     {/if}
-                </p>
-            </div>
-        {/if}
+                </div>
 
-        <!-- Analysis Loading State -->
-        {#if !datasetLoaded && sourceDir}
-            <div class="bg-yellow-50 p-3 rounded-md border border-yellow-200">
-                <p class="text-sm text-yellow-800">
-                    📋 Analyzing dataset... Please wait for analysis to
-                    complete.
-                </p>
-            </div>
-        {/if}
+                <!-- Output Directory -->
+                <div class="space-y-3 pt-2">
+                    <label class="label font-bold text-xs text-base-content/40 uppercase tracking-wider pl-1">
+                        Destination
+                    </label>
+                    <div class="flex items-center w-full px-1 py-1 rounded-xl border border-base-300 bg-base-100 hover:border-base-content/30 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all shadow-sm">
+                        <div class="pl-3 text-base-content/40">
+                            <span class="material-symbols-rounded">output</span>
+                        </div>
+                        <input
+                            type="text"
+                            bind:value={outputDir}
+                            readonly
+                            placeholder="Select output directory..."
+                            class="input input-ghost w-full focus:outline-none border-none bg-transparent h-10 text-sm"
+                        />
+                        <button
+                            on:click={selectOutputDirectory}
+                            class="btn btn-sm btn-ghost bg-base-200/80 hover:bg-base-300 text-base-content/70 mr-1 rounded-lg font-medium"
+                        >
+                            Browse
+                        </button>
+                    </div>
+                </div>
+            {/if}
 
-        <!-- Padding Factor -->
-        {#if datasetLoaded}
-            <div>
-                <label
-                    for="paddingFactor"
-                    class="block text-sm font-medium text-gray-700 mb-1"
-                >
-                    Padding Factor
-                    <span class="text-indigo-600 font-medium"
-                        >({((paddingFactor - 1) * 100).toFixed(0)}% {paddingFactor >
-                        1
-                            ? "larger"
-                            : paddingFactor < 1
-                              ? "smaller"
-                              : "original"})</span
+            <!-- Analysis Loading State -->
+            {#if !datasetLoaded && sourceDir}
+                <div class="alert alert-warning shadow-sm">
+                    <span class="loading loading-spinner loading-sm"></span>
+                    <span>Analyzing dataset... Please wait.</span>
+                </div>
+            {/if}
+
+            <!-- Padding Factor -->
+            {#if datasetLoaded}
+                <div class="form-control">
+                    <label
+                        for="paddingFactor"
+                        class="label font-medium text-base-content/80"
                     >
-                </label>
-                <div class="flex items-center gap-3">
-                    <input
-                        type="range"
-                        id="paddingFactor"
-                        bind:value={paddingFactor}
-                        min="0.5"
-                        max="2.0"
-                        step="0.1"
-                        class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                    />
-                    <input
-                        type="number"
-                        bind:value={paddingFactor}
-                        min="0.5"
-                        max="2.0"
-                        step="0.1"
-                        class="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center"
-                    />
+                        <span>Padding Factor</span>
+                        <span class="badge badge-neutral font-mono">
+                            {((paddingFactor - 1) * 100).toFixed(0)}% {paddingFactor >
+                            1
+                                ? "larger"
+                                : paddingFactor < 1
+                                  ? "smaller"
+                                  : "original"}
+                        </span>
+                    </label>
+                    <div class="flex items-center gap-4 px-1">
+                        <input
+                            type="range"
+                            id="paddingFactor"
+                            bind:value={paddingFactor}
+                            min="0.5"
+                            max="2.0"
+                            step="0.1"
+                            class="range range-primary range-sm flex-1"
+                        />
+                        <input
+                            type="number"
+                            bind:value={paddingFactor}
+                            min="0.5"
+                            max="2.0"
+                            step="0.1"
+                            class="input input-bordered input-sm w-20 text-center font-mono"
+                        />
+                    </div>
+                    <div
+                        class="w-full flex justify-between text-xs px-1 text-base-content/50 mt-1"
+                    >
+                        <span>0.5x</span>
+                        <span>1.0x</span>
+                        <span>2.0x</span>
+                    </div>
                 </div>
-                <div class="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>0.5x (50% smaller)</span>
-                    <span>1.0x (original size)</span>
-                    <span>2.0x (100% larger)</span>
-                </div>
-                <p class="text-xs text-gray-500 mt-1">
-                    Controls how much larger the crop area should be compared to
-                    the parent bounding box. Larger values provide more context
-                    but may include unwanted background.
-                </p>
-            </div>
-        {/if}
+            {/if}
+        </div>
     </div>
 
-    <!-- Run Button -->
-    <div class="mt-6">
-        <button
-            on:click={runProcessing}
-            disabled={loading ||
-                !sourceDir ||
-                !outputDir ||
-                !datasetLoaded ||
-                !selectedParentLabel ||
-                selectedChildLabels.length === 0}
-            class="w-full inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-            {#if loading}
-                <div
-                    class="mr-2 animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"
-                ></div>
-                Processing...
-            {:else}
-                Run Crop & Remap
-            {/if}
-        </button>
+    <!-- Run Button Area -->
+    <div class="mt-8 pt-6 border-t border-base-200">
+        <div class="flex justify-between items-center">
+            <div class="text-sm text-base-content/60">
+                {#if datasetLoaded}
+                    <span class="font-bold text-base-content">{datasetSummary?.total_images || 0}</span> images ready to process
+                {/if}
+            </div>
+            <button
+                on:click={runProcessing}
+                disabled={loading ||
+                    !sourceDir ||
+                    !outputDir ||
+                    !datasetLoaded ||
+                    !selectedParentLabel ||
+                    selectedChildLabels.length === 0}
+                class="btn btn-primary px-8 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:shadow-none"
+            >
+                {#if loading}
+                    <span class="loading loading-spinner loading-sm"></span>
+                    Processing...
+                {:else}
+                    <span class="material-symbols-rounded">play_circle</span>
+                    Start Processing
+                {/if}
+            </button>
+        </div>
 
-        <!-- Validation Warning -->
-        {#if datasetLoaded}
-            {#if validateSelection()}
-                <p class="text-sm text-red-600 mt-2">
-                    ⚠️ {validateSelection()}
-                </p>
-            {/if}
+        <!-- Validation Warning (Toast style) -->
+        {#if datasetLoaded && validateSelection()}
+            <div class="alert alert-warning mt-4 rounded-xl border border-warning/20 bg-warning/5 text-warning-content shadow-sm flex items-start gap-3">
+                <span class="material-symbols-rounded text-xl mt-0.5">warning</span>
+                <div class="text-sm font-medium">{validateSelection()}</div>
+            </div>
         {/if}
     </div>
 
     <!-- Status Messages -->
-    <div class="space-y-3 mt-4">
+    <div class="space-y-3 mt-6">
         {#if successMessage}
-            <div class="bg-green-50 text-green-700 p-3 rounded-md text-sm">
-                <p class="font-medium">Success!</p>
-                <p>{successMessage}</p>
+            <div class="alert alert-success shadow-sm">
+                <span class="material-symbols-rounded">check_circle</span>
+                <div>
+                    <h3 class="font-bold">Success!</h3>
+                    <div class="text-xs">{successMessage}</div>
+                </div>
             </div>
         {/if}
         {#if errorMessage}
-            <div class="bg-red-50 text-red-700 p-3 rounded-md text-sm">
-                <p class="font-medium">Error!</p>
-                <p>{errorMessage}</p>
+            <div class="alert alert-error shadow-sm">
+                <span class="material-symbols-rounded">error</span>
+                <div>
+                    <h3 class="font-bold">Error!</h3>
+                    <div class="text-xs">{errorMessage}</div>
+                </div>
             </div>
         {/if}
     </div>

@@ -93,37 +93,51 @@
         aria-modal="true"
         aria-labelledby="crop-modal-title"
     >
-        <div class="modal-box max-w-2xl">
+        <div
+            class="modal-box max-w-2xl bg-base-100 p-0 overflow-hidden relative"
+        >
+            <!-- Header Accent -->
+            <div
+                class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-secondary to-accent opacity-50"
+            ></div>
+
             <!-- Header -->
-            <div class="flex justify-between items-center mb-4">
-                <h3
-                    id="crop-modal-title"
-                    class="text-xl font-bold text-base-content flex items-center gap-2"
-                >
-                    <span class="material-symbols-rounded text-secondary"
-                        >crop</span
+            <div class="px-8 pt-8 pb-4 flex justify-between items-center">
+                <div>
+                    <h3
+                        id="crop-modal-title"
+                        class="text-2xl font-bold text-base-content flex items-center gap-2"
                     >
-                    Crop & Remap Tool
-                </h3>
+                        Crop & Remap
+                    </h3>
+                    <p class="text-sm text-base-content/60 mt-1">
+                        Simple crop based on parent class
+                    </p>
+                </div>
                 <button
                     on:click={handleClose}
-                    class="btn btn-sm btn-circle btn-ghost"
+                    class="btn btn-sm btn-circle btn-ghost text-base-content/50 hover:text-base-content hover:bg-base-200 transition-colors"
                     aria-label="Close modal"
                     disabled={localLoading}>✕</button
                 >
             </div>
 
             <!-- Content -->
-            <div class="space-y-6">
+            <div class="px-8 py-2 space-y-6">
+                <!-- Status Messages -->
                 {#if localError}
-                    <div class="alert alert-error">
+                    <div
+                        class="alert alert-error rounded-xl shadow-sm border border-error/10"
+                    >
                         <span class="material-symbols-rounded">error</span>
                         <span>{localError}</span>
                     </div>
                 {/if}
 
                 {#if localSuccess}
-                    <div class="alert alert-success">
+                    <div
+                        class="alert alert-success rounded-xl shadow-sm border border-success/10 bg-success/10 text-success-content"
+                    >
                         <span class="material-symbols-rounded"
                             >check_circle</span
                         >
@@ -131,102 +145,122 @@
                     </div>
                 {/if}
 
-                <!-- Description -->
+                <!-- Info Card -->
                 <div
-                    class="text-sm text-base-content/70 bg-base-200 rounded-lg p-4"
+                    class="p-4 bg-info/10 border border-info/20 rounded-xl text-sm text-base-content/80 flex gap-3 items-start"
                 >
-                    <p class="flex items-start gap-2">
-                        <span class="material-symbols-rounded text-info mt-0.5"
+                    <div class="p-1 bg-info/20 rounded-full text-info shrink-0">
+                        <span class="material-symbols-rounded text-lg block"
                             >info</span
                         >
-                        <span>
-                            This tool crops images around a parent label (e.g.,
-                            "person") and remaps child label coordinates to the
-                            cropped region. Useful for creating focused datasets
-                            from larger annotated images.
-                        </span>
-                    </p>
+                    </div>
+                    <div class="leading-relaxed opacity-90">
+                        This tool crops images around a specified <strong
+                            >Parent Label</strong
+                        > (e.g., "person") and remaps all child label coordinates
+                        to the new cropped region.
+                    </div>
                 </div>
 
                 <!-- Source Directory -->
-                <div class="form-control">
-                    <label class="label" for="cropSourceDir">
-                        <span class="label-text font-medium"
-                            >Source Directory</span
-                        >
+                <div class="space-y-2">
+                    <label
+                        class="label font-bold text-xs text-base-content/40 uppercase tracking-wider pl-1 pb-1"
+                    >
+                        Input Source
                     </label>
-                    <div class="join w-full">
+                    <div
+                        class="flex items-center w-full px-1 py-1 rounded-xl border border-base-300 bg-base-100 hover:border-base-content/30 focus-within:ring-2 focus-within:ring-secondary/20 focus-within:border-secondary transition-all shadow-sm"
+                    >
+                        <div class="pl-3 text-secondary/60">
+                            <span class="material-symbols-rounded"
+                                >folder_open</span
+                            >
+                        </div>
                         <input
                             type="text"
-                            id="cropSourceDir"
                             bind:value={sourceDir}
                             readonly
                             placeholder="Select source directory..."
-                            class="input input-bordered join-item flex-1 bg-base-200 text-base-content/70"
+                            class="input input-ghost w-full focus:outline-none border-none bg-transparent h-10 text-sm"
                         />
                         <button
                             on:click={() => selectDirectory("source")}
-                            class="btn btn-neutral join-item"
+                            class="btn btn-sm btn-ghost bg-base-200/80 hover:bg-base-300 text-base-content/70 mr-1 rounded-lg font-medium"
                             disabled={localLoading}
                         >
-                            Browse...
+                            Browse
                         </button>
                     </div>
                 </div>
 
                 <!-- Output Directory -->
-                <div class="form-control">
-                    <label class="label" for="cropOutputDir">
-                        <span class="label-text font-medium"
-                            >Output Directory</span
-                        >
+                <div class="space-y-2">
+                    <label
+                        class="label font-bold text-xs text-base-content/40 uppercase tracking-wider pl-1 pb-1"
+                    >
+                        Destination
                     </label>
-                    <div class="join w-full">
+                    <div
+                        class="flex items-center w-full px-1 py-1 rounded-xl border border-base-300 bg-base-100 hover:border-base-content/30 focus-within:ring-2 focus-within:ring-secondary/20 focus-within:border-secondary transition-all shadow-sm"
+                    >
+                        <div class="pl-3 text-secondary/60">
+                            <span class="material-symbols-rounded">output</span>
+                        </div>
                         <input
                             type="text"
-                            id="cropOutputDir"
                             bind:value={outputDir}
                             readonly
                             placeholder="Select output directory..."
-                            class="input input-bordered join-item flex-1 bg-base-200 text-base-content/70"
+                            class="input input-ghost w-full focus:outline-none border-none bg-transparent h-10 text-sm"
                         />
                         <button
                             on:click={() => selectDirectory("output")}
-                            class="btn btn-neutral join-item"
+                            class="btn btn-sm btn-ghost bg-base-200/80 hover:bg-base-300 text-base-content/70 mr-1 rounded-lg font-medium"
                             disabled={localLoading}
                         >
-                            Browse...
+                            Browse
                         </button>
                     </div>
-                    <p class="text-xs text-base-content/50 mt-1 ml-1">
-                        Results will be loaded into the gallery automatically.
+                    <p class="text-xs text-base-content/40 px-2">
+                        Processed images will be automatically loaded into the
+                        gallery.
                     </p>
                 </div>
 
                 <!-- Parent Label -->
-                <div class="form-control">
-                    <label class="label" for="cropParentLabel">
-                        <span class="label-text font-medium">Parent Label</span>
+                <div class="space-y-2 pb-2">
+                    <label
+                        class="label font-bold text-xs text-base-content/40 uppercase tracking-wider pl-1 pb-1"
+                        for="cropParentLabel"
+                    >
+                        Target Class (Parent)
                     </label>
-                    <input
-                        type="text"
-                        id="cropParentLabel"
-                        bind:value={parentLabel}
-                        placeholder="e.g., person, car, animal"
-                        class="input input-bordered"
-                        disabled={localLoading}
-                    />
-                    <p class="text-xs text-base-content/50 mt-1 ml-1">
-                        The label of the object to crop around.
-                    </p>
+                    <div
+                        class="flex items-center w-full px-1 py-1 rounded-xl border border-base-300 bg-base-100 hover:border-base-content/30 focus-within:ring-2 focus-within:ring-secondary/20 focus-within:border-secondary transition-all shadow-sm"
+                    >
+                        <div class="pl-3 text-base-content/40">
+                            <span class="material-symbols-rounded">label</span>
+                        </div>
+                        <input
+                            type="text"
+                            id="cropParentLabel"
+                            bind:value={parentLabel}
+                            placeholder="e.g., person, car..."
+                            class="input input-ghost w-full focus:outline-none border-none bg-transparent h-10 text-sm font-medium"
+                            disabled={localLoading}
+                        />
+                    </div>
                 </div>
             </div>
 
             <!-- Footer -->
-            <div class="modal-action">
+            <div
+                class="px-8 py-5 bg-base-100 border-t border-base-100 flex justify-end gap-3 sticky bottom-0 z-10 w-full mt-4"
+            >
                 <button
                     type="button"
-                    class="btn btn-ghost"
+                    class="btn btn-ghost hover:bg-base-200 font-medium text-base-content/70"
                     on:click={handleClose}
                     disabled={localLoading}
                 >
@@ -234,7 +268,7 @@
                 </button>
                 <button
                     type="button"
-                    class="btn btn-ghost border border-neutral"
+                    class="btn btn-primary min-w-[140px] shadow-lg shadow-primary/20 border-none hover:bg-primary-focus hover:scale-[1.02] active:scale-[0.98] transition-all"
                     on:click={handleRunCrop}
                     disabled={localLoading ||
                         !sourceDir ||
@@ -242,18 +276,22 @@
                         !parentLabel.trim()}
                 >
                     {#if localLoading}
-                        <span class="loading loading-spinner loading-sm"></span>
-                        Processing...
+                        <span
+                            class="loading loading-spinner loading-sm text-primary-content"
+                        ></span>
                     {:else}
-                        <span class="material-symbols-rounded text-sm"
-                            >play_arrow</span
+                        <span>Run Processing</span>
+                        <span class="material-symbols-rounded text-lg"
+                            >arrow_forward</span
                         >
-                        Run Crop & Remap
                     {/if}
                 </button>
             </div>
         </div>
-        <form method="dialog" class="modal-backdrop">
+        <form
+            method="dialog"
+            class="modal-backdrop bg-base-300/50 backdrop-blur-sm"
+        >
             <button on:click={handleClose} disabled={localLoading}>close</button
             >
         </form>
