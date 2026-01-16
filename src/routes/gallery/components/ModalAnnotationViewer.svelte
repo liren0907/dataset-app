@@ -752,7 +752,8 @@
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
+                <!-- Action Buttons (Removed for current dev stage) -->
+                <!-- 
                 <div class="flex items-center gap-2">
                     <button on:click={handleClose} class="btn btn-ghost btn-sm">
                         Cancel
@@ -761,11 +762,13 @@
                         on:click={handleSave}
                         class="btn btn-neutral btn-sm gap-2 shadow-sm"
                     >
-                        <span class="material-symbols-rounded text-lg"
-                            >check</span
-                        >
+                        <span class="material-symbols-rounded text-lg">check</span>
                         Save Changes
                     </button>
+                </div>
+                -->
+                <div class="flex items-center gap-2">
+                    <!-- Placeholder for future actions or empty -->
                 </div>
             </div>
 
@@ -774,15 +777,16 @@
                 {#if isInitialized}
                     <!-- Control Panel -->
                     <!-- Control Panel (Modern Toolbar) -->
+                    <!-- Control Panel (Modern Toolbar matched to Gallery Navbar) -->
                     <div
-                        class="flex flex-wrap items-center justify-between gap-4 mb-4"
+                        class="navbar bg-base-100 min-h-0 h-14 border border-base-200 shadow-sm rounded-lg px-3 gap-2 mb-4"
                     >
-                        <div class="flex items-center gap-4">
-                            <!-- Zoom Group -->
+                        <!-- Left: Zoom Controls -->
+                        <div class="flex items-center gap-2">
                             <div class="join">
                                 <button
                                     on:click={handleZoomOut}
-                                    class="join-item btn btn-sm btn-ghost"
+                                    class="join-item btn btn-sm btn-ghost text-base-content/70 hover:text-base-content"
                                     title="Zoom Out (-)"
                                 >
                                     <span
@@ -792,7 +796,7 @@
                                 </button>
                                 <button
                                     on:click={handleResetZoom}
-                                    class="join-item btn btn-sm btn-ghost font-normal min-w-[60px]"
+                                    class="join-item btn btn-sm btn-ghost text-base-content/70 hover:text-base-content font-normal min-w-[60px]"
                                     title="Reset Zoom (0)"
                                 >
                                     {konvaManager
@@ -803,7 +807,7 @@
                                 </button>
                                 <button
                                     on:click={handleZoomIn}
-                                    class="join-item btn btn-sm btn-ghost"
+                                    class="join-item btn btn-sm btn-ghost text-base-content/70 hover:text-base-content"
                                     title="Zoom In (=)"
                                 >
                                     <span
@@ -813,51 +817,54 @@
                                 </button>
                             </div>
 
-                            <!-- Fit Button -->
+                            <div
+                                class="divider divider-horizontal mx-0 h-6"
+                            ></div>
+
                             <button
                                 on:click={handleFitToScreen}
-                                class="btn btn-sm btn-ghost gap-2"
+                                class="btn btn-sm btn-ghost gap-2 text-base-content/70 hover:text-base-content"
                                 title="Fit to Screen (R)"
                             >
                                 <span class="material-symbols-rounded text-lg"
                                     >fit_screen</span
                                 >
-                                Fit
+                                <span class="hidden sm:inline font-normal"
+                                    >Fit</span
+                                >
                             </button>
                         </div>
 
-                        <!-- Annotation Tools -->
-                        <div class="join">
-                            <button
-                                on:click={handleSelectAll}
-                                class="join-item btn btn-sm btn-ghost gap-2"
-                                title="Select All (Ctrl+A)"
-                            >
-                                <span class="material-symbols-rounded text-lg"
-                                    >select_all</span
+                        <!-- Right: Annotation Tools (Hidden for current dev stage) -->
+                        <div class="flex-1 flex justify-end">
+                            <!--
+                            <div class="join">
+                                <button
+                                    on:click={handleSelectAll}
+                                    class="join-item btn btn-sm btn-ghost gap-2 text-base-content/70 hover:text-base-content"
+                                    title="Select All (Ctrl+A)"
                                 >
-                                Select All
-                            </button>
-                            <button
-                                on:click={handleDeselect}
-                                class="join-item btn btn-sm btn-ghost gap-2"
-                                title="Deselect (Esc)"
-                            >
-                                <span class="material-symbols-rounded text-lg"
-                                    >deselect</span
+                                    <span class="material-symbols-rounded text-lg">select_all</span>
+                                    <span class="hidden sm:inline font-normal">Select All</span>
+                                </button>
+                                <button
+                                    on:click={handleDeselect}
+                                    class="join-item btn btn-sm btn-ghost gap-2 text-base-content/70 hover:text-base-content"
+                                    title="Deselect (Esc)"
                                 >
-                                Deselect
-                            </button>
-                            <button
-                                on:click={handleDeleteSelected}
-                                class="join-item btn btn-sm btn-ghost text-error hover:bg-error/10 gap-2"
-                                title="Delete Selected (Del)"
-                            >
-                                <span class="material-symbols-rounded text-lg"
-                                    >delete</span
+                                    <span class="material-symbols-rounded text-lg">deselect</span>
+                                    <span class="hidden sm:inline font-normal">Deselect</span>
+                                </button>
+                                <button
+                                    on:click={handleDeleteSelected}
+                                    class="join-item btn btn-sm btn-ghost text-error/70 hover:text-error hover:bg-error/10 gap-2"
+                                    title="Delete Selected (Del)"
                                 >
-                                Delete
-                            </button>
+                                    <span class="material-symbols-rounded text-lg">delete</span>
+                                    <span class="hidden sm:inline font-normal">Delete</span>
+                                </button>
+                            </div>
+                            -->
                         </div>
                     </div>
 

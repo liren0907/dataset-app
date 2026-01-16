@@ -92,8 +92,9 @@
             // Map mock images to match ProcessedImage interface
             images = mockImages.map((img) => ({
                 ...img,
-                previewUrl: img.src,
-                assetUrl: img.src,
+                // Use the properties already set by mockGetImages
+                previewUrl: img.previewUrl,
+                assetUrl: img.assetUrl,
                 annotated: (img.k || 0) > 0, // Mock annotation status
                 // Fill missing required properties with defaults
                 name: img.name || "Mock Image",
