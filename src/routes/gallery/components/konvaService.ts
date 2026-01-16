@@ -2,6 +2,7 @@
 // Handles all KonvaJS-related functionality in a centralized way
 
 import Konva from 'konva';
+import { safeConvertFileSrc } from '../utils/tauriUtils';
 
 export interface KonvaAnnotation {
     label?: string;
@@ -712,8 +713,7 @@ export function createKonvaManager(): KonvaManager {
 export const konvaUtils = {
     // Convert file path to Tauri-compatible URL
     convertFileSrc: (path: string): string => {
-        // This would typically use Tauri's convertFileSrc
-        return path; // Placeholder - actual implementation would use Tauri API
+        return safeConvertFileSrc(path);
     },
 
     // Calculate optimal stage dimensions

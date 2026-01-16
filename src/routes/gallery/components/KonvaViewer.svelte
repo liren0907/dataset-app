@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount, onDestroy } from 'svelte';
+    import { onMount, onDestroy, createEventDispatcher } from 'svelte';
     import { createKonvaManager, type KonvaManager, type KonvaImageData, type KonvaAnnotation } from './konvaService';
 
     // Props

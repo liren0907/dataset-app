@@ -77,14 +77,14 @@
     }
 
     // --- Helper Functions (can be moved from +page.svelte or kept if only used here) ---
-    function formatFileSize(bytes) {
+    function formatFileSize(bytes: number | null | undefined) {
         if (bytes === null || bytes === undefined) return "";
         if (bytes < 1024) return bytes + " B";
         if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
         return (bytes / 1048576).toFixed(1) + " MB";
     }
 
-    function generatePageNumbers(current, total) {
+    function generatePageNumbers(current: number, total: number) {
         let pages: (number | string)[] = [];
         if (total <= 1) return [1];
         pages.push(1);

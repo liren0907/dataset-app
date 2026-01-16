@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount, onDestroy, createEventDispatcher, tick } from "svelte";
-    import { convertFileSrc } from "@tauri-apps/api/core";
+    import { safeConvertFileSrc } from "../utils/tauriUtils";
     import { invoke } from "@tauri-apps/api/core";
     import {
         createKonvaManager,
@@ -112,12 +112,30 @@
         }
     }
 
+    import { mockGeneratePreview } from "../../../mocks/mockFileSystem";
+
+    // ... (existing imports, ensure no duplication if possible, or just place this conveniently)
+    // Note: Since I can't easily check for existing imports in this replace block without context of top of file,
+    // I will assume I need to add the import if it's not there, but `replace_file_content` works on range.
+    // I will replace the loadAnnotationMetadata function mostly.
+
+    // ...
+
     async function loadAnnotationMetadata(): Promise<void> {
         if (!selectedImage?.path) return;
         try {
-            const result = (await invoke("generate_single_annotated_preview", {
-                imagePath: selectedImage.path,
-            })) as string;
+            const isTauri =
+                typeof window !== "undefined" && "__TAURI__" in window;
+            let result: string;
+
+            if (isTauri) {
+                result = (await invoke("generate_single_annotated_preview", {
+                    imagePath: selectedImage.path,
+                })) as string;
+            } else {
+                console.log("🌍 Browser Mode (Panel): Using Mock Preview Data");
+                result = await mockGeneratePreview(selectedImage.path);
+            }
 
             const data = JSON.parse(result);
             if (data.annotation_metadata) {
@@ -126,7 +144,7 @@
                     path: selectedImage.path,
                     previewUrl:
                         selectedImage.previewUrl ||
-                        convertFileSrc(selectedImage.path),
+                        safeConvertFileSrc(selectedImage.path),
                     name: selectedImage.name,
                     annotations: parseAnnotationsFromLabelMe(
                         data.annotation_metadata,
@@ -142,15 +160,6 @@
     // Event handlers
     function handleClose(): void {
         dispatch("close");
-    }
-
-    function handleSave(): void {
-        if (annotatedImageData) {
-            dispatch("save", {
-                image: selectedImage,
-                annotations: annotatedImageData.annotations,
-            });
-        }
     }
 
     // Keyboard shortcuts (simplified for panel)
@@ -244,14 +253,6 @@
             class="w-full h-full"
             style="visibility: {isLoading ? 'hidden' : 'visible'}"
         ></div>
-    </div>
-
-    <!-- Footer Actions -->
-    <div class="p-4 border-t border-base-300 bg-base-100">
-        <button on:click={handleSave} class="btn btn-primary w-full gap-2">
-            <span class="material-symbols-rounded">save</span>
-            Save Changes
-        </button>
     </div>
 </div>
 

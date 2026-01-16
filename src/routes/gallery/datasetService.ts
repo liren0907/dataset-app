@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { convertFileSrc } from "@tauri-apps/api/core";
+import { safeConvertFileSrc } from "./utils/tauriUtils";
 
 // Interface for the structure of an image object from the backend (basic version)
 interface BackendImage {
@@ -45,7 +45,7 @@ function processImagesForService(backendImages: BackendImage[], isFirstPageLoad:
         const actualIndex = isFirstPageLoad ? index : existingImagesLength + index;
         return {
             ...img,
-            previewUrl: convertFileSrc(img.path), // Generate preview URL
+            previewUrl: safeConvertFileSrc(img.path), // Generate preview URL
             isLoaded: false, // Default for lazy loading
             displayIndex: actualIndex, // Critical: used for smart loading decision
             annotated: !!(img.annotations && img.annotations.length > 0 && img.has_json) // Simplified logic

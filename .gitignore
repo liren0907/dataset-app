@@ -19,3 +19,19 @@ reference/
 
 # temp files
 tmp/
+
+
+# Agentic AI related
+.agent/
+
+# IDE
+.vscode/
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/schemas/
+src-tauri/WixTools/
+src-tauri/*.log
+
+# Mock data
+mock_data/

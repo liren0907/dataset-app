@@ -1,18 +1,18 @@
 <script lang="ts">
-    import { onMount, afterUpdate, createEventDispatcher } from 'svelte';
+    import { onMount, afterUpdate, createEventDispatcher } from "svelte";
 
     export let selectedImage: any | null = null; // The image object to display
-    export let annotationType: string = 'bounding_box'; // To display correct annotation info
+    export let annotationType: string = "bounding_box"; // To display correct annotation info
 
     const dispatch = createEventDispatcher();
 
     function close() {
-        dispatch('close');
+        dispatch("close");
     }
 
     // Helper function to format file size
-    function formatFileSize(bytes) {
-        if (bytes === null || bytes === undefined) return '';
+    function formatFileSize(bytes: number | null | undefined) {
+        if (bytes === null || bytes === undefined) return "";
         if (bytes < 1024) return bytes + " B";
         if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
         return (bytes / 1048576).toFixed(1) + " MB";
@@ -22,8 +22,12 @@
     function drawAnnotationsOnModal() {
         if (!selectedImage || !selectedImage.annotations) return;
 
-        const imageElement = document.getElementById("selected-image-modal") as HTMLImageElement;
-        const canvasElement = document.getElementById("annotation-canvas-modal") as HTMLCanvasElement;
+        const imageElement = document.getElementById(
+            "selected-image-modal",
+        ) as HTMLImageElement;
+        const canvasElement = document.getElementById(
+            "annotation-canvas-modal",
+        ) as HTMLCanvasElement;
 
         if (!imageElement || !canvasElement) return;
 
@@ -32,7 +36,9 @@
                 if (imageElement.complete && imageElement.naturalHeight > 0) {
                     drawAnnotationsOnModal();
                 } else {
-                    console.warn("Image in modal could not be loaded for annotation drawing.");
+                    console.warn(
+                        "Image in modal could not be loaded for annotation drawing.",
+                    );
                 }
             };
             imageElement.onload = attemptDraw;
@@ -54,7 +60,7 @@
         const scaleX = canvas.width / naturalWidth;
         const scaleY = canvas.height / naturalHeight;
 
-        selectedImage.annotations.forEach((annotation, index) => {
+        selectedImage.annotations.forEach((annotation: any, index: number) => {
             if (!annotation.points || annotation.points.length === 0) return;
 
             const hue = (index * 30) % 360;
@@ -76,9 +82,15 @@
                 }
             } else if (annotation.shape_type === "polygon") {
                 if (annotation.points.length >= 1) {
-                    ctx.moveTo(annotation.points[0][0] * scaleX, annotation.points[0][1] * scaleY);
+                    ctx.moveTo(
+                        annotation.points[0][0] * scaleX,
+                        annotation.points[0][1] * scaleY,
+                    );
                     for (let i = 1; i < annotation.points.length; i++) {
-                        ctx.lineTo(annotation.points[i][0] * scaleX, annotation.points[i][1] * scaleY);
+                        ctx.lineTo(
+                            annotation.points[i][0] * scaleX,
+                            annotation.points[i][1] * scaleY,
+                        );
                     }
                     if (annotation.points.length >= 3) {
                         ctx.closePath();
@@ -86,8 +98,12 @@
                 }
             }
 
-            const isClosedPolygon = annotation.shape_type === "polygon" && annotation.points.length >= 3;
-            const isRectangle = annotation.shape_type === "rectangle" && annotation.points.length >=2;
+            const isClosedPolygon =
+                annotation.shape_type === "polygon" &&
+                annotation.points.length >= 3;
+            const isRectangle =
+                annotation.shape_type === "rectangle" &&
+                annotation.points.length >= 2;
 
             if (isClosedPolygon || isRectangle) {
                 ctx.fill();
@@ -98,9 +114,9 @@
                 const firstPoint = annotation.points[0];
                 const labelX = firstPoint[0] * scaleX;
                 let labelY = firstPoint[1] * scaleY - 5;
-                if (labelY < 15 && firstPoint[1] * scaleY + 15 < canvas.height) labelY = firstPoint[1] * scaleY + 15;
-                 else if (labelY < 15) labelY = 15;
-
+                if (labelY < 15 && firstPoint[1] * scaleY + 15 < canvas.height)
+                    labelY = firstPoint[1] * scaleY + 15;
+                else if (labelY < 15) labelY = 15;
 
                 ctx.font = "14px Arial";
                 ctx.fillStyle = `hsl(${hue}, 100%, 35%)`;
@@ -110,12 +126,22 @@
     }
 
     afterUpdate(() => {
-        if (selectedImage && selectedImage.annotations && selectedImage.annotations.length > 0) {
+        if (
+            selectedImage &&
+            selectedImage.annotations &&
+            selectedImage.annotations.length > 0
+        ) {
             // Defer to allow DOM to fully update and image to potentially load.
             // The on:load on the image is the primary trigger for drawing.
             // This afterUpdate serves as a fallback if props change after initial load.
             setTimeout(() => {
-                 if (document.getElementById("selected-image-modal")?.complete) {
+                if (
+                    (
+                        document.getElementById(
+                            "selected-image-modal",
+                        ) as HTMLImageElement
+                    )?.complete
+                ) {
                     drawAnnotationsOnModal();
                 }
             }, 50);
@@ -123,10 +149,20 @@
     });
 
     onMount(() => {
-         if (selectedImage && selectedImage.annotations && selectedImage.annotations.length > 0) {
-             // Defer to ensure image is loaded if component mounts with an image already selected
+        if (
+            selectedImage &&
+            selectedImage.annotations &&
+            selectedImage.annotations.length > 0
+        ) {
+            // Defer to ensure image is loaded if component mounts with an image already selected
             setTimeout(() => {
-                if (document.getElementById("selected-image-modal")?.complete) {
+                if (
+                    (
+                        document.getElementById(
+                            "selected-image-modal",
+                        ) as HTMLImageElement
+                    )?.complete
+                ) {
                     drawAnnotationsOnModal();
                 }
             }, 100); // A slightly longer delay onMount just in case.
@@ -134,11 +170,10 @@
     });
 
     function handleKeydown(event: KeyboardEvent) {
-        if (event.key === 'Escape') {
+        if (event.key === "Escape") {
             close();
         }
     }
-
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -159,23 +194,39 @@
             aria-labelledby="modal-title"
         >
             <div class="flex justify-between items-center p-4 border-b">
-                <h3 id="modal-title" class="text-lg font-medium text-slate-800 truncate">
-                    {selectedImage.name || 'Image Details'}
+                <h3
+                    id="modal-title"
+                    class="text-lg font-medium text-slate-800 truncate"
+                >
+                    {selectedImage.name || "Image Details"}
                 </h3>
                 <button
                     on:click={close}
                     class="text-slate-400 hover:text-slate-600 p-2 -mr-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     aria-label="Close image viewer"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                        class="w-6 h-6"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M6 18L18 6M6 6l12 12"
+                        />
                     </svg>
                 </button>
             </div>
             <div
                 class="p-4 flex-grow flex flex-col items-center justify-center overflow-auto min-h-[200px]"
             >
-                <div class="relative w-full h-full flex items-center justify-center">
+                <div
+                    class="relative w-full h-full flex items-center justify-center"
+                >
                     <img
                         id="selected-image-modal"
                         src={selectedImage.previewUrl}
@@ -197,13 +248,22 @@
                         class="mb-3 p-3 bg-green-50/80 backdrop-blur rounded-md border border-green-200 max-h-32 overflow-y-auto"
                     >
                         <h4 class="text-xs font-semibold text-green-800 mb-2">
-                            {annotationType === "bounding_box" ? "Bounding Box" : "Polygon"} Annotations ({selectedImage.annotations.length})
+                            {annotationType === "bounding_box"
+                                ? "Bounding Box"
+                                : "Polygon"} Annotations ({selectedImage
+                                .annotations.length})
                         </h4>
                         <ul class="space-y-1">
                             {#each selectedImage.annotations as annotation, i (i)}
                                 <li class="flex justify-between items-center">
-                                    <span class="text-slate-700 truncate pr-2">{annotation.label || 'Unlabelled'}</span>
-                                    <span class="text-slate-600 font-medium bg-slate-100 px-1.5 py-0.5 rounded text-xs">{annotation.shape_type}</span>
+                                    <span class="text-slate-700 truncate pr-2"
+                                        >{annotation.label ||
+                                            "Unlabelled"}</span
+                                    >
+                                    <span
+                                        class="text-slate-600 font-medium bg-slate-100 px-1.5 py-0.5 rounded text-xs"
+                                        >{annotation.shape_type}</span
+                                    >
                                 </li>
                             {/each}
                         </ul>
@@ -213,25 +273,37 @@
                     {#if selectedImage.size != null}
                         <div>
                             <span class="text-slate-500">Size:</span>
-                            <span class="text-slate-800 font-medium ml-1">{formatFileSize(selectedImage.size)}</span>
+                            <span class="text-slate-800 font-medium ml-1"
+                                >{formatFileSize(selectedImage.size)}</span
+                            >
                         </div>
                     {/if}
                     {#if selectedImage.dimensions}
                         <div>
                             <span class="text-slate-500">Dimensions:</span>
-                            <span class="text-slate-800 font-medium ml-1">{selectedImage.dimensions.width} × {selectedImage.dimensions.height}</span>
+                            <span class="text-slate-800 font-medium ml-1"
+                                >{selectedImage.dimensions.width} × {selectedImage
+                                    .dimensions.height}</span
+                            >
                         </div>
                     {/if}
                     {#if selectedImage.path}
-                         <div class="sm:col-span-3">
+                        <div class="sm:col-span-3">
                             <span class="text-slate-500">Path:</span>
-                            <span class="text-slate-800 font-medium ml-1 break-all">{selectedImage.path}</span>
+                            <span
+                                class="text-slate-800 font-medium ml-1 break-all"
+                                >{selectedImage.path}</span
+                            >
                         </div>
                     {/if}
                     {#if selectedImage.created}
                         <div class="sm:col-span-3 mt-1">
                             <span class="text-slate-500">Created:</span>
-                            <span class="text-slate-800 font-medium ml-1">{new Date(selectedImage.created).toLocaleString()}</span>
+                            <span class="text-slate-800 font-medium ml-1"
+                                >{new Date(
+                                    selectedImage.created,
+                                ).toLocaleString()}</span
+                            >
                         </div>
                     {/if}
                 </div>

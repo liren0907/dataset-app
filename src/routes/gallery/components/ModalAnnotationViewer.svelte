@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount, onDestroy, createEventDispatcher, tick } from "svelte";
-    import { convertFileSrc } from "@tauri-apps/api/core";
+    import { safeConvertFileSrc } from "../utils/tauriUtils";
     import { invoke } from "@tauri-apps/api/core";
     import {
         createKonvaManager,
@@ -344,6 +344,10 @@
         }
     }
 
+    import { mockGeneratePreview } from "../../../mocks/mockFileSystem";
+
+    // ... (existing imports)
+
     // Load annotation metadata from backend and parse for Konva
     async function loadAnnotationMetadata(): Promise<void> {
         if (!selectedImage?.path) return;
@@ -358,16 +362,23 @@
             // 3. Frontend parses and converts to Konva annotation format
             // 4. Original image is used with parsed annotations for drawing
 
-            console.log(
-                "🚀 Invoking Tauri command: generate_single_annotated_preview",
-            );
-            const result = (await invoke("generate_single_annotated_preview", {
-                imagePath: selectedImage.path,
-            })) as string;
-            console.log(
-                "✅ Tauri command completed, result length:",
-                result.length,
-            );
+            const isTauri =
+                typeof window !== "undefined" && "__TAURI__" in window;
+            let result: string;
+
+            if (isTauri) {
+                console.log(
+                    "🚀 Invoking Tauri command: generate_single_annotated_preview",
+                );
+                result = (await invoke("generate_single_annotated_preview", {
+                    imagePath: selectedImage.path,
+                })) as string;
+            } else {
+                console.log("🌍 Browser Mode: Using Mock Preview Data");
+                result = await mockGeneratePreview(selectedImage.path);
+            }
+
+            console.log("✅ Command completed, result length:", result.length);
 
             const data = JSON.parse(result);
 
@@ -383,7 +394,7 @@
                     path: selectedImage.path,
                     previewUrl:
                         selectedImage.previewUrl ||
-                        convertFileSrc(selectedImage.path),
+                        safeConvertFileSrc(selectedImage.path),
                     name: selectedImage.name,
                     annotations: parsedAnnotations,
                 };
@@ -449,7 +460,11 @@
             );
         } catch (konvaError) {
             console.error("❌ KonvaJS initialization failed:", konvaError);
-            throw new Error(`KonvaJS setup failed: ${konvaError.message}`);
+            const errorMessage =
+                konvaError instanceof Error
+                    ? konvaError.message
+                    : String(konvaError);
+            throw new Error(`KonvaJS setup failed: ${errorMessage}`);
         }
     }
 
@@ -496,7 +511,7 @@
                 path: selectedImage.path,
                 previewUrl:
                     selectedImage.previewUrl ||
-                    convertFileSrc(selectedImage.path),
+                    safeConvertFileSrc(selectedImage.path),
                 name: selectedImage.name,
                 annotations: selectedImage.annotations || [],
             };
@@ -722,7 +737,7 @@
                     </button>
                     <button
                         on:click={handleSave}
-                        class="btn btn-ghost border border-neutral btn-sm"
+                        class="btn btn-neutral btn-sm gap-2 shadow-sm"
                     >
                         <span class="material-symbols-rounded text-lg"
                             >check</span
@@ -736,102 +751,95 @@
             <div class="flex-1 flex flex-col p-4 min-h-0">
                 {#if isInitialized}
                     <!-- Control Panel -->
+                    <!-- Control Panel (Modern Toolbar) -->
                     <div
-                        class="flex flex-wrap items-center gap-2 mb-4 p-3 bg-base-200 rounded-lg border border-base-300"
+                        class="flex flex-wrap items-center justify-between gap-4 mb-4"
                     >
-                        <div class="text-sm text-base-content/70 mr-4">
-                            Tools:
+                        <div class="flex items-center gap-4">
+                            <!-- Zoom Group -->
+                            <div class="join">
+                                <button
+                                    on:click={handleZoomOut}
+                                    class="join-item btn btn-sm btn-ghost"
+                                    title="Zoom Out (-)"
+                                >
+                                    <span
+                                        class="material-symbols-rounded text-lg"
+                                        >remove</span
+                                    >
+                                </button>
+                                <button
+                                    on:click={handleResetZoom}
+                                    class="join-item btn btn-sm btn-ghost font-normal min-w-[60px]"
+                                    title="Reset Zoom (0)"
+                                >
+                                    {konvaManager
+                                        ? Math.round(
+                                              konvaManager.getZoomPercentage(),
+                                          ) + "%"
+                                        : "100%"}
+                                </button>
+                                <button
+                                    on:click={handleZoomIn}
+                                    class="join-item btn btn-sm btn-ghost"
+                                    title="Zoom In (=)"
+                                >
+                                    <span
+                                        class="material-symbols-rounded text-lg"
+                                        >add</span
+                                    >
+                                </button>
+                            </div>
+
+                            <!-- Fit Button -->
+                            <button
+                                on:click={handleFitToScreen}
+                                class="btn btn-sm btn-ghost gap-2"
+                                title="Fit to Screen (R)"
+                            >
+                                <span class="material-symbols-rounded text-lg"
+                                    >fit_screen</span
+                                >
+                                Fit
+                            </button>
                         </div>
 
-                        <!-- Zoom Controls -->
+                        <!-- Annotation Tools -->
                         <div class="join">
                             <button
-                                on:click={handleZoomOut}
-                                class="join-item btn btn-sm btn-ghost border border-neutral"
-                                title="Zoom Out (-)"
-                                aria-label="Zoom out"
-                            >
-                                🔍-
-                            </button>
-                            <button
-                                on:click={handleResetZoom}
-                                class="join-item btn btn-sm btn-ghost border border-neutral"
-                                title="Reset Zoom (0)"
-                                aria-label="Reset zoom"
-                            >
-                                100%
-                            </button>
-                            <button
-                                on:click={handleZoomIn}
-                                class="join-item btn btn-sm btn-ghost border border-neutral"
-                                title="Zoom In (=)"
-                                aria-label="Zoom in"
-                            >
-                                🔍+
-                            </button>
-                        </div>
-
-                        <!-- Fit to Screen -->
-                        <button
-                            on:click={handleFitToScreen}
-                            class="btn btn-sm btn-ghost border border-neutral ml-2"
-                            title="Fit to Screen (R)"
-                            aria-label="Fit to screen"
-                        >
-                            📐 Fit
-                        </button>
-
-                        <!-- Annotation Controls -->
-                        <div class="ml-4 flex items-center gap-2">
-                            <span class="text-sm text-base-content/70"
-                                >Annotations:</span
-                            >
-                            <button
                                 on:click={handleSelectAll}
-                                class="btn btn-sm btn-ghost border border-neutral"
+                                class="join-item btn btn-sm btn-ghost gap-2"
                                 title="Select All (Ctrl+A)"
-                                aria-label="Select all annotations"
                             >
+                                <span class="material-symbols-rounded text-lg"
+                                    >select_all</span
+                                >
                                 Select All
                             </button>
                             <button
                                 on:click={handleDeselect}
-                                class="btn btn-sm btn-ghost"
+                                class="join-item btn btn-sm btn-ghost gap-2"
                                 title="Deselect (Esc)"
-                                aria-label="Deselect annotations"
                             >
+                                <span class="material-symbols-rounded text-lg"
+                                    >deselect</span
+                                >
                                 Deselect
                             </button>
                             <button
                                 on:click={handleDeleteSelected}
-                                class="btn btn-sm btn-ghost border border-neutral"
+                                class="join-item btn btn-sm btn-ghost text-error hover:bg-error/10 gap-2"
                                 title="Delete Selected (Del)"
-                                aria-label="Delete selected annotations"
                             >
-                                🗑️ Delete
+                                <span class="material-symbols-rounded text-lg"
+                                    >delete</span
+                                >
+                                Delete
                             </button>
-                        </div>
-
-                        <!-- Status -->
-                        <div class="ml-auto text-sm text-base-content/70">
-                            {#if konvaManager}
-                                Zoom: {konvaManager.getZoomPercentage()}% |
-                                Annotations: {konvaManager.getAnnotationCount()}
-                                {#if konvaManager.getSelectedCount() > 0}
-                                    | Selected: {konvaManager.getSelectedCount()}
-                                {/if}
-                            {/if}
                         </div>
                     </div>
 
                     <!-- Keyboard Shortcuts Info -->
-                    <div class="alert alert-info py-2 mb-4">
-                        <span class="text-xs"
-                            ><strong>Keyboard Shortcuts:</strong> Zoom (+/-), Reset
-                            (0), Fit (R), Select All (Ctrl+A), Delete (Del), Save
-                            (Ctrl+S), Cancel (Esc)</span
-                        >
-                    </div>
 
                     <!-- Konva container is now always present below, outside the conditional blocks -->
                 {/if}
@@ -895,21 +903,44 @@
                         </div>
                     {/if}
 
-                    <!-- Status Indicators -->
+                    <!-- Modern Status Badges -->
                     {#if isInitialized}
                         <div
-                            class="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded shadow z-10"
+                            class="absolute top-4 left-4 z-10 flex flex-col gap-2"
                         >
                             {#if autoAnnotationEnabled}
-                                Backend Metadata
+                                <div
+                                    class="badge badge-success gap-1 shadow-sm"
+                                >
+                                    <span
+                                        class="material-symbols-rounded text-xs"
+                                        >dns</span
+                                    >
+                                    Backend Data
+                                </div>
                             {:else}
-                                Live Processing
+                                <div class="badge badge-info gap-1 shadow-sm">
+                                    <span
+                                        class="material-symbols-rounded text-xs"
+                                        >computer</span
+                                    >
+                                    Live Mode
+                                </div>
                             {/if}
                         </div>
-                        <div
-                            class="absolute bottom-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow z-10"
-                        >
-                            {konvaManager?.getAnnotationCount() || 0} annotations
+
+                        <div class="absolute bottom-4 right-4 z-10">
+                            <div
+                                class="badge badge-neutral badge-lg shadow-sm gap-2 p-3"
+                            >
+                                <span class="font-mono font-bold"
+                                    >{konvaManager?.getAnnotationCount() ||
+                                        0}</span
+                                >
+                                <span class="text-xs font-normal opacity-70"
+                                    >annotations</span
+                                >
+                            </div>
                         </div>
                     {/if}
                 </div>
@@ -917,11 +948,16 @@
                 <!-- Instructions -->
                 {#if isInitialized}
                     <div
-                        class="mt-4 text-sm text-base-content/70 text-center bg-base-200 p-3 rounded-lg"
+                        class="mt-4 flex flex-col items-center justify-center text-sm text-base-content/50 gap-1"
                     >
-                        Use the tools above to edit annotations. Click and drag
-                        to select, use Delete key to remove, or click Save when
-                        done.
+                        <p>
+                            Click and drag to select • Delete to remove • Save
+                            when done
+                        </p>
+                        <p class="text-xs opacity-70">
+                            Shortcuts: Zoom (+/-) • Reset (0) • Fit (R) • Select
+                            All (⌘A) • Save (⌘S)
+                        </p>
                     </div>
                 {/if}
             </div>

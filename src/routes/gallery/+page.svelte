@@ -1,18 +1,21 @@
 <script lang="ts">
     import { onMount, tick } from "svelte";
-    import { invoke, convertFileSrc } from "@tauri-apps/api/core";
+    import { invoke } from "@tauri-apps/api/core";
     import { open } from "@tauri-apps/plugin-dialog";
     import DatasetSummaryCard from "./components/DatasetSummaryCard.svelte";
-    import AnnotationPanel from "./components/AnnotationPanel.svelte";
+    import ImagePreviewPanel from "./components/ImagePreviewPanel.svelte";
     import ImageGallery from "./components/ImageGallery.svelte";
     import ExportModal from "./components/ExportModal.svelte";
     import ModalAnnotationViewer from "./components/ModalAnnotationViewer.svelte";
+    import CropRemapTool from "./components/CropRemapTool.svelte";
+    import ExtractLabelsModal from "./components/ExtractLabelsModal.svelte";
     import {
         fetchPaginatedImages,
         fetchImageDetails,
         fetchDatasetSummary,
         performAutoAnnotation,
         performDatasetExport,
+        performCropAndRemap,
     } from "./datasetService";
     import type {
         ProcessedImage,
@@ -22,6 +25,10 @@
         AnnotatedImageInfo,
         DatasetExportParams,
     } from "./datasetService";
+    import {
+        MOCK_DIRECTORY_PATH,
+        mockGetImages,
+    } from "../../mocks/mockFileSystem";
 
     // State variables
     let directoryPath = "";
@@ -45,12 +52,79 @@
     let pageExportError = "";
     let pageExportSuccess = "";
 
+    // Crop & Remap Tool State
+    let showCropTool = false;
+
+    // Extract Labels Modal State
+    let showExtractModal = false;
+    let extractLoading = false;
+    let extractError = "";
+    let extractSuccess = "";
+
     // Pagination
     let currentPage = 1;
     let pageSize = 30;
     $: itemsPerPage = pageSize;
     let totalPages = 0;
     let totalImages = 0;
+
+    // --- Initialization ---
+    // Auto-load Mock Data if in Browser Environment
+    onMount(async () => {
+        const isTauri = typeof window !== "undefined" && "__TAURI__" in window;
+        if (!isTauri) {
+            console.log(
+                "🌍 Browser environment detected: Loading Mock Data...",
+            );
+            directoryPath = MOCK_DIRECTORY_PATH;
+            loading = true;
+            try {
+                // Cast to any[] to avoid strict type checks on mock data properties
+                const mockImages = (await mockGetImages(
+                    directoryPath,
+                )) as any[];
+
+                // Map mock images to match ProcessedImage interface
+                images = mockImages.map((img) => ({
+                    ...img,
+                    previewUrl: img.src,
+                    assetUrl: img.src,
+                    annotated: (img.k || 0) > 0, // Mock annotation status
+                    // Fill missing required properties with defaults
+                    name: img.name || "Mock Image",
+                    path: img.path || "",
+                }));
+
+                // Calculate Mock Stats
+                const totalAnn = images.reduce(
+                    (acc, img) => acc + (img.annotated ? 1 : 0),
+                    0,
+                );
+                const classDist = { opening: 50, crane: 30, liftcar: 20 };
+
+                datasetSummary = {
+                    total_images: images.length,
+                    images_with_annotations: totalAnn,
+                    total_annotations: totalAnn * 3, // Fake total annotations
+                    unique_labels: 3,
+                    label_counts: classDist,
+                    annotation_types: ["rectangle"], // Matches 'shape_type' in mock json
+                };
+
+                totalImages = images.length;
+                totalPages = 1;
+
+                // Auto-select first image for convenience
+                if (images.length > 0) {
+                    // Optional: selectedImage = images[0];
+                }
+            } catch (err) {
+                console.error("❌ Mock load failed", err);
+            } finally {
+                loading = false;
+            }
+        }
+    });
 
     // Keyboard shortcuts
     function handleKeydown(event: KeyboardEvent) {
@@ -377,6 +451,71 @@
             pageExportLoading = false;
         }
     }
+
+    // Handler for Crop & Remap completion
+    async function handleCropCompleted(
+        event: CustomEvent<{ outputDir: string }>,
+    ) {
+        const { outputDir } = event.detail;
+        console.log("Crop completed, loading from:", outputDir);
+
+        // Reset state and load the new directory
+        error = "";
+        directoryPath = outputDir;
+        currentPage = 1;
+        images = [];
+        datasetSummary = null;
+        selectedImage = null;
+        showCropTool = false;
+
+        try {
+            await loadImagesPage(1);
+        } catch (loadErr: any) {
+            error = `Failed to load images from cropped directory: ${loadErr.message || "Unknown error"}`;
+        }
+    }
+
+    // Handler for Extract Labels
+    async function handleExtractLabels(
+        event: CustomEvent<{
+            sourceDir: string;
+            outputDir: string;
+            includedLabels: string[];
+        }>,
+    ) {
+        const { sourceDir, outputDir, includedLabels } = event.detail;
+
+        if (!sourceDir || !outputDir || includedLabels.length === 0) {
+            extractError = "Missing required parameters for extraction.";
+            return;
+        }
+
+        extractLoading = true;
+        extractError = "";
+        extractSuccess = "";
+
+        try {
+            const params: DatasetExportParams = {
+                sourceDir,
+                outputDir,
+                mode: "labelme",
+                includedLabels,
+            };
+
+            const resultMessage = await performDatasetExport(params);
+            extractSuccess = resultMessage;
+
+            // Close modal after short delay to show success
+            setTimeout(() => {
+                showExtractModal = false;
+                extractSuccess = "";
+            }, 2000);
+        } catch (err: any) {
+            extractError = `Extraction failed: ${err.message || "Unknown error"}`;
+        } finally {
+            extractLoading = false;
+        }
+    }
 </script>
 
 <svelte:head>
@@ -459,7 +598,7 @@
                     <!-- Annotation Type Toggle -->
                     <div class="join hidden lg:flex">
                         <button
-                            class={`btn btn-sm join-item gap-2 border-base-300 px-4 ${annotationType === "bounding_box" ? "btn-neutral text-neutral-content" : "btn-ghost text-base-content/70"}`}
+                            class={`btn btn-sm join-item gap-2 border-0 px-4 ${annotationType === "bounding_box" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/70"}`}
                             on:click={() => (annotationType = "bounding_box")}
                             disabled={!directoryPath || images.length === 0}
                             title="Bounding Boxes"
@@ -472,7 +611,7 @@
                             >
                         </button>
                         <button
-                            class={`btn btn-sm join-item gap-2 border-base-300 px-4 ${annotationType === "polygon" ? "btn-neutral text-neutral-content" : "btn-ghost text-base-content/70"}`}
+                            class={`btn btn-sm join-item gap-2 border-0 px-4 ${annotationType === "polygon" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/70"}`}
                             on:click={() => (annotationType = "polygon")}
                             disabled={!directoryPath || images.length === 0}
                             title="Polygons"
@@ -550,6 +689,34 @@
                         >
                     </button>
 
+                    <!-- Crop & Remap Button -->
+                    <button
+                        on:click={() => (showCropTool = !showCropTool)}
+                        class="btn btn-ghost btn-sm btn-square text-base-content/70 hover:text-secondary hover:bg-secondary/10"
+                        class:bg-secondary={showCropTool}
+                        title="Crop & Remap Tool"
+                    >
+                        <span class="material-symbols-rounded text-xl"
+                            >crop</span
+                        >
+                    </button>
+
+                    <!-- Extract Labels Button -->
+                    <button
+                        on:click={() => {
+                            extractError = "";
+                            extractSuccess = "";
+                            showExtractModal = true;
+                        }}
+                        class="btn btn-ghost btn-sm btn-square text-base-content/70 hover:text-accent hover:bg-accent/10"
+                        disabled={!directoryPath || !datasetSummary}
+                        title="Extract Labels"
+                    >
+                        <span class="material-symbols-rounded text-xl"
+                            >label</span
+                        >
+                    </button>
+
                     <div class="divider divider-horizontal mx-0 h-6"></div>
 
                     <!-- View Mode Toggle -->
@@ -580,7 +747,7 @@
                     <!-- Edit Mode Toggle -->
                     <div class="join">
                         <button
-                            class={`btn btn-sm join-item gap-2 border-0 ${editMode === "modal" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/60"}`}
+                            class={`btn btn-sm join-item gap-2 border-0 px-6 ${editMode === "modal" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/60"}`}
                             on:click={() => (editMode = "modal")}
                             title="Pop-out Editor Mode"
                         >
@@ -590,7 +757,7 @@
                             <span class="hidden 2xl:inline">Pop-out</span>
                         </button>
                         <button
-                            class={`btn btn-sm join-item gap-2 border-0 ${editMode === "sidebar" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/60"}`}
+                            class={`btn btn-sm join-item gap-2 border-0 px-6 ${editMode === "sidebar" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/60"}`}
                             on:click={() => (editMode = "sidebar")}
                             title="Sidebar Editor Mode"
                         >
@@ -717,17 +884,13 @@
                 </div>
 
                 <!-- Right Sidebar Panel -->
-                {#if selectedImage}
+                {#if selectedImage && editMode === "sidebar"}
                     <div
                         class="w-full lg:w-[450px] xl:w-[500px] h-full flex-none bg-base-100 rounded-box shadow-xl border border-base-300 overflow-hidden flex flex-col animate-in slide-in-from-right-4 duration-300"
                     >
-                        <AnnotationPanel
+                        <ImagePreviewPanel
                             {selectedImage}
                             on:close={() => (selectedImage = null)}
-                            on:save={(e) => {
-                                console.log("Save requested", e.detail);
-                                // Handle save logic here or pass through
-                            }}
                         />
                     </div>
                 {/if}
@@ -761,6 +924,22 @@
         }}
     />
 {/if}
+
+<!-- Extract Labels Modal -->
+<ExtractLabelsModal
+    isOpen={showExtractModal}
+    sourceDir={directoryPath}
+    {datasetSummary}
+    on:extract={handleExtractLabels}
+    on:close={() => (showExtractModal = false)}
+/>
+
+<!-- Crop & Remap Modal -->
+<CropRemapTool
+    isOpen={showCropTool}
+    on:cropCompleted={handleCropCompleted}
+    on:close={() => (showCropTool = false)}
+/>
 
 <style>
 </style>
