@@ -45,6 +45,7 @@
     let autoAnnotationEnabled = true;
     let editMode: "modal" | "sidebar" = "modal";
     let showAnnotationModal = false;
+    let isMockMode = false;
 
     // Export Modal State
     let showActualExportModal = false;
@@ -73,58 +74,57 @@
     onMount(async () => {
         const isTauri = typeof window !== "undefined" && "__TAURI__" in window;
         if (!isTauri) {
-            console.log(
-                "🌍 Browser environment detected: Loading Mock Data...",
-            );
-            directoryPath = MOCK_DIRECTORY_PATH;
-            loading = true;
-            try {
-                // Cast to any[] to avoid strict type checks on mock data properties
-                const mockImages = (await mockGetImages(
-                    directoryPath,
-                )) as any[];
-
-                // Map mock images to match ProcessedImage interface
-                images = mockImages.map((img) => ({
-                    ...img,
-                    previewUrl: img.src,
-                    assetUrl: img.src,
-                    annotated: (img.k || 0) > 0, // Mock annotation status
-                    // Fill missing required properties with defaults
-                    name: img.name || "Mock Image",
-                    path: img.path || "",
-                }));
-
-                // Calculate Mock Stats
-                const totalAnn = images.reduce(
-                    (acc, img) => acc + (img.annotated ? 1 : 0),
-                    0,
-                );
-                const classDist = { opening: 50, crane: 30, liftcar: 20 };
-
-                datasetSummary = {
-                    total_images: images.length,
-                    images_with_annotations: totalAnn,
-                    total_annotations: totalAnn * 3, // Fake total annotations
-                    unique_labels: 3,
-                    label_counts: classDist,
-                    annotation_types: ["rectangle"], // Matches 'shape_type' in mock json
-                };
-
-                totalImages = images.length;
-                totalPages = 1;
-
-                // Auto-select first image for convenience
-                if (images.length > 0) {
-                    // Optional: selectedImage = images[0];
-                }
-            } catch (err) {
-                console.error("❌ Mock load failed", err);
-            } finally {
-                loading = false;
-            }
+            console.log("🌍 Browser environment detected (No Tauri).");
+            isMockMode = true;
+            // Auto-load mock data
+            await loadMockData();
         }
     });
+
+    // Helper to load mock data
+    async function loadMockData() {
+        directoryPath = MOCK_DIRECTORY_PATH;
+        loading = true;
+        try {
+            // Cast to any[] to avoid strict type checks on mock data properties
+            const mockImages = (await mockGetImages(directoryPath)) as any[];
+
+            // Map mock images to match ProcessedImage interface
+            images = mockImages.map((img) => ({
+                ...img,
+                previewUrl: img.src,
+                assetUrl: img.src,
+                annotated: (img.k || 0) > 0, // Mock annotation status
+                // Fill missing required properties with defaults
+                name: img.name || "Mock Image",
+                path: img.path || "",
+            }));
+
+            // Calculate Mock Stats
+            const totalAnn = images.reduce(
+                (acc, img) => acc + (img.annotated ? 1 : 0),
+                0,
+            );
+            const classDist = { opening: 50, crane: 30, liftcar: 20 };
+
+            datasetSummary = {
+                total_images: images.length,
+                images_with_annotations: totalAnn,
+                total_annotations: totalAnn * 3, // Fake total annotations
+                unique_labels: 3,
+                label_counts: classDist,
+                annotation_types: ["rectangle"], // Matches 'shape_type' in mock json
+            };
+
+            totalImages = images.length;
+            totalPages = 1;
+        } catch (err) {
+            console.error("❌ Mock load failed", err);
+            error = "Failed to load mock data.";
+        } finally {
+            loading = false;
+        }
+    }
 
     // Keyboard shortcuts
     function handleKeydown(event: KeyboardEvent) {
@@ -137,6 +137,11 @@
         try {
             loading = true;
             error = "";
+
+            if (isMockMode) {
+                await loadMockData();
+                return;
+            }
 
             const selected = await open({
                 directory: true,
@@ -172,6 +177,20 @@
         }
     }
 
+    async function toggleMockMode() {
+        isMockMode = !isMockMode;
+        images = [];
+        directoryPath = "";
+        datasetSummary = null;
+        selectedImage = null;
+        currentPage = 1;
+        error = "";
+
+        if (isMockMode) {
+            await loadMockData();
+        }
+    }
+
     async function loadImagesPage(page: number) {
         try {
             loading = true;
@@ -179,6 +198,13 @@
 
             if (!directoryPath) {
                 throw new Error("Directory path is empty for loadImagesPage.");
+            }
+
+            // If in Mock Mode, skip real backend call (logic already handled in initial load,
+            // but for pagination we might need more logic later. For now, mock data is typically 1 page)
+            if (isMockMode) {
+                await loadMockData();
+                return;
             }
 
             // Using itemsPerPage/pageSize consistently
@@ -229,6 +255,12 @@
 
     // Function for auto-annotating images
     async function annotateImages() {
+        if (isMockMode) {
+            console.log("🧪 Mock Mode: Using local mock annotations.");
+            await loadMockData();
+            return;
+        }
+
         try {
             if (!directoryPath || images.length === 0) {
                 error = "Please select a directory with images first";
@@ -289,6 +321,11 @@
     }
 
     async function autoLoadAnnotationsForPage(page: number) {
+        if (isMockMode) {
+            console.log("🧪 Mock Mode: Skipping auto-annotation backend call.");
+            return;
+        }
+
         try {
             autoAnnotating = true;
             const result = await performAutoAnnotation(
@@ -541,6 +578,26 @@
             >
                 <!-- Left: Directory & Breadcrumbs -->
                 <div class="flex items-center gap-2 flex-1 min-w-0">
+                    <!-- Mock Mode Toggle -->
+                    <div
+                        class="tooltip tooltip-bottom"
+                        data-tip={isMockMode
+                            ? "Switch to Real Data"
+                            : "Switch to Mock Data"}
+                    >
+                        <button
+                            class={`btn btn-sm btn-circle ${isMockMode ? "btn-secondary text-secondary-content" : "btn-ghost text-base-content/40"}`}
+                            on:click={toggleMockMode}
+                            aria-label="Toggle Mock Mode"
+                        >
+                            <span class="material-symbols-rounded text-lg"
+                                >science</span
+                            >
+                        </button>
+                    </div>
+
+                    <div class="divider divider-horizontal mx-0 h-6"></div>
+
                     <button
                         on:click={selectDirectory}
                         class="btn btn-ghost btn-sm gap-2 text-base-content/70 hover:text-base-content hover:bg-base-200"
@@ -916,6 +973,7 @@
         bind:showModal={showAnnotationModal}
         {selectedImage}
         {autoAnnotationEnabled}
+        {isMockMode}
         on:close={() => {
             showAnnotationModal = false;
         }}

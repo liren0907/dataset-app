@@ -8,11 +8,13 @@
         type KonvaImageData,
         type KonvaAnnotation,
     } from "./konvaService";
+    import { mockGeneratePreview } from "../../../mocks/mockFileSystem";
 
     // Props
     export let showModal: boolean = false;
     export let selectedImage: any = null; // ProcessedImage from parent
     export let autoAnnotationEnabled: boolean = true;
+    export let isMockMode: boolean = false;
 
     // Event dispatcher for communication with parent
     const dispatch = createEventDispatcher();
@@ -22,9 +24,19 @@
     let konvaContainer: HTMLDivElement;
     let isInitialized = false;
     let isLoading = false;
-    let isInitializing = false; // ← NEW: Prevent duplicate initialization
+    let isInitializing = false; // Prevent duplicate initialization
     let annotatedImageData: KonvaImageData | null = null;
     let tempPreviewPath: string | null = null;
+    let annotationCount = 0; // Reactive count
+
+    // Helpers
+    function updateMetadata(): void {
+        if (konvaManager) {
+            annotationCount = konvaManager.getAnnotationCount();
+        } else {
+            annotationCount = 0;
+        }
+    }
 
     // Debug: Track konvaContainer binding
     $: if (konvaContainer && showModal) {
@@ -297,23 +309,23 @@
 
         try {
             isLoading = true;
-            console.log(
-                "🚀 Initializing modal annotation viewer for:",
-                selectedImage.name,
-            );
-
-            // Step 0: Ensure DOM is ready with robust checking
+            console.log("⏱️ Step 0: Ensuring Konva container is ready...");
             await ensureKonvaContainerReady();
+            console.log("✅ Step 0: Container ready.");
 
-            console.log("✅ Konva container is ready:", konvaContainer);
-
-            // Step 1: Load annotation metadata from backend
+            console.log("⏱️ Step 1: Loading annotation metadata...");
             await loadAnnotationMetadata();
+            console.log("✅ Step 1: Metadata loaded.");
 
-            // Step 2: Initialize KonvaJS with original image and parsed annotations
+            console.log("⏱️ Step 2: Initializing Konva Viewer...");
             if (annotatedImageData && konvaContainer) {
                 await initializeKonvaViewer();
+                console.log("✅ Step 2: Viewer initialized.");
             } else {
+                console.error("❌ Step 2 failed: missing data", {
+                    annotatedImageData: !!annotatedImageData,
+                    konvaContainer: !!konvaContainer,
+                });
                 throw new Error(
                     "Missing required data for KonvaJS initialization",
                 );
@@ -333,6 +345,8 @@
                     "✅ MODAL INITIALIZATION COMPLETED for:",
                     selectedImage?.name,
                 );
+                // Initial metadata update
+                updateMetadata();
             } else {
                 // Reset hasTriggeredInit if initialization failed, allowing retry
                 hasTriggeredInit = false;
@@ -343,10 +357,6 @@
             }
         }
     }
-
-    import { mockGeneratePreview } from "../../../mocks/mockFileSystem";
-
-    // ... (existing imports)
 
     // Load annotation metadata from backend and parse for Konva
     async function loadAnnotationMetadata(): Promise<void> {
@@ -362,11 +372,12 @@
             // 3. Frontend parses and converts to Konva annotation format
             // 4. Original image is used with parsed annotations for drawing
 
+            // NOTE: Respect isMockMode prop even if in Tauri
             const isTauri =
                 typeof window !== "undefined" && "__TAURI__" in window;
             let result: string;
 
-            if (isTauri) {
+            if (isTauri && !isMockMode) {
                 console.log(
                     "🚀 Invoking Tauri command: generate_single_annotated_preview",
                 );
@@ -374,12 +385,15 @@
                     imagePath: selectedImage.path,
                 })) as string;
             } else {
-                console.log("🌍 Browser Mode: Using Mock Preview Data");
+                console.log("🧪 Mode: Using Mock Preview Data");
+                const startTime = Date.now();
                 result = await mockGeneratePreview(selectedImage.path);
+                console.log(
+                    `✅ mockGeneratePreview returned in ${Date.now() - startTime}ms`,
+                );
             }
 
-            console.log("✅ Command completed, result length:", result.length);
-
+            console.log("📦 Parsing result...");
             const data = JSON.parse(result);
 
             if (data.annotation_metadata) {
@@ -451,10 +465,12 @@
                         offsetX,
                         offsetY,
                     );
+                    updateMetadata(); // New: update after draw
                 },
             );
 
             isInitialized = true;
+            updateMetadata(); // New: update after init
             console.log(
                 "✅ Modal annotation viewer initialized successfully - isInitialized set to true",
             );
@@ -532,10 +548,12 @@
                         offsetX,
                         offsetY,
                     );
+                    updateMetadata(); // New: update after draw
                 },
             );
 
             isInitialized = true;
+            updateMetadata(); // New: update after init
             console.log("✅ Fallback initialization completed successfully");
         } catch (fallbackError) {
             console.error(
@@ -569,6 +587,7 @@
         hasTriggeredInit = false; // ← Reset trigger flag (IMPORTANT: allows re-init)
         annotatedImageData = null;
         isLoading = false;
+        annotationCount = 0; // New: reset count
         console.log(
             "🧹 Modal cleanup completed - all flags reset, ready for next open",
         );
@@ -581,6 +600,7 @@
 
     function handleSave(): void {
         // Emit save event with current annotations
+        updateMetadata();
         if (annotatedImageData) {
             dispatch("save", {
                 image: selectedImage,
@@ -630,6 +650,7 @@
             case "delete":
             case "backspace":
                 konvaManager.deleteSelectedAnnotation();
+                updateMetadata();
                 break;
             case "a":
                 if (event.ctrlKey || event.metaKey) {
@@ -674,6 +695,7 @@
     }
     function handleDeleteSelected(): void {
         konvaManager?.deleteSelectedAnnotation();
+        updateMetadata();
     }
 </script>
 
@@ -934,8 +956,7 @@
                                 class="badge badge-neutral badge-lg shadow-sm gap-2 p-3"
                             >
                                 <span class="font-mono font-bold"
-                                    >{konvaManager?.getAnnotationCount() ||
-                                        0}</span
+                                    >{annotationCount}</span
                                 >
                                 <span class="text-xs font-normal opacity-70"
                                     >annotations</span
