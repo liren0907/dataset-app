@@ -22,7 +22,7 @@ impl ScanProgress {
     /// Create a new progress event
     pub fn new(current: usize, total: usize, message: impl Into<String>) -> Self {
         let percentage = if total > 0 {
-            (current as f32 / total as f32 * 100.0)
+            current as f32 / total as f32 * 100.0
         } else {
             0.0
         };

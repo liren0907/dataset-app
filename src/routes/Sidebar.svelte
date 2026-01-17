@@ -30,10 +30,10 @@
 			description: "資料集管理與標註",
 		},
 		{
-			href: "/dataset-gallery",
-			label: "Dataset Gallery",
-			icon: "photo_library",
-			description: "資料集瀏覽",
+			href: "/legacy-gallery",
+			label: "Legacy Gallery",
+			icon: "history",
+			description: "舊版瀏覽器集合",
 		},
 		{
 			href: "/crop-remap",
@@ -46,18 +46,6 @@
 			label: "Crop Component",
 			icon: "straighten",
 			description: "裁切組件",
-		},
-		{
-			href: "/dataset-gallery-advanced",
-			label: "Advanced Gallery",
-			icon: "palette",
-			description: "進階瀏覽器",
-		},
-		{
-			href: "/imageViewer3",
-			label: "Image Viewer",
-			icon: "visibility",
-			description: "圖片檢視器",
 		},
 		{
 			href: "/settings",
