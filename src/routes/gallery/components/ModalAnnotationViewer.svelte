@@ -436,9 +436,9 @@
 
         console.log("🎨 Initializing KonvaJS viewer...");
 
-        // Calculate optimal stage dimensions (fixed for performance)
-        const stageWidth = 1000;
-        const stageHeight = 700;
+        // Calculate optimal stage dimensions from container
+        const stageWidth = konvaContainer.clientWidth || 1000;
+        const stageHeight = konvaContainer.clientHeight || 700;
 
         // Initialize the stage
         konvaManager.initializeStage(konvaContainer, stageWidth, stageHeight);
@@ -503,8 +503,8 @@
         }
 
         try {
-            const stageWidth = 1000;
-            const stageHeight = 700;
+            const stageWidth = konvaContainer.clientWidth || 1000;
+            const stageHeight = konvaContainer.clientHeight || 700;
 
             // DEBUG: Log fallback state
             console.log("🔄 Fallback: Initializing KonvaJS stage");
@@ -697,9 +697,15 @@
         konvaManager?.deleteSelectedAnnotation();
         updateMetadata();
     }
+    // Resize handler for responsiveness
+    function handleResize() {
+        if (konvaManager && isInitialized) {
+            konvaManager.resize();
+        }
+    }
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window on:keydown={handleKeydown} on:resize={handleResize} />
 
 {#if showModal}
     <!-- Modal Overlay -->
@@ -711,7 +717,6 @@
     )}
     <dialog
         class="modal modal-open"
-        role="dialog"
         aria-modal="true"
         aria-labelledby="annotation-modal-title"
         aria-describedby="annotation-modal-description"
@@ -721,8 +726,6 @@
             class="modal-box max-w-6xl w-full max-h-[95vh] flex flex-col p-0"
             role="document"
             aria-label="Annotation editor content"
-            on:click|stopPropagation
-            on:keydown|stopPropagation
         >
             <!-- Header -->
             <div
@@ -880,7 +883,6 @@
                     <div
                         bind:this={konvaContainer}
                         class="w-full h-full bg-slate-50"
-                        style="width: 1000px; height: 700px; min-width: 1000px; min-height: 700px;"
                         role="img"
                         aria-label="Interactive annotation editor for {selectedImage?.name ||
                             'image'}"

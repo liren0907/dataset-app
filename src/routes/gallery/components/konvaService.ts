@@ -463,14 +463,18 @@ export class KonvaManager {
                 // Simplified hover effects (only change opacity)
                 annotationGroup.on('mouseenter', () => {
                     document.body.style.cursor = 'pointer';
-                    shape.opacity(0.4);
-                    this.state.annotationLayer!.batchDraw();
+                    if (shape) {
+                        shape.opacity(0.4);
+                        this.state.annotationLayer!.batchDraw();
+                    }
                 });
 
                 annotationGroup.on('mouseleave', () => {
                     document.body.style.cursor = 'default';
-                    shape.opacity(0.25);
-                    this.state.annotationLayer!.batchDraw();
+                    if (shape) {
+                        shape.opacity(0.25);
+                        this.state.annotationLayer!.batchDraw();
+                    }
                 });
 
                 // Add click handler
@@ -574,17 +578,46 @@ export class KonvaManager {
         if (!this.state.stage || !this.state.imageNode) return;
 
         const containerRect = this.container?.getBoundingClientRect();
-        if (!containerRect) return;
+        if (!containerRect || containerRect.width === 0) return;
 
-        const imageRect = this.state.imageNode.getClientRect();
-        const scaleX = containerRect.width / imageRect.width;
-        const scaleY = containerRect.height / imageRect.height;
-        const newScale = Math.min(scaleX, scaleY, 1);
+        // Use stage size if container rect is not available (though it should be here)
+        const targetWidth = containerRect.width;
+        const targetHeight = containerRect.height;
+
+        const imageRect = this.state.imageNode.getClientRect({ skipTransform: true });
+        const scaleX = targetWidth / imageRect.width;
+        const scaleY = targetHeight / imageRect.height;
+
+        // Find best fit scale
+        const newScale = Math.min(scaleX, scaleY) * 0.95; // 5% padding
 
         this.zoomToScale(newScale);
-        this.state.stage.position({ x: 0, y: 0 });
-        this.state.stageX = 0;
-        this.state.stageY = 0;
+
+        // Center stage
+        const scaledWidth = imageRect.width * newScale;
+        const scaledHeight = imageRect.height * newScale;
+
+        const newX = (targetWidth - scaledWidth) / 2;
+        const newY = (targetHeight - scaledHeight) / 2;
+
+        this.state.stage.position({ x: newX, y: newY });
+        this.state.stageX = newX;
+        this.state.stageY = newY;
+        this.state.stage.batchDraw();
+    }
+
+    // Resize stage to match current container dimensions
+    resize(): void {
+        if (!this.state.stage || !this.container) return;
+
+        const rect = this.container.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
+
+        console.log(`Resizing stage to: ${rect.width}x${rect.height}`);
+
+        this.state.stage.width(rect.width);
+        this.state.stage.height(rect.height);
+        this.state.stage.batchDraw();
     }
 
     private zoomToScale(newScale: number): void {
