@@ -20,6 +20,14 @@
     function splitPath(path: string) {
         return path.split("/").slice(-2);
     }
+
+    // Computed tooltip text for dynamic tooltips
+    $: mockModeTooltip = isMockMode
+        ? "Switch to Real Data"
+        : "Switch to Mock Data";
+    $: autoLoadTooltip = autoAnnotationEnabled
+        ? "Auto-load Active"
+        : "Auto-load Inactive";
 </script>
 
 <div class="flex flex-col gap-4 mb-6">
@@ -30,12 +38,7 @@
         <!-- Left: Directory & Breadcrumbs -->
         <div class="flex items-center gap-2 flex-1 min-w-0">
             <!-- Mock Mode Toggle -->
-            <div
-                class="tooltip tooltip-bottom"
-                data-tip={isMockMode
-                    ? "Switch to Real Data"
-                    : "Switch to Mock Data"}
-            >
+            <div class="tooltip tooltip-bottom" data-tip={mockModeTooltip}>
                 <button
                     class={`btn btn-sm btn-circle ${isMockMode ? "btn-secondary text-secondary-content" : "btn-ghost text-base-content/40"}`}
                     on:click={() => dispatch("toggleMockMode")}
@@ -48,20 +51,25 @@
 
             <div class="divider divider-horizontal mx-0 h-6"></div>
 
-            <button
-                on:click={() => dispatch("selectDirectory")}
-                class="btn btn-ghost btn-sm gap-2 text-base-content/70 hover:text-base-content hover:bg-base-200"
-                disabled={loading}
-                title="Open Project Directory"
+            <!-- Open Directory Button -->
+            <div
+                class="tooltip tooltip-bottom"
+                data-tip="Open Project Directory"
             >
-                {#if loading}
-                    <span class="loading loading-spinner loading-xs"></span>
-                {:else}
-                    <span class="material-symbols-rounded text-lg"
-                        >folder_open</span
-                    >
-                {/if}
-            </button>
+                <button
+                    on:click={() => dispatch("selectDirectory")}
+                    class="btn btn-ghost btn-sm gap-2 text-base-content/70 hover:text-base-content hover:bg-base-200"
+                    disabled={loading}
+                >
+                    {#if loading}
+                        <span class="loading loading-spinner loading-xs"></span>
+                    {:else}
+                        <span class="material-symbols-rounded text-lg"
+                            >folder_open</span
+                        >
+                    {/if}
+                </button>
+            </div>
 
             <div class="divider divider-horizontal mx-0 h-6"></div>
 
@@ -99,28 +107,33 @@
         <div class="flex items-center gap-1 sm:gap-2 flex-none">
             <!-- Annotation Type Toggle -->
             <div class="join hidden lg:flex">
-                <button
-                    class={`btn btn-sm join-item gap-2 border-0 px-4 ${annotationType === "bounding_box" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/70"}`}
-                    on:click={() =>
-                        dispatch("setAnnotationType", "bounding_box")}
-                    disabled={!directoryPath || images.length === 0}
-                    title="Bounding Boxes"
-                >
-                    <span class="material-symbols-rounded text-lg"
-                        >crop_square</span
+                <div class="tooltip tooltip-bottom" data-tip="Bounding Boxes">
+                    <button
+                        class={`btn btn-sm join-item gap-2 border-0 px-4 ${annotationType === "bounding_box" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/70"}`}
+                        on:click={() =>
+                            dispatch("setAnnotationType", "bounding_box")}
+                        disabled={!directoryPath || images.length === 0}
                     >
-                    <span class="hidden xl:inline font-normal">Boxes</span>
-                </button>
-                <button
-                    class={`btn btn-sm join-item gap-2 border-0 px-4 ${annotationType === "polygon" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/70"}`}
-                    on:click={() => dispatch("setAnnotationType", "polygon")}
-                    disabled={!directoryPath || images.length === 0}
-                    title="Polygons"
-                >
-                    <span class="material-symbols-rounded text-lg">hexagon</span
+                        <span class="material-symbols-rounded text-lg"
+                            >crop_square</span
+                        >
+                        <span class="hidden xl:inline font-normal">Boxes</span>
+                    </button>
+                </div>
+                <div class="tooltip tooltip-bottom" data-tip="Polygons">
+                    <button
+                        class={`btn btn-sm join-item gap-2 border-0 px-4 ${annotationType === "polygon" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/70"}`}
+                        on:click={() =>
+                            dispatch("setAnnotationType", "polygon")}
+                        disabled={!directoryPath || images.length === 0}
                     >
-                    <span class="hidden xl:inline font-normal">Polygon</span>
-                </button>
+                        <span class="material-symbols-rounded text-lg"
+                            >hexagon</span
+                        >
+                        <span class="hidden xl:inline font-normal">Polygon</span
+                        >
+                    </button>
+                </div>
             </div>
 
             <div
@@ -128,12 +141,7 @@
             ></div>
 
             <!-- Auto-load Toggle -->
-            <div
-                class="tooltip tooltip-bottom"
-                data-tip={autoAnnotationEnabled
-                    ? "Auto-load active"
-                    : "Auto-load inactive"}
-            >
+            <div class="tooltip tooltip-bottom" data-tip={autoLoadTooltip}>
                 <button
                     class={`btn btn-sm btn-square join-item ${autoAnnotationEnabled ? "btn-active text-primary" : "btn-ghost text-base-content/50"}`}
                     on:click={() => dispatch("toggleAutoAnnotation")}
@@ -151,73 +159,83 @@
             ></div>
 
             <!-- Actions -->
-            <button
-                on:click={() => dispatch("annotateImages")}
-                class="btn btn-ghost btn-sm btn-square text-base-content/70 hover:text-primary hover:bg-primary/10"
-                disabled={!directoryPath ||
-                    images.length === 0 ||
-                    annotating ||
-                    autoAnnotating}
-                title="Load Annotations"
-            >
-                {#if annotating}
-                    <span class="loading loading-spinner loading-xs"></span>
-                {:else}
-                    <span class="material-symbols-rounded text-xl">label</span>
-                {/if}
-            </button>
+            <div class="tooltip tooltip-bottom" data-tip="Load Annotations">
+                <button
+                    on:click={() => dispatch("annotateImages")}
+                    class="btn btn-ghost btn-sm btn-square text-base-content/70 hover:text-primary hover:bg-primary/10"
+                    disabled={!directoryPath ||
+                        images.length === 0 ||
+                        annotating ||
+                        autoAnnotating}
+                >
+                    {#if annotating}
+                        <span class="loading loading-spinner loading-xs"></span>
+                    {:else}
+                        <span class="material-symbols-rounded text-xl"
+                            >label</span
+                        >
+                    {/if}
+                </button>
+            </div>
 
-            <button
-                on:click={() => dispatch("openExportModal")}
-                class="btn btn-ghost btn-sm btn-square text-base-content/70 hover:text-primary hover:bg-primary/10"
-                disabled={!directoryPath || images.length === 0}
-                title="Export Dataset"
-            >
-                <span class="material-symbols-rounded text-xl">ios_share</span>
-            </button>
+            <div class="tooltip tooltip-bottom" data-tip="Export Dataset">
+                <button
+                    on:click={() => dispatch("openExportModal")}
+                    class="btn btn-ghost btn-sm btn-square text-base-content/70 hover:text-primary hover:bg-primary/10"
+                    disabled={!directoryPath || images.length === 0}
+                >
+                    <span class="material-symbols-rounded text-xl"
+                        >ios_share</span
+                    >
+                </button>
+            </div>
 
             <!-- Crop & Remap Button -->
-            <button
-                on:click={() => dispatch("toggleCropTool")}
-                class="btn btn-ghost btn-sm btn-square text-base-content/70 hover:text-secondary hover:bg-secondary/10"
-                class:bg-secondary={showCropTool}
-                title="Crop & Remap Tool"
-            >
-                <span class="material-symbols-rounded text-xl">crop</span>
-            </button>
+            <div class="tooltip tooltip-bottom" data-tip="Crop & Remap Tool">
+                <button
+                    on:click={() => dispatch("toggleCropTool")}
+                    class="btn btn-ghost btn-sm btn-square text-base-content/70 hover:text-secondary hover:bg-secondary/10"
+                    class:bg-secondary={showCropTool}
+                >
+                    <span class="material-symbols-rounded text-xl">crop</span>
+                </button>
+            </div>
 
             <!-- Extract Labels Button -->
-            <button
-                on:click={() => dispatch("openExtractModal")}
-                class="btn btn-ghost btn-sm btn-square text-base-content/70 hover:text-accent hover:bg-accent/10"
-                disabled={!directoryPath || !datasetSummary}
-                title="Extract Labels"
-            >
-                <span class="material-symbols-rounded text-xl">label</span>
-            </button>
+            <div class="tooltip tooltip-bottom" data-tip="Extract Labels">
+                <button
+                    on:click={() => dispatch("openExtractModal")}
+                    class="btn btn-ghost btn-sm btn-square text-base-content/70 hover:text-accent hover:bg-accent/10"
+                    disabled={!directoryPath || !datasetSummary}
+                >
+                    <span class="material-symbols-rounded text-xl">label</span>
+                </button>
+            </div>
 
             <div class="divider divider-horizontal mx-0 h-6"></div>
 
             <!-- View Mode Toggle -->
             <div class="join">
-                <button
-                    class={`btn btn-sm join-item btn-square border-0 ${viewMode === "grid" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/60"}`}
-                    on:click={() => dispatch("setViewMode", "grid")}
-                    title="Grid View"
-                >
-                    <span class="material-symbols-rounded text-lg"
-                        >grid_view</span
+                <div class="tooltip tooltip-bottom" data-tip="Grid View">
+                    <button
+                        class={`btn btn-sm join-item btn-square border-0 ${viewMode === "grid" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/60"}`}
+                        on:click={() => dispatch("setViewMode", "grid")}
                     >
-                </button>
-                <button
-                    class={`btn btn-sm join-item btn-square border-0 ${viewMode === "column" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/60"}`}
-                    on:click={() => dispatch("setViewMode", "column")}
-                    title="List View"
-                >
-                    <span class="material-symbols-rounded text-lg"
-                        >view_list</span
+                        <span class="material-symbols-rounded text-lg"
+                            >grid_view</span
+                        >
+                    </button>
+                </div>
+                <div class="tooltip tooltip-bottom" data-tip="List View">
+                    <button
+                        class={`btn btn-sm join-item btn-square border-0 ${viewMode === "column" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/60"}`}
+                        on:click={() => dispatch("setViewMode", "column")}
                     >
-                </button>
+                        <span class="material-symbols-rounded text-lg"
+                            >view_list</span
+                        >
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -226,25 +244,28 @@
     <div class="flex justify-end px-1">
         <!-- Edit Mode Toggle -->
         <div class="join">
-            <button
-                class={`btn btn-sm join-item gap-2 border-0 px-6 ${editMode === "modal" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/60"}`}
-                on:click={() => dispatch("setEditMode", "modal")}
-                title="Pop-out Editor Mode"
-            >
-                <span class="material-symbols-rounded text-lg">open_in_new</span
+            <div class="tooltip tooltip-bottom" data-tip="Pop-out Editor Mode">
+                <button
+                    class={`btn btn-sm join-item gap-2 border-0 px-6 ${editMode === "modal" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/60"}`}
+                    on:click={() => dispatch("setEditMode", "modal")}
                 >
-                <span class="hidden 2xl:inline">Pop-out</span>
-            </button>
-            <button
-                class={`btn btn-sm join-item gap-2 border-0 px-6 ${editMode === "sidebar" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/60"}`}
-                on:click={() => dispatch("setEditMode", "sidebar")}
-                title="Sidebar Editor Mode"
-            >
-                <span class="material-symbols-rounded text-lg"
-                    >view_sidebar</span
+                    <span class="material-symbols-rounded text-lg"
+                        >open_in_new</span
+                    >
+                    <span class="hidden 2xl:inline">Pop-out</span>
+                </button>
+            </div>
+            <div class="tooltip tooltip-bottom" data-tip="Sidebar Editor Mode">
+                <button
+                    class={`btn btn-sm join-item gap-2 border-0 px-6 ${editMode === "sidebar" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/60"}`}
+                    on:click={() => dispatch("setEditMode", "sidebar")}
                 >
-                <span class="hidden 2xl:inline">Sidebar</span>
-            </button>
+                    <span class="material-symbols-rounded text-lg"
+                        >view_sidebar</span
+                    >
+                    <span class="hidden 2xl:inline">Sidebar</span>
+                </button>
+            </div>
         </div>
     </div>
 </div>

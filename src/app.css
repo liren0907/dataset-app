@@ -166,3 +166,8 @@ button:focus:not(:focus-visible) {
 	scrollbar-width: none;
 	-ms-overflow-style: none;
 }
+
+/* DaisyUI v5 Tooltip Fix - ensures tooltip text displays correctly */
+.tooltip::before {
+	content: attr(data-tip);
+}
