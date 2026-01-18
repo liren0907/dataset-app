@@ -10,48 +10,36 @@
 
 	// 工具列表 - using Material Symbols icon names
 	const tools = [
-		{ href: "/", label: "Home", icon: "home", description: "首頁" },
+		{ href: "/", label: "Home", icon: "home" },
 		{
 			href: "/turbo-export",
 			label: "Turbo Export",
 			icon: "bolt",
-			description: "高效能格式轉換",
 		},
 		{
 			href: "/smart-tools",
 			label: "Smart Tools",
 			icon: "construction",
-			description: "智能工具集",
 		},
 		{
 			href: "/gallery",
 			label: "Unified Gallery",
 			icon: "collections_bookmark",
-			description: "資料集管理與標註",
 		},
 		{
 			href: "/legacy-gallery",
 			label: "Legacy Gallery",
 			icon: "history",
-			description: "舊版瀏覽器集合",
 		},
 		{
 			href: "/crop-remap",
 			label: "Crop & Remap",
 			icon: "crop",
-			description: "裁切與重映射",
 		},
 		{
 			href: "/crop-remap-component",
 			label: "Crop Component",
 			icon: "straighten",
-			description: "裁切組件",
-		},
-		{
-			href: "/settings",
-			label: "Settings",
-			icon: "settings",
-			description: "應用程式設定",
 		},
 	];
 </script>
@@ -88,16 +76,26 @@
 				class="flex items-center gap-3 {isActive ? 'active' : ''}"
 			>
 				<span class="material-symbols-rounded">{tool.icon}</span>
-				<div class="flex flex-col">
-					<span class="font-medium">{tool.label}</span>
-					<span class="text-xs opacity-60">{tool.description}</span>
-				</div>
+				<span class="font-medium">{tool.label}</span>
 			</a>
 		</li>
 	{/each}
 
 	<!-- Spacer -->
 	<div class="flex-1"></div>
+
+	<!-- Settings (Pinned to Bottom) -->
+	<li>
+		<a
+			href="/settings"
+			class="flex items-center gap-3 {$page.url.pathname === '/settings'
+				? 'active'
+				: ''}"
+		>
+			<span class="material-symbols-rounded">settings</span>
+			<span class="font-medium">Settings</span>
+		</a>
+	</li>
 
 	<!-- Divider -->
 	<li class="divider my-2"></li>
@@ -108,14 +106,9 @@
 			<span class="material-symbols-rounded">
 				{theme === "dark" ? "light_mode" : "dark_mode"}
 			</span>
-			<div class="flex flex-col">
-				<span class="font-medium"
-					>{theme === "dark" ? "淺色模式" : "深色模式"}</span
-				>
-				<span class="text-xs opacity-60">
-					{theme === "dark" ? "切換到淺色主題" : "拯救你的眼睛"}
-				</span>
-			</div>
+			<span class="font-medium">
+				{theme === "dark" ? "Light Mode" : "Dark Mode"}
+			</span>
 		</button>
 	</li>
 </ul>
