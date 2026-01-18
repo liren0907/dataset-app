@@ -3,7 +3,6 @@
     import { open } from "@tauri-apps/plugin-dialog";
     import { performCropAndRemap } from "../datasetService";
 
-    // Props
     export let isOpen: boolean = false;
 
     const dispatch = createEventDispatcher();
@@ -16,7 +15,6 @@
     let localError: string = "";
     let localSuccess: string = "";
 
-    // Reset messages when modal opens
     $: if (isOpen) {
         localError = "";
         localSuccess = "";
@@ -30,16 +28,12 @@
                 multiple: false,
                 title: `Select ${type === "source" ? "Source" : "Output"} Directory`,
             });
-
             if (selected && typeof selected === "string") {
-                if (type === "source") {
-                    sourceDir = selected;
-                } else {
-                    outputDir = selected;
-                }
+                if (type === "source") sourceDir = selected;
+                else outputDir = selected;
             }
         } catch (err) {
-            localError = `Failed to select directory: ${err instanceof Error ? err.message : String(err)}`;
+            localError = `Failed to select directory.`;
         }
     }
 
@@ -68,8 +62,6 @@
                 parentLabel,
             );
             localSuccess = message;
-
-            // Dispatch completion event after short delay
             setTimeout(() => {
                 dispatch("cropCompleted", { outputDir });
             }, 1500);
@@ -81,211 +73,245 @@
     }
 
     function handleClose() {
-        if (!localLoading) {
-            dispatch("close");
-        }
+        if (!localLoading) dispatch("close");
     }
 </script>
 
 {#if isOpen}
-    <dialog
-        class="modal modal-open"
-        aria-modal="true"
-        aria-labelledby="crop-modal-title"
-    >
+    <dialog class="modal modal-open">
+        <!-- Main Fixed-Size Container -->
         <div
-            class="modal-box max-w-2xl bg-base-100 p-0 overflow-hidden relative"
+            class="modal-box w-11/12 max-w-4xl h-[550px] p-0 flex overflow-hidden rounded-2xl shadow-2xl bg-base-100"
         >
-            <!-- Header Accent -->
+            <!-- Left Sidebar (40%) -->
             <div
-                class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-secondary to-accent opacity-50"
-            ></div>
+                class="w-[40%] bg-base-200/50 border-r border-base-200 flex flex-col p-6 gap-6 justify-between"
+            >
+                <div class="space-y-6">
+                    <!-- Header -->
+                    <div>
+                        <h2
+                            class="text-xl font-bold text-base-content flex items-center gap-2"
+                        >
+                            <span
+                                class="material-symbols-rounded text-secondary"
+                                >crop</span
+                            >
+                            Crop & Remap
+                        </h2>
+                        <p class="text-xs text-base-content/60 mt-1">
+                            Isolate objects to new dataset
+                        </p>
+                    </div>
 
-            <!-- Header -->
-            <div class="px-8 pt-8 pb-4 flex justify-between items-center">
-                <div>
-                    <h3
-                        id="crop-modal-title"
-                        class="text-2xl font-bold text-base-content flex items-center gap-2"
-                    >
-                        Crop & Remap
-                    </h3>
-                    <p class="text-sm text-base-content/60 mt-1">
-                        Simple crop based on parent class
-                    </p>
+                    <!-- Paths Configuration -->
+                    <div class="space-y-4">
+                        <label
+                            class="text-xs font-bold text-base-content/40 uppercase tracking-wider"
+                            >I/O Configuration</label
+                        >
+
+                        <!-- Source Path (Compact) -->
+                        <div>
+                            <label
+                                class="text-[10px] font-semibold text-base-content/50 mb-1 block pl-1"
+                                >Source Dataset</label
+                            >
+                            <div
+                                class="flex items-center w-full px-2 py-1.5 rounded-lg border border-base-300 bg-base-100 focus-within:border-secondary focus-within:ring-1 focus-within:ring-secondary/20 transition-all"
+                            >
+                                <span
+                                    class="material-symbols-rounded text-secondary/70 text-sm ml-1"
+                                    >folder_open</span
+                                >
+                                <input
+                                    type="text"
+                                    bind:value={sourceDir}
+                                    readonly
+                                    placeholder="Select source..."
+                                    class="input input-ghost w-full h-8 text-xs focus:outline-none border-none bg-transparent px-2"
+                                />
+                                <button
+                                    on:click={() => selectDirectory("source")}
+                                    class="btn btn-sm btn-ghost bg-base-200 hover:bg-base-300 text-base-content/70 ml-2 px-4 rounded-md border-none font-normal"
+                                    >Browse</button
+                                >
+                            </div>
+                        </div>
+
+                        <!-- Output Path -->
+                        <div>
+                            <label
+                                class="text-[10px] font-semibold text-base-content/50 mb-1 block pl-1"
+                                >Output Destination</label
+                            >
+                            <div
+                                class="flex items-center w-full px-2 py-1.5 rounded-lg border border-base-300 bg-base-100 focus-within:border-secondary focus-within:ring-1 focus-within:ring-secondary/20 transition-all"
+                            >
+                                <span
+                                    class="material-symbols-rounded text-secondary/70 text-sm ml-1"
+                                    >output</span
+                                >
+                                <input
+                                    type="text"
+                                    bind:value={outputDir}
+                                    readonly
+                                    placeholder="Select output..."
+                                    class="input input-ghost w-full h-8 text-xs focus:outline-none border-none bg-transparent px-2"
+                                />
+                                <button
+                                    on:click={() => selectDirectory("output")}
+                                    class="btn btn-sm btn-ghost bg-base-200 hover:bg-base-300 text-base-content/70 ml-2 px-4 rounded-md border-none font-normal"
+                                    >Browse</button
+                                >
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Info Block (Bottom of Sidebar) -->
+                <div
+                    class="p-4 bg-base-100 rounded-xl border border-base-300/50 shadow-sm text-xs text-base-content/70 leading-relaxed"
+                >
+                    <span class="font-bold block mb-1 text-base-content"
+                        >How it works</span
+                    >
+                    This tool creates a new dataset by cropping around the
+                    <span class="text-secondary font-medium">Parent Label</span
+                    >. All internal annotations are remapped to the new image
+                    coordinates.
+                </div>
+            </div>
+
+            <!-- Right Content Panel (60%) -->
+            <div class="w-[60%] flex flex-col h-full bg-base-100 relative">
+                <!-- Close Button -->
                 <button
                     on:click={handleClose}
-                    class="btn btn-sm btn-circle btn-ghost text-base-content/50 hover:text-base-content hover:bg-base-200 transition-colors"
-                    aria-label="Close modal"
+                    class="absolute top-4 right-4 z-10 btn btn-sm btn-circle btn-ghost text-base-content/40 hover:text-base-content"
                     disabled={localLoading}>✕</button
                 >
-            </div>
 
-            <!-- Content -->
-            <div class="px-8 py-2 space-y-6">
-                <!-- Status Messages -->
-                {#if localError}
-                    <div
-                        class="alert alert-error rounded-xl shadow-sm border border-error/10"
-                    >
-                        <span class="material-symbols-rounded">error</span>
-                        <span>{localError}</span>
-                    </div>
-                {/if}
-
-                {#if localSuccess}
-                    <div
-                        class="alert alert-success rounded-xl shadow-sm border border-success/10 bg-success/10 text-success-content"
-                    >
-                        <span class="material-symbols-rounded"
-                            >check_circle</span
-                        >
-                        <span>{localSuccess}</span>
-                    </div>
-                {/if}
-
-                <!-- Info Card -->
                 <div
-                    class="p-4 bg-info/10 border border-info/20 rounded-xl text-sm text-base-content/80 flex gap-3 items-start"
+                    class="flex-1 flex flex-col items-center justify-center p-8 space-y-8"
                 >
-                    <div class="p-1 bg-info/20 rounded-full text-info shrink-0">
-                        <span class="material-symbols-rounded text-lg block"
-                            >info</span
+                    {#if localError}
+                        <div
+                            class="absolute top-16 left-8 right-8 alert alert-error py-2 px-4 rounded-lg text-sm shadow-sm animate-in fade-in slide-in-from-top-2"
                         >
-                    </div>
-                    <div class="leading-relaxed opacity-90">
-                        This tool crops images around a specified <strong
-                            >Parent Label</strong
-                        > (e.g., "person") and remaps all child label coordinates
-                        to the new cropped region.
-                    </div>
-                </div>
-
-                <!-- Source Directory -->
-                <div class="space-y-2">
-                    <label
-                        class="label font-bold text-xs text-base-content/40 uppercase tracking-wider pl-1 pb-1"
-                    >
-                        Input Source
-                    </label>
-                    <div
-                        class="flex items-center w-full px-1 py-1 rounded-xl border border-base-300 bg-base-100 hover:border-base-content/30 focus-within:ring-2 focus-within:ring-secondary/20 focus-within:border-secondary transition-all shadow-sm"
-                    >
-                        <div class="pl-3 text-secondary/60">
-                            <span class="material-symbols-rounded"
-                                >folder_open</span
+                            <span class="material-symbols-rounded text-lg"
+                                >error</span
                             >
+                            <span>{localError}</span>
                         </div>
-                        <input
-                            type="text"
-                            bind:value={sourceDir}
-                            readonly
-                            placeholder="Select source directory..."
-                            class="input input-ghost w-full focus:outline-none border-none bg-transparent h-10 text-sm"
-                        />
-                        <button
-                            on:click={() => selectDirectory("source")}
-                            class="btn btn-sm btn-ghost bg-base-200/80 hover:bg-base-300 text-base-content/70 mr-1 rounded-lg font-medium"
-                            disabled={localLoading}
-                        >
-                            Browse
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Output Directory -->
-                <div class="space-y-2">
-                    <label
-                        class="label font-bold text-xs text-base-content/40 uppercase tracking-wider pl-1 pb-1"
-                    >
-                        Destination
-                    </label>
-                    <div
-                        class="flex items-center w-full px-1 py-1 rounded-xl border border-base-300 bg-base-100 hover:border-base-content/30 focus-within:ring-2 focus-within:ring-secondary/20 focus-within:border-secondary transition-all shadow-sm"
-                    >
-                        <div class="pl-3 text-secondary/60">
-                            <span class="material-symbols-rounded">output</span>
-                        </div>
-                        <input
-                            type="text"
-                            bind:value={outputDir}
-                            readonly
-                            placeholder="Select output directory..."
-                            class="input input-ghost w-full focus:outline-none border-none bg-transparent h-10 text-sm"
-                        />
-                        <button
-                            on:click={() => selectDirectory("output")}
-                            class="btn btn-sm btn-ghost bg-base-200/80 hover:bg-base-300 text-base-content/70 mr-1 rounded-lg font-medium"
-                            disabled={localLoading}
-                        >
-                            Browse
-                        </button>
-                    </div>
-                    <p class="text-xs text-base-content/40 px-2">
-                        Processed images will be automatically loaded into the
-                        gallery.
-                    </p>
-                </div>
-
-                <!-- Parent Label -->
-                <div class="space-y-2 pb-2">
-                    <label
-                        class="label font-bold text-xs text-base-content/40 uppercase tracking-wider pl-1 pb-1"
-                        for="cropParentLabel"
-                    >
-                        Target Class (Parent)
-                    </label>
-                    <div
-                        class="flex items-center w-full px-1 py-1 rounded-xl border border-base-300 bg-base-100 hover:border-base-content/30 focus-within:ring-2 focus-within:ring-secondary/20 focus-within:border-secondary transition-all shadow-sm"
-                    >
-                        <div class="pl-3 text-base-content/40">
-                            <span class="material-symbols-rounded">label</span>
-                        </div>
-                        <input
-                            type="text"
-                            id="cropParentLabel"
-                            bind:value={parentLabel}
-                            placeholder="e.g., person, car..."
-                            class="input input-ghost w-full focus:outline-none border-none bg-transparent h-10 text-sm font-medium"
-                            disabled={localLoading}
-                        />
-                    </div>
-                </div>
-            </div>
-
-            <!-- Footer -->
-            <div
-                class="px-8 py-5 bg-base-100 border-t border-base-100 flex justify-end gap-3 sticky bottom-0 z-10 w-full mt-4"
-            >
-                <button
-                    type="button"
-                    class="btn btn-ghost hover:bg-base-200 font-medium text-base-content/70"
-                    on:click={handleClose}
-                    disabled={localLoading}
-                >
-                    Cancel
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-primary min-w-[140px] shadow-lg shadow-primary/20 border-none hover:bg-primary-focus hover:scale-[1.02] active:scale-[0.98] transition-all"
-                    on:click={handleRunCrop}
-                    disabled={localLoading ||
-                        !sourceDir ||
-                        !outputDir ||
-                        !parentLabel.trim()}
-                >
-                    {#if localLoading}
-                        <span
-                            class="loading loading-spinner loading-sm text-primary-content"
-                        ></span>
-                    {:else}
-                        <span>Run Processing</span>
-                        <span class="material-symbols-rounded text-lg"
-                            >arrow_forward</span
-                        >
                     {/if}
-                </button>
+
+                    {#if localSuccess}
+                        <div
+                            class="absolute top-16 left-8 right-8 alert alert-success py-2 px-4 rounded-lg text-sm shadow-sm animate-in fade-in slide-in-from-top-2"
+                        >
+                            <span class="material-symbols-rounded"
+                                >check_circle</span
+                            >
+                            <span>{localSuccess}</span>
+                        </div>
+                    {/if}
+
+                    <!-- Process Visualization -->
+                    <div class="w-full max-w-sm">
+                        <label
+                            class="text-xs font-bold text-base-content/40 uppercase tracking-wider mb-6 block text-center"
+                            >Operation Parameters</label
+                        >
+
+                        <div
+                            class="bg-base-200/30 border border-base-200 rounded-2xl p-6 flex flex-col items-center gap-6"
+                        >
+                            <!-- Visual Flow -->
+                            <div
+                                class="flex items-center gap-3 text-base-content/30 select-none"
+                            >
+                                <div
+                                    class="w-12 h-16 border-2 border-dashed border-current rounded flex items-center justify-center"
+                                >
+                                    <div
+                                        class="w-6 h-8 bg-current opacity-20 transform scale-75"
+                                    ></div>
+                                </div>
+                                <span
+                                    class="material-symbols-rounded text-2xl animate-pulse"
+                                    >arrow_forward</span
+                                >
+                                <div
+                                    class="w-10 h-10 bg-secondary/10 border-2 border-secondary rounded flex items-center justify-center text-secondary relative"
+                                >
+                                    <span
+                                        class="material-symbols-rounded text-lg"
+                                        >crop</span
+                                    >
+                                    <div
+                                        class="absolute -top-1 -right-1 w-2 h-2 bg-success rounded-full"
+                                    ></div>
+                                </div>
+                            </div>
+
+                            <!-- Input -->
+                            <div class="w-full">
+                                <label
+                                    class="label text-xs font-bold text-base-content/50 uppercase pl-1 pb-1"
+                                    for="parentLabel">Parent Class Label</label
+                                >
+                                <div class="relative">
+                                    <input
+                                        id="parentLabel"
+                                        type="text"
+                                        bind:value={parentLabel}
+                                        placeholder="e.g. person"
+                                        class="input input-lg input-bordered w-full text-center text-lg font-bold bg-base-100 shadow-sm focus:border-secondary focus:ring-4 focus:ring-secondary/10 transition-all"
+                                    />
+                                    <div
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/20 pointer-events-none"
+                                    >
+                                        <span class="material-symbols-rounded"
+                                            >label</span
+                                        >
+                                    </div>
+                                </div>
+                                <p
+                                    class="text-[10px] text-center mt-2 text-base-content/40"
+                                >
+                                    Enter the class name to crop around
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Action -->
+                <div
+                    class="p-6 border-t border-base-100 bg-base-50/50 flex justify-end gap-3"
+                >
+                    <button
+                        class="btn btn-sm btn-ghost bg-base-200 hover:bg-base-300 text-base-content/70 border-none font-normal"
+                        on:click={handleClose}
+                        disabled={localLoading}>Cancel</button
+                    >
+                    <button
+                        class="btn btn-sm bg-base-200 hover:bg-base-300 text-base-content border-none font-normal min-w-[140px]"
+                        on:click={handleRunCrop}
+                        disabled={localLoading ||
+                            !sourceDir ||
+                            !outputDir ||
+                            !parentLabel.trim()}
+                    >
+                        {#if localLoading}
+                            <span class="loading loading-spinner loading-xs"
+                            ></span>
+                        {:else}
+                            Start Processing
+                        {/if}
+                    </button>
+                </div>
             </div>
         </div>
         <form
