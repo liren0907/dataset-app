@@ -917,6 +917,7 @@
                         <!-- Image Gallery Component -->
                         <div
                             class="h-full overflow-y-auto pr-2 rounded-box border border-base-300 bg-base-100"
+                            class:pointer-events-none={showAnnotationModal}
                         >
                             <ImageGallery
                                 {images}
@@ -977,6 +978,7 @@
         {isMockMode}
         on:close={() => {
             showAnnotationModal = false;
+            selectedImage = null;
         }}
         on:save={(e) => {
             console.log("Annotation retained/saved via modal");

@@ -71,54 +71,30 @@
         }, 100);
     }
 
-    // Manual trigger approach to avoid reactive statement issues
-    let hasTriggeredInit = false;
+    // ResizeObserver for robust container detection
+    let resizeObserver: ResizeObserver | null = null;
 
-    // Watch for modal opening - allow re-initialization if previous failed
-    $: {
-        if (showModal && selectedImage && !isInitializing) {
-            console.log(
-                "🔄 Modal opened with image, checking initialization state",
-            );
-            console.log(
-                "State: isInitialized:",
-                isInitialized,
-                "hasTriggeredInit:",
-                hasTriggeredInit,
-                "isInitializing:",
-                isInitializing,
-            );
-
-            // Allow initialization if:
-            // 1. Never initialized before (!hasTriggeredInit)
-            // 2. Previous initialization failed (hasTriggeredInit but !isInitialized)
-            if (!hasTriggeredInit || (hasTriggeredInit && !isInitialized)) {
-                console.log("🚀 Triggering modal initialization");
-                hasTriggeredInit = true;
-
-                // Always use delayed initialization to ensure DOM is ready
-                // The modal needs time to fully render before Konva can attach
-                console.log(
-                    "⏳ Using delayed initialization to ensure DOM readiness",
-                );
-                setTimeout(() => {
-                    // Double-check modal is still open before initializing
-                    if (showModal && selectedImage) {
-                        initializeModal();
-                    }
-                }, 100); // Reduced from 500ms to 100ms for better UX
-            } else if (hasTriggeredInit && isInitialized) {
-                console.log(
-                    "⚠️ Skipping re-initialization - already successfully initialized",
-                );
-            }
-        }
+    // Reactive: Trigger initialization when all conditions are met
+    // strict dependency on konvaContainer ensures we don't run before DOM is mounted
+    $: if (
+        showModal &&
+        selectedImage &&
+        konvaContainer &&
+        !isInitialized &&
+        !isInitializing
+    ) {
+        // Use a small debounce to allow any final layout shifts to settle
+        console.log("🚀 Triggering modal initialization (Reactive)");
+        initializeModal();
     }
 
     // Watch for modal closing - reset all state
+    // Watch for modal closing - reset all state
     $: if (!showModal) {
-        console.log("🔄 Modal closed, cleaning up");
-        cleanupModal();
+        if (isInitialized || isInitializing) {
+            console.log("🔄 Modal closed, cleaning up");
+            cleanupModal();
+        }
     }
 
     onMount(() => {
@@ -142,219 +118,112 @@
         }));
     }
 
-    // Robust DOM readiness checking with retry mechanism
-    async function ensureKonvaContainerReady(
-        maxRetries: number = 15,
-        baseDelay: number = 100,
-    ): Promise<void> {
-        console.log("🔍 Starting DOM readiness check for Konva container...");
-
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            // Wait for Svelte to update DOM
-            await tick();
-
-            // Additional wait for DOM to stabilize
-            await new Promise((resolve) => setTimeout(resolve, 50));
-
-            // First, try to find the element directly using querySelector as fallback
-            let container = konvaContainer;
-            if (!container) {
-                console.log(
-                    `🔍 Attempt ${attempt}: Trying to find container with querySelector...`,
-                );
-                container = document.querySelector(
-                    '[aria-label*="Interactive annotation editor"]',
-                ) as HTMLDivElement;
-                if (container) {
-                    console.log(
-                        `✅ Found container via querySelector on attempt ${attempt}`,
-                    );
-                    konvaContainer = container; // Update the bound variable
-                }
+    // Robust DOM readiness checking using ResizeObserver
+    // This waits until the container actually has dimensions (is painted)
+    function waitForContainerDimensions(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            if (!konvaContainer) {
+                reject(new Error("Konva container not bound"));
+                return;
             }
 
-            // Check if container is available
-            if (container) {
+            // Check if already ready
+            if (
+                konvaContainer.clientWidth > 0 &&
+                konvaContainer.clientHeight > 0
+            ) {
                 console.log(
-                    `🔍 Attempt ${attempt}: Container exists, checking DOM attachment...`,
+                    `✅ Container ready immediately (${konvaContainer.clientWidth}x${konvaContainer.clientHeight})`,
                 );
-
-                // Additional verification: check if element is in document
-                if (document.contains(container)) {
-                    console.log(
-                        `🔍 Attempt ${attempt}: Container is in DOM, checking dimensions...`,
-                    );
-
-                    // Final check: ensure element has dimensions (fully rendered)
-                    const rect = container.getBoundingClientRect();
-                    if (rect.width > 0 && rect.height > 0) {
-                        console.log(
-                            `✅ Konva container ready on attempt ${attempt} (${rect.width}x${rect.height})`,
-                        );
-                        return;
-                    } else {
-                        console.log(
-                            `⏳ Container exists but has zero dimensions (${rect.width}x${rect.height})`,
-                        );
-                    }
-                } else {
-                    console.log(`⏳ Container exists but not attached to DOM`);
-                }
-            } else {
-                console.log(`⏳ Container is null/undefined`);
+                resolve();
+                return;
             }
 
-            // Progressive delay with cap
-            const delay = Math.min(baseDelay * attempt, 500); // Cap at 500ms
             console.log(
-                `⏳ Waiting ${delay}ms before next attempt (${attempt}/${maxRetries})...`,
+                "⏳ Waiting for container dimensions via ResizeObserver...",
             );
 
-            await new Promise((resolve) => setTimeout(resolve, delay));
+            // Cleanup previous observer if exists
+            if (resizeObserver) resizeObserver.disconnect();
 
-            // Additional tick after delay
-            await tick();
-        }
+            resizeObserver = new ResizeObserver((entries) => {
+                for (const entry of entries) {
+                    const { width, height } = entry.contentRect;
+                    if (width > 0 && height > 0) {
+                        console.log(
+                            `✅ Container resized to ${width}x${height}`,
+                        );
+                        resizeObserver?.disconnect();
+                        resizeObserver = null;
+                        resolve();
+                    }
+                }
+            });
 
-        // FINAL FALLBACK: Try to find and set container manually
-        console.log(
-            "🔄 Final fallback: Attempting manual container discovery...",
-        );
-        const manualContainer = document.querySelector(
-            '[aria-label*="Interactive annotation editor"]',
-        ) as HTMLDivElement;
+            resizeObserver.observe(konvaContainer);
 
-        if (manualContainer) {
-            console.log("✅ Manual container discovery successful!");
-            konvaContainer = manualContainer;
-
-            const rect = manualContainer.getBoundingClientRect();
-            if (rect.width > 0 && rect.height > 0) {
-                console.log(
-                    `🎉 Final fallback successful! Container ready (${rect.width}x${rect.height})`,
-                );
-                return;
-            } else {
-                console.log(
-                    "⚠️ Manual container found but has zero dimensions, will still proceed",
-                );
-                return;
-            }
-        }
-
-        // If we get here, all retries failed
-        console.error("❌ All attempts to find Konva container failed");
-        console.error("📊 Debug info:", {
-            showModal,
-            selectedImage: !!selectedImage,
-            konvaContainer: !!konvaContainer,
-            documentContains: konvaContainer
-                ? document.contains(konvaContainer)
-                : false,
-            querySelectorFound: !!document.querySelector(
-                '[aria-label*="Interactive annotation editor"]',
-            ),
-            dimensions: konvaContainer
-                ? (() => {
-                      const rect = konvaContainer.getBoundingClientRect();
-                      return `${rect.width}x${rect.height}`;
-                  })()
-                : "N/A",
+            // Safety timeout (5 seconds)
+            setTimeout(() => {
+                if (resizeObserver) {
+                    resizeObserver.disconnect();
+                    resizeObserver = null;
+                    const width = konvaContainer?.clientWidth || 0;
+                    const height = konvaContainer?.clientHeight || 0;
+                    if (width > 0 && height > 0) {
+                        resolve();
+                    } else {
+                        reject(
+                            new Error(
+                                "Timeout waiting for container dimensions",
+                            ),
+                        );
+                    }
+                }
+            }, 5000);
         });
-
-        throw new Error(
-            `Konva container not ready after ${maxRetries} attempts. This usually indicates a DOM timing issue.`,
-        );
     }
 
     // Initialize the modal with backend-preprocessed image
     async function initializeModal(): Promise<void> {
-        if (!selectedImage) return;
+        if (!selectedImage || isInitializing || isInitialized) return;
 
-        // Multiple guards to prevent any duplicate calls
-        if (isInitializing || (hasTriggeredInit && isInitialized)) {
-            console.log(
-                "⚠️ Initialization blocked - isInitializing:",
-                isInitializing,
-                "isInitialized:",
-                isInitialized,
-                "hasTriggeredInit:",
-                hasTriggeredInit,
-            );
-            return;
-        }
-
-        isInitializing = true; // ← NEW: Prevent duplicate calls
+        isInitializing = true;
         console.log(
             "🚀 STARTING modal initialization for:",
             selectedImage.name,
         );
 
-        // DEBUG: Log initialization state
-        console.log("🔧 DEBUG: Initialization state:", {
-            selectedImage: !!selectedImage,
-            konvaContainer: !!konvaContainer,
-            konvaManager: !!konvaManager,
-            isLoading,
-            isInitialized,
-            isInitializing,
-        });
-
         // Ensure konvaManager is ready
         if (!konvaManager) {
-            throw new Error(
-                "KonvaManager not initialized - check konvaService import",
-            );
+            isInitializing = false;
+            // Should retry or error logic here
+            return;
         }
 
         try {
             isLoading = true;
-            console.log("⏱️ Step 0: Ensuring Konva container is ready...");
-            await ensureKonvaContainerReady();
-            console.log("✅ Step 0: Container ready.");
+
+            // Wait for dimensions
+            await waitForContainerDimensions();
 
             console.log("⏱️ Step 1: Loading annotation metadata...");
             await loadAnnotationMetadata();
-            console.log("✅ Step 1: Metadata loaded.");
 
             console.log("⏱️ Step 2: Initializing Konva Viewer...");
             if (annotatedImageData && konvaContainer) {
                 await initializeKonvaViewer();
-                console.log("✅ Step 2: Viewer initialized.");
             } else {
-                console.error("❌ Step 2 failed: missing data", {
-                    annotatedImageData: !!annotatedImageData,
-                    konvaContainer: !!konvaContainer,
-                });
                 throw new Error(
                     "Missing required data for KonvaJS initialization",
                 );
             }
         } catch (error) {
             console.error("❌ Failed to initialize modal:", error);
-            console.log("🔄 Attempting fallback initialization...");
-            // Fallback to basic image display
-            await fallbackInitialization();
+            // Fallback commented out for now as simple init usually works with observer
+            // await fallbackInitialization();
         } finally {
             isLoading = false;
-            isInitializing = false; // ← NEW: Reset flag
-            // Only reset hasTriggeredInit if initialization actually succeeded
-            if (isInitialized) {
-                // Keep hasTriggeredInit = true to prevent re-initialization of successful state
-                console.log(
-                    "✅ MODAL INITIALIZATION COMPLETED for:",
-                    selectedImage?.name,
-                );
-                // Initial metadata update
-                updateMetadata();
-            } else {
-                // Reset hasTriggeredInit if initialization failed, allowing retry
-                hasTriggeredInit = false;
-                console.log(
-                    "❌ MODAL INITIALIZATION FAILED for:",
-                    selectedImage?.name,
-                );
-            }
+            isInitializing = false;
         }
     }
 
@@ -491,12 +360,8 @@
         console.log("🔄 Using fallback initialization...");
 
         try {
-            // Use the same robust checking mechanism
-            await ensureKonvaContainerReady(8, 100); // Fewer retries, longer base delay for fallback
-            console.log(
-                "✅ Fallback: Konva container is ready:",
-                konvaContainer,
-            );
+            await waitForContainerDimensions();
+            console.log("✅ Fallback: Konva container is ready");
         } catch (error) {
             console.error("❌ Fallback failed:", error);
             return;
@@ -560,11 +425,8 @@
                 "❌ Fallback initialization also failed:",
                 fallbackError,
             );
-            console.error("Full error details:", fallbackError);
-            // Reset hasTriggeredInit to allow retry if user tries again
-            hasTriggeredInit = false;
-            // At this point, both main and fallback have failed
-            // The modal will show the error state
+            // Reset state
+            isInitializing = false;
         }
     }
 
@@ -574,27 +436,33 @@
             konvaManager.cleanup();
         }
 
-        // Clean up temporary preview file
+        // Disconnect observer
+        if (resizeObserver) {
+            resizeObserver.disconnect();
+            resizeObserver = null;
+        }
+
         if (tempPreviewPath) {
-            // Note: In a real implementation, you might want to clean up temp files
-            // For now, we'll let the OS handle cleanup
             tempPreviewPath = null;
         }
 
-        // Reset all state flags for clean slate
         isInitialized = false;
-        isInitializing = false; // ← Reset initialization flag
-        hasTriggeredInit = false; // ← Reset trigger flag (IMPORTANT: allows re-init)
+        isInitializing = false;
         annotatedImageData = null;
         isLoading = false;
-        annotationCount = 0; // New: reset count
-        console.log(
-            "🧹 Modal cleanup completed - all flags reset, ready for next open",
-        );
+        annotationCount = 0;
+        console.log("🧹 Modal cleanup completed");
     }
 
     // Event handlers
-    function handleClose(): void {
+    function handleClose(event?: Event): void {
+        if (event) {
+            // Stop propagation to prevent underlying elements from triggering
+            event.stopPropagation();
+            event.preventDefault();
+        }
+
+        console.log("❌ Closing modal via handleClose");
         dispatch("close");
     }
 
@@ -733,11 +601,11 @@
             >
                 <div class="flex items-center gap-3">
                     <button
-                        on:click={handleClose}
+                        on:click={(e) => handleClose(e)}
                         class="btn btn-ghost btn-sm btn-circle"
-                        aria-label="Close annotation viewer"
+                        aria-label="Close modal"
                     >
-                        <span class="material-symbols-rounded">arrow_back</span>
+                        <span class="material-symbols-rounded">close</span>
                     </button>
                     <div>
                         <h3
@@ -771,7 +639,21 @@
                 </div>
                 -->
                 <div class="flex items-center gap-2">
-                    <!-- Placeholder for future actions or empty -->
+                    {#if autoAnnotationEnabled}
+                        <div class="badge badge-success gap-1 shadow-sm">
+                            <span class="material-symbols-rounded text-xs"
+                                >dns</span
+                            >
+                            Backend Data
+                        </div>
+                    {:else}
+                        <div class="badge badge-info gap-1 shadow-sm">
+                            <span class="material-symbols-rounded text-xs"
+                                >computer</span
+                            >
+                            Live Mode
+                        </div>
+                    {/if}
                 </div>
             </div>
 
@@ -878,11 +760,11 @@
 
                 <!-- Single Konva Container - Always Present -->
                 <div
-                    class="flex-1 relative bg-slate-100 rounded-lg overflow-hidden border-2 border-slate-300 min-h-[500px]"
+                    class="flex-1 flex flex-col relative bg-slate-100 rounded-lg overflow-hidden border-2 border-slate-300 min-h-[500px]"
                 >
                     <div
                         bind:this={konvaContainer}
-                        class="w-full h-full bg-slate-50"
+                        class="w-full flex-1 bg-slate-50"
                         role="img"
                         aria-label="Interactive annotation editor for {selectedImage?.name ||
                             'image'}"
@@ -934,32 +816,9 @@
                         </div>
                     {/if}
 
-                    <!-- Modern Status Badges -->
-                    {#if isInitialized}
-                        <div
-                            class="absolute top-4 left-4 z-10 flex flex-col gap-2"
-                        >
-                            {#if autoAnnotationEnabled}
-                                <div
-                                    class="badge badge-success gap-1 shadow-sm"
-                                >
-                                    <span
-                                        class="material-symbols-rounded text-xs"
-                                        >dns</span
-                                    >
-                                    Backend Data
-                                </div>
-                            {:else}
-                                <div class="badge badge-info gap-1 shadow-sm">
-                                    <span
-                                        class="material-symbols-rounded text-xs"
-                                        >computer</span
-                                    >
-                                    Live Mode
-                                </div>
-                            {/if}
-                        </div>
+                    <!-- Modern Status Badges moved to Header -->
 
+                    {#if isInitialized}
                         <div class="absolute bottom-4 right-4 z-10">
                             <div
                                 class="badge badge-neutral badge-lg shadow-sm gap-2 p-3"
@@ -993,7 +852,7 @@
             </div>
         </div>
         <form method="dialog" class="modal-backdrop">
-            <button on:click={handleClose}>close</button>
+            <button on:click={(e) => handleClose(e)}>close</button>
         </form>
     </dialog>
 {/if}
