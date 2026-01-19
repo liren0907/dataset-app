@@ -1,5 +1,6 @@
 <script lang="ts">
-    export let datasetSummary: any = null;
+    import type { DatasetSummary } from "../services/datasetService";
+    export let datasetSummary: DatasetSummary | null = null;
 
     function formatPercentage(value: number, total: number): string {
         if (!total || total === 0) return "0.0%";
@@ -20,6 +21,10 @@
         label_counts: {},
         annotation_types: [],
     };
+
+    $: sortedLabelCounts = Object.entries(summary.label_counts || {}).sort(
+        ([, countA], [, countB]) => (countB as number) - (countA as number),
+    );
 </script>
 
 <!-- Dense Info Strip Layout -->
@@ -85,7 +90,7 @@
             <div
                 class="flex items-center gap-2 overflow-x-auto no-scrollbar mask-linear-fade pb-1"
             >
-                {#each Object.entries(summary.label_counts).sort((a, b) => b[1] - a[1]) as [label, count]}
+                {#each sortedLabelCounts as [label, count]}
                     <div
                         class="badge badge-neutral gap-1.5 py-3 px-3 border-base-300 bg-base-200 text-base-content whitespace-nowrap flex-shrink-0"
                     >

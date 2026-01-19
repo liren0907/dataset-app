@@ -6,7 +6,7 @@ import { imageStore } from "./imageStore";
 export interface AnnotationState {
     annotating: boolean;
     autoAnnotating: boolean;
-    annotationType: string;
+    annotationType: "bounding_box" | "polygon";
     autoAnnotationEnabled: boolean;
 }
 

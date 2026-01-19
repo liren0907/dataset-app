@@ -3,7 +3,7 @@
     import type {
         DatasetSummary,
         ProcessedImage,
-    } from "../../services/datasetService";
+    } from "../services/datasetService";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import ToggleButtonGroup from "$lib/components/ui/ToggleButtonGroup.svelte";
     import IconSegmentedControl from "$lib/components/ui/IconSegmentedControl.svelte";
@@ -15,6 +15,7 @@
     export let annotationType: "bounding_box" | "polygon" = "bounding_box";
     export let autoAnnotationEnabled: boolean;
     export let annotating: boolean;
+    export let autoAnnotating: boolean;
 
     export let showCropTool: boolean;
     export let datasetSummary: DatasetSummary | null;
