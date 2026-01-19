@@ -1,8 +1,12 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
-    import type { DatasetSummary, ProcessedImage } from "../datasetService";
+    import type {
+        DatasetSummary,
+        ProcessedImage,
+    } from "../../services/datasetService";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import ToggleButtonGroup from "$lib/components/ui/ToggleButtonGroup.svelte";
+    import IconSegmentedControl from "$lib/components/ui/IconSegmentedControl.svelte";
 
     export let isMockMode: boolean;
     export let loading: boolean;
@@ -31,13 +35,11 @@
         {
             value: "bounding_box",
             icon: "crop_square",
-            label: "Boxes",
             tooltip: "Bounding Boxes",
         },
         {
             value: "polygon",
             icon: "hexagon",
-            label: "Polygon",
             tooltip: "Polygons",
         },
     ];
@@ -86,20 +88,15 @@
             <div class="divider divider-horizontal mx-0 h-6"></div>
 
             <!-- Open Directory Button -->
-            <button
-                on:click={() => dispatch("selectDirectory")}
-                class="btn btn-ghost btn-sm gap-2 text-base-content/70 hover:text-base-content hover:bg-base-200"
+            <!-- Open Directory Button -->
+            <IconButton
+                icon="folder_open"
+                tooltip="Open Project Directory"
                 disabled={loading}
-                title="Open Project Directory"
-            >
-                {#if loading}
-                    <span class="loading loading-spinner loading-xs"></span>
-                {:else}
-                    <span class="material-symbols-rounded text-lg"
-                        >folder_open</span
-                    >
-                {/if}
-            </button>
+                {loading}
+                variant="ghost"
+                on:click={() => dispatch("selectDirectory")}
+            />
 
             <div class="divider divider-horizontal mx-0 h-6"></div>
 
@@ -139,7 +136,7 @@
             <!-- Annotation Type Toggle -->
             {#if directoryPath && images.length > 0}
                 <div class="hidden lg:block">
-                    <ToggleButtonGroup
+                    <IconSegmentedControl
                         options={annotationOptions}
                         value={annotationType}
                         on:change={(e) =>
@@ -206,7 +203,7 @@
             <div class="divider divider-horizontal mx-0 h-6"></div>
 
             <!-- View Mode Toggle -->
-            <ToggleButtonGroup
+            <IconSegmentedControl
                 options={viewModeOptions}
                 value={viewMode}
                 on:change={(e) => dispatch("setViewMode", e.detail)}

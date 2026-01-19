@@ -1,7 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import { open } from "@tauri-apps/plugin-dialog";
-    import type { DatasetSummary } from "../datasetService";
+    import type { DatasetSummary } from "../services/datasetService";
 
     // New UI Components
     import SimpleModal from "$lib/components/ui/SimpleModal.svelte";

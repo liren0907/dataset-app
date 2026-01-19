@@ -8,6 +8,7 @@
         SectionLabel,
         SplitPaneModal,
         Alert,
+        LabelBadge,
     } from "$lib/components/ui";
 
     export let showModal: boolean = false;
@@ -306,22 +307,14 @@
             {#if availableLabels.length > 0}
                 <div class="flex flex-wrap gap-2">
                     {#each availableLabels as label}
-                        <button
-                            class={`px-2.5 py-1 rounded-md text-xs font-medium transition-all border select-none
-                            ${
-                                !internalExcludedLabels.has(label)
-                                    ? "bg-primary/5 text-primary border-primary/20 hover:bg-primary/10"
-                                    : "bg-base-200 text-base-content/30 border-transparent decoration-slice line-through opacity-60"
-                            }`}
-                            on:click={() => toggleLabelExclusion(label)}
-                        >
+                        <LabelBadge
                             {label}
-                            <span class="ml-1 opacity-50 text-[10px]"
-                                >#{currentDatasetSummary?.label_counts[
-                                    label
-                                ]}</span
-                            >
-                        </button>
+                            count={currentDatasetSummary?.label_counts[label]}
+                            state={!internalExcludedLabels.has(label)
+                                ? "active"
+                                : "excluded"}
+                            on:click={() => toggleLabelExclusion(label)}
+                        />
                     {/each}
                 </div>
             {:else}

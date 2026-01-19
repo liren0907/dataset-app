@@ -1,6 +1,6 @@
 
 import { writable, get } from "svelte/store";
-import { performAutoAnnotation } from "../datasetService";
+import { performAutoAnnotation } from "../services/datasetService";
 import { imageStore } from "./imageStore";
 
 export interface AnnotationState {

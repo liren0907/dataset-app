@@ -5,11 +5,11 @@ import { tick } from "svelte";
 import {
     fetchPaginatedImages,
     fetchDatasetSummary,
-} from "../datasetService";
+} from "../services/datasetService";
 import type {
     ProcessedImage,
     DatasetSummary,
-} from "../datasetService";
+} from "../services/datasetService";
 import {
     MOCK_DIRECTORY_PATH,
     mockGetImages,

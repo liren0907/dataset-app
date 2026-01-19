@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { safeConvertFileSrc } from "./utils/tauriUtils";
+import { safeConvertFileSrc } from "../utils/tauriUtils";
 
 // Interface for the structure of an image object from the backend (basic version)
 interface BackendImage {
@@ -285,10 +285,12 @@ export async function performAutoAnnotation(
 export async function performCropAndRemap(
     sourceDir: string,
     outputDir: string,
-    parentLabel: string
+    parentLabel: string,
+    requiredChildLabelsStr?: string,
+    paddingFactor: number = 1.25
 ): Promise<string> {
     console.log(
-        `Service: Performing crop and remap. Source: ${sourceDir}, Output: ${outputDir}, Parent: ${parentLabel}`
+        `Service: Performing crop and remap. Source: ${sourceDir}, Output: ${outputDir}, Parent: ${parentLabel}, Children: ${requiredChildLabelsStr}, Padding: ${paddingFactor}`
     );
 
     if (!sourceDir || !sourceDir.trim()) {
@@ -305,7 +307,9 @@ export async function performCropAndRemap(
         const message = await invoke("crop_and_remap_annotations", {
             sourceDir: sourceDir,
             outputDir: outputDir,
-            parentLabel: parentLabel
+            parentLabel: parentLabel,
+            requiredChildLabelsStr: requiredChildLabelsStr || "",
+            paddingFactor: paddingFactor
         }) as string;
 
         console.log(`Service: Crop and remap successful. Message: ${message}`);

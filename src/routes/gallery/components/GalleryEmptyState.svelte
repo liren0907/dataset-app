@@ -1,6 +1,6 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
-    import type { ProcessedImage } from "../datasetService";
+    import type { ProcessedImage } from "../services/datasetService";
 
     export let loading: boolean;
     export let directoryPath: string;

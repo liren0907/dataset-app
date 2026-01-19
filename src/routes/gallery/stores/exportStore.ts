@@ -1,7 +1,7 @@
 
 import { writable } from "svelte/store";
-import { performDatasetExport } from "../datasetService";
-import type { DatasetExportParams } from "../datasetService";
+import { performDatasetExport } from "../services/datasetService";
+import type { DatasetExportParams } from "../services/datasetService";
 import { imageStore } from "./imageStore";
 
 export interface ExportState {
