@@ -30,7 +30,13 @@
         aria-labelledby="modal-title"
     >
         <!-- Backdrop -->
-        <div class="modal-backdrop" on:click={close}></div>
+        <button
+            type="button"
+            class="modal-backdrop cursor-default"
+            on:click={close}
+            on:keydown={(e) => e.key === "Enter" && close()}
+            aria-label="Close modal"
+        ></button>
 
         <!-- Modal Box -->
         <div

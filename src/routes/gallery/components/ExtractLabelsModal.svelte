@@ -3,6 +3,14 @@
     import { open } from "@tauri-apps/plugin-dialog";
     import type { DatasetSummary } from "../datasetService";
 
+    // New UI Components
+    import SimpleModal from "$lib/components/ui/SimpleModal.svelte";
+    import Alert from "$lib/components/ui/Alert.svelte";
+    import Button from "$lib/components/ui/Button.svelte";
+    import LabelBadge from "$lib/components/ui/LabelBadge.svelte";
+    import BrowseInput from "$lib/components/ui/BrowseInput.svelte";
+    import SectionLabel from "$lib/components/ui/SectionLabel.svelte";
+
     // Props
     export let isOpen: boolean = false;
     export let sourceDir: string = "";
@@ -99,157 +107,102 @@
     }
 </script>
 
-{#if isOpen}
-    <dialog
-        class="modal modal-open"
-        aria-modal="true"
-        aria-labelledby="extract-modal-title"
-    >
-        <div class="modal-box max-w-2xl">
-            <!-- Header -->
-            <div class="flex justify-between items-center mb-4">
-                <h3
-                    id="extract-modal-title"
-                    class="text-xl font-bold text-base-content"
-                >
-                    Extract Labels
-                </h3>
-                <button
-                    on:click={handleClose}
-                    class="btn btn-sm btn-circle btn-ghost"
-                    aria-label="Close modal"
-                    disabled={localLoading}>✕</button
-                >
-            </div>
+<SimpleModal
+    {isOpen}
+    title="Extract Labels"
+    maxWidth="max-w-2xl"
+    on:close={handleClose}
+>
+    <div class="space-y-6">
+        {#if localError}
+            <Alert
+                variant="error"
+                dismissible
+                on:close={() => (localError = "")}
+            >
+                {localError}
+            </Alert>
+        {/if}
 
-            <!-- Content -->
-            <div class="space-y-6">
-                {#if localError}
-                    <div class="alert alert-error">
-                        <span class="material-symbols-rounded">error</span>
-                        <span>{localError}</span>
-                    </div>
-                {/if}
-
-                <!-- Source Directory -->
-                <div class="form-control">
-                    <label class="label" for="extractSourceDir">
-                        <span class="label-text font-medium"
-                            >Source Directory</span
-                        >
-                    </label>
-                    <input
-                        type="text"
-                        id="extractSourceDir"
-                        value={sourceDir}
-                        readonly
-                        class="input input-bordered bg-base-200 text-base-content/70"
-                    />
-                </div>
-
-                <!-- Output Directory -->
-                <div class="form-control">
-                    <label class="label" for="extractOutputDir">
-                        <span class="label-text font-medium"
-                            >Output Directory</span
-                        >
-                    </label>
-                    <div class="join w-full">
-                        <input
-                            type="text"
-                            id="extractOutputDir"
-                            bind:value={outputDir}
-                            readonly
-                            placeholder="Select output directory..."
-                            class="input input-bordered join-item flex-1 bg-base-200 text-base-content/70"
-                        />
-                        <button
-                            on:click={selectOutputDirectory}
-                            class="btn btn-neutral join-item"
-                            disabled={localLoading}
-                        >
-                            Browse...
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Label Selection -->
-                <div class="form-control">
-                    <span class="label-text font-medium block mb-1"
-                        >Labels to Extract</span
-                    >
-                    {#if datasetSummary?.label_counts && availableLabels.length > 0}
-                        <p class="text-xs text-base-content/60 mb-2">
-                            Click to toggle labels. By default, all are
-                            included.
-                        </p>
-                        <div
-                            class="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-3 border border-base-300 rounded-lg bg-base-200"
-                        >
-                            {#each Object.entries(datasetSummary.label_counts) as [label, count] (label)}
-                                <button
-                                    type="button"
-                                    class={`badge badge-lg cursor-pointer transition-all
-                                        ${
-                                            !excludedLabels.has(label)
-                                                ? "badge-info"
-                                                : "badge-ghost opacity-60 line-through"
-                                        }`}
-                                    on:click={() => toggleLabelExclusion(label)}
-                                    disabled={localLoading}
-                                >
-                                    {label} ({count})
-                                </button>
-                            {/each}
-                        </div>
-                        <p class="text-xs text-base-content/50 mt-2">
-                            {includedLabelsCount} of {availableLabels.length} labels
-                            selected
-                        </p>
-                    {:else if datasetSummary && availableLabels.length === 0}
-                        <p class="text-sm text-base-content/60 italic">
-                            No labels found in the dataset summary.
-                        </p>
-                    {:else}
-                        <p class="text-sm text-base-content/60 italic">
-                            Dataset summary not available. Load a directory
-                            first.
-                        </p>
-                    {/if}
-                </div>
-            </div>
-
-            <!-- Footer -->
-            <div class="modal-action">
-                <button
-                    type="button"
-                    class="btn btn-ghost"
-                    on:click={handleClose}
-                    disabled={localLoading}
-                >
-                    Cancel
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-ghost border border-neutral"
-                    on:click={handleExtract}
-                    disabled={localLoading ||
-                        !outputDir ||
-                        (availableLabels.length > 0 &&
-                            includedLabelsCount === 0)}
-                >
-                    {#if localLoading}
-                        <span class="loading loading-spinner loading-sm"></span>
-                        Extracting...
-                    {:else}
-                        Run Extraction
-                    {/if}
-                </button>
+        <!-- Source Directory -->
+        <div>
+            <SectionLabel>Source Directory</SectionLabel>
+            <div class="px-1 py-2 opacity-70">
+                <BrowseInput value={sourceDir} disabled />
             </div>
         </div>
-        <form method="dialog" class="modal-backdrop">
-            <button on:click={handleClose} disabled={localLoading}>close</button
-            >
-        </form>
-    </dialog>
-{/if}
+
+        <!-- Output Directory -->
+        <div>
+            <SectionLabel>Output Directory</SectionLabel>
+            <div class="px-1 py-2">
+                <BrowseInput
+                    value={outputDir}
+                    placeholder="Select destination folder..."
+                    disabled={localLoading}
+                    on:browse={selectOutputDirectory}
+                />
+            </div>
+        </div>
+
+        <!-- Label Selection -->
+        <div>
+            <div class="flex justify-between items-end mb-2 px-1">
+                <SectionLabel>Labels to Extract</SectionLabel>
+                <span class="text-xs text-base-content/50">
+                    {includedLabelsCount} of {availableLabels.length} selected
+                </span>
+            </div>
+
+            {#if datasetSummary?.label_counts && availableLabels.length > 0}
+                <div
+                    class="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-4 border border-base-200 rounded-lg bg-base-100/50"
+                >
+                    {#each Object.entries(datasetSummary.label_counts) as [label, count] (label)}
+                        <LabelBadge
+                            {label}
+                            {count}
+                            state={excludedLabels.has(label)
+                                ? "excluded"
+                                : "active"}
+                            on:click={() => toggleLabelExclusion(label)}
+                        />
+                    {/each}
+                </div>
+            {:else if datasetSummary && availableLabels.length === 0}
+                <div
+                    class="p-4 border border-dashed border-base-300 rounded-lg text-center text-sm text-base-content/60"
+                >
+                    No labels found in the dataset.
+                </div>
+            {:else}
+                <div
+                    class="p-4 border border-dashed border-base-300 rounded-lg text-center text-sm text-base-content/60"
+                >
+                    Dataset summary not available.
+                </div>
+            {/if}
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div slot="actions" class="flex w-full justify-end gap-2">
+        <Button variant="ghost" on:click={handleClose} disabled={localLoading}>
+            Cancel
+        </Button>
+        <Button
+            variant="default"
+            on:click={handleExtract}
+            disabled={localLoading ||
+                !outputDir ||
+                (availableLabels.length > 0 && includedLabelsCount === 0)}
+        >
+            {#if localLoading}
+                <span class="loading loading-spinner loading-xs mr-2"></span>
+                Extracting...
+            {:else}
+                Run Extraction
+            {/if}
+        </Button>
+    </div>
+</SimpleModal>

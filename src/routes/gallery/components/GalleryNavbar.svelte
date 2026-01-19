@@ -1,33 +1,68 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import type { DatasetSummary, ProcessedImage } from "../datasetService";
+    import IconButton from "$lib/components/ui/IconButton.svelte";
+    import ToggleButtonGroup from "$lib/components/ui/ToggleButtonGroup.svelte";
 
     export let isMockMode: boolean;
     export let loading: boolean;
     export let directoryPath: string;
     export let images: ProcessedImage[];
-    export let annotationType: string;
+    export let annotationType: "bounding_box" | "polygon" = "bounding_box";
     export let autoAnnotationEnabled: boolean;
     export let annotating: boolean;
-    export let autoAnnotating: boolean;
+
     export let showCropTool: boolean;
     export let datasetSummary: DatasetSummary | null;
-    export let viewMode: string;
-    export let editMode: "modal" | "sidebar";
+    export let viewMode: "grid" | "column" = "grid";
+    export let editMode: "modal" | "sidebar" = "sidebar";
 
     const dispatch = createEventDispatcher();
 
     function splitPath(path: string) {
+        if (!path) return [];
         return path.split("/").slice(-2);
     }
 
-    // Computed tooltip text for dynamic tooltips
-    $: mockModeTooltip = isMockMode
-        ? "Switch to Real Data"
-        : "Switch to Mock Data";
-    $: autoLoadTooltip = autoAnnotationEnabled
-        ? "Auto-load Active"
-        : "Auto-load Inactive";
+    // --- Options Configuration ---
+
+    // 1. Annotation Types (Box vs Polygon)
+    const annotationOptions = [
+        {
+            value: "bounding_box",
+            icon: "crop_square",
+            label: "Boxes",
+            tooltip: "Bounding Boxes",
+        },
+        {
+            value: "polygon",
+            icon: "hexagon",
+            label: "Polygon",
+            tooltip: "Polygons",
+        },
+    ];
+
+    // 2. View Modes (Grid vs List)
+    const viewModeOptions = [
+        { value: "grid", icon: "grid_view", tooltip: "Grid View" },
+        { value: "column", icon: "view_list", tooltip: "List View" },
+    ];
+
+    // 3. Edit Modes (Modal vs Sidebar)
+    const editModeOptions = [
+        {
+            value: "modal",
+            icon: "open_in_new",
+            label: "Pop-out",
+            tooltip: "Pop-out Editor Mode",
+        },
+        {
+            value: "sidebar",
+            icon: "view_sidebar",
+            label: "Sidebar",
+            tooltip: "Sidebar Editor Mode",
+        },
+    ];
 </script>
 
 <div class="flex flex-col gap-4 mb-6">
@@ -38,41 +73,37 @@
         <!-- Left: Directory & Breadcrumbs -->
         <div class="flex items-center gap-2 flex-1 min-w-0">
             <!-- Mock Mode Toggle -->
-            <div class="tooltip tooltip-bottom" data-tip={mockModeTooltip}>
-                <button
-                    class={`btn btn-sm btn-circle ${isMockMode ? "btn-secondary text-secondary-content" : "btn-ghost text-base-content/40"}`}
-                    on:click={() => dispatch("toggleMockMode")}
-                    aria-label="Toggle Mock Mode"
-                >
-                    <span class="material-symbols-rounded text-lg">science</span
-                    >
-                </button>
-            </div>
+            <IconButton
+                icon="science"
+                variant={isMockMode ? "soft" : "ghost"}
+                active={isMockMode}
+                tooltip={isMockMode
+                    ? "Switch to Real Data"
+                    : "Switch to Mock Data"}
+                on:click={() => dispatch("toggleMockMode")}
+            />
 
             <div class="divider divider-horizontal mx-0 h-6"></div>
 
             <!-- Open Directory Button -->
-            <div
-                class="tooltip tooltip-bottom"
-                data-tip="Open Project Directory"
+            <button
+                on:click={() => dispatch("selectDirectory")}
+                class="btn btn-ghost btn-sm gap-2 text-base-content/70 hover:text-base-content hover:bg-base-200"
+                disabled={loading}
+                title="Open Project Directory"
             >
-                <button
-                    on:click={() => dispatch("selectDirectory")}
-                    class="btn btn-ghost btn-sm gap-2 text-base-content/70 hover:text-base-content hover:bg-base-200"
-                    disabled={loading}
-                >
-                    {#if loading}
-                        <span class="loading loading-spinner loading-xs"></span>
-                    {:else}
-                        <span class="material-symbols-rounded text-lg"
-                            >folder_open</span
-                        >
-                    {/if}
-                </button>
-            </div>
+                {#if loading}
+                    <span class="loading loading-spinner loading-xs"></span>
+                {:else}
+                    <span class="material-symbols-rounded text-lg"
+                        >folder_open</span
+                    >
+                {/if}
+            </button>
 
             <div class="divider divider-horizontal mx-0 h-6"></div>
 
+            <!-- Breadcrumbs -->
             {#if directoryPath}
                 <div class="breadcrumbs text-sm ml-1 hidden sm:block">
                     <ul>
@@ -106,166 +137,89 @@
         <!-- Right: Tools & Actions -->
         <div class="flex items-center gap-1 sm:gap-2 flex-none">
             <!-- Annotation Type Toggle -->
-            <div class="join hidden lg:flex">
-                <div class="tooltip tooltip-bottom" data-tip="Bounding Boxes">
-                    <button
-                        class={`btn btn-sm join-item gap-2 border-0 px-4 ${annotationType === "bounding_box" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/70"}`}
-                        on:click={() =>
-                            dispatch("setAnnotationType", "bounding_box")}
-                        disabled={!directoryPath || images.length === 0}
-                    >
-                        <span class="material-symbols-rounded text-lg"
-                            >crop_square</span
-                        >
-                        <span class="hidden xl:inline font-normal">Boxes</span>
-                    </button>
+            {#if directoryPath && images.length > 0}
+                <div class="hidden lg:block">
+                    <ToggleButtonGroup
+                        options={annotationOptions}
+                        value={annotationType}
+                        on:change={(e) =>
+                            dispatch("setAnnotationType", e.detail)}
+                    />
                 </div>
-                <div class="tooltip tooltip-bottom" data-tip="Polygons">
-                    <button
-                        class={`btn btn-sm join-item gap-2 border-0 px-4 ${annotationType === "polygon" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/70"}`}
-                        on:click={() =>
-                            dispatch("setAnnotationType", "polygon")}
-                        disabled={!directoryPath || images.length === 0}
-                    >
-                        <span class="material-symbols-rounded text-lg"
-                            >hexagon</span
-                        >
-                        <span class="hidden xl:inline font-normal">Polygon</span
-                        >
-                    </button>
-                </div>
-            </div>
-
-            <div
-                class="divider divider-horizontal mx-0 h-6 hidden lg:flex"
-            ></div>
+                <div
+                    class="divider divider-horizontal mx-0 h-6 hidden lg:flex"
+                ></div>
+            {/if}
 
             <!-- Auto-load Toggle -->
-            <div class="tooltip tooltip-bottom" data-tip={autoLoadTooltip}>
-                <button
-                    class={`btn btn-sm btn-square join-item ${autoAnnotationEnabled ? "btn-active text-primary" : "btn-ghost text-base-content/50"}`}
-                    on:click={() => dispatch("toggleAutoAnnotation")}
-                    disabled={!directoryPath}
-                    aria-label="Toggle Auto-load Annotations"
-                >
-                    <span class="material-symbols-rounded text-xl"
-                        >autorenew</span
-                    >
-                </button>
-            </div>
+            <IconButton
+                icon="autorenew"
+                active={autoAnnotationEnabled}
+                variant={autoAnnotationEnabled ? "soft" : "ghost"}
+                tooltip={autoAnnotationEnabled
+                    ? "Auto-load Active"
+                    : "Auto-load Inactive"}
+                disabled={!directoryPath}
+                on:click={() => dispatch("toggleAutoAnnotation")}
+            />
 
             <div
                 class="divider divider-horizontal mx-0 h-6 hidden lg:flex"
             ></div>
 
-            <!-- Actions -->
-            <div class="tooltip tooltip-bottom" data-tip="Load Annotations">
-                <button
-                    on:click={() => dispatch("annotateImages")}
-                    class="btn btn-ghost btn-sm btn-square text-base-content/70 hover:text-primary hover:bg-primary/10"
-                    disabled={!directoryPath ||
-                        images.length === 0 ||
-                        annotating ||
-                        autoAnnotating}
-                >
-                    {#if annotating}
-                        <span class="loading loading-spinner loading-xs"></span>
-                    {:else}
-                        <span class="material-symbols-rounded text-xl"
-                            >label</span
-                        >
-                    {/if}
-                </button>
-            </div>
+            <!-- Actions Group -->
 
-            <div class="tooltip tooltip-bottom" data-tip="Export Dataset">
-                <button
-                    on:click={() => dispatch("openExportModal")}
-                    class="btn btn-ghost btn-sm btn-square text-base-content/70 hover:text-primary hover:bg-primary/10"
-                    disabled={!directoryPath || images.length === 0}
-                >
-                    <span class="material-symbols-rounded text-xl"
-                        >ios_share</span
-                    >
-                </button>
-            </div>
+            <!-- 1. Load Annotations -->
+            <IconButton
+                icon="label"
+                tooltip="Load Annotations"
+                disabled={!directoryPath || images.length === 0 || annotating}
+                loading={annotating}
+                on:click={() => dispatch("annotateImages")}
+            />
 
-            <!-- Crop & Remap Button -->
-            <div class="tooltip tooltip-bottom" data-tip="Crop & Remap Tool">
-                <button
-                    on:click={() => dispatch("toggleCropTool")}
-                    class="btn btn-ghost btn-sm btn-square text-base-content/70 hover:text-secondary hover:bg-secondary/10"
-                    class:bg-secondary={showCropTool}
-                >
-                    <span class="material-symbols-rounded text-xl">crop</span>
-                </button>
-            </div>
+            <!-- 2. Export -->
+            <IconButton
+                icon="ios_share"
+                tooltip="Export Dataset"
+                disabled={!directoryPath || images.length === 0}
+                on:click={() => dispatch("openExportModal")}
+            />
 
-            <!-- Extract Labels Button -->
-            <div class="tooltip tooltip-bottom" data-tip="Extract Labels">
-                <button
-                    on:click={() => dispatch("openExtractModal")}
-                    class="btn btn-ghost btn-sm btn-square text-base-content/70 hover:text-accent hover:bg-accent/10"
-                    disabled={!directoryPath || !datasetSummary}
-                >
-                    <span class="material-symbols-rounded text-xl">label</span>
-                </button>
-            </div>
+            <!-- 3. Crop Tool -->
+            <IconButton
+                icon="crop"
+                tooltip="Crop & Remap Tool"
+                active={showCropTool}
+                variant={showCropTool ? "soft" : "ghost"}
+                on:click={() => dispatch("toggleCropTool")}
+            />
+
+            <!-- 4. Extract Labels -->
+            <IconButton
+                icon="category"
+                tooltip="Extract Labels"
+                disabled={!directoryPath || !datasetSummary}
+                on:click={() => dispatch("openExtractModal")}
+            />
 
             <div class="divider divider-horizontal mx-0 h-6"></div>
 
             <!-- View Mode Toggle -->
-            <div class="join">
-                <div class="tooltip tooltip-bottom" data-tip="Grid View">
-                    <button
-                        class={`btn btn-sm join-item btn-square border-0 ${viewMode === "grid" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/60"}`}
-                        on:click={() => dispatch("setViewMode", "grid")}
-                    >
-                        <span class="material-symbols-rounded text-lg"
-                            >grid_view</span
-                        >
-                    </button>
-                </div>
-                <div class="tooltip tooltip-bottom" data-tip="List View">
-                    <button
-                        class={`btn btn-sm join-item btn-square border-0 ${viewMode === "column" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/60"}`}
-                        on:click={() => dispatch("setViewMode", "column")}
-                    >
-                        <span class="material-symbols-rounded text-lg"
-                            >view_list</span
-                        >
-                    </button>
-                </div>
-            </div>
+            <ToggleButtonGroup
+                options={viewModeOptions}
+                value={viewMode}
+                on:change={(e) => dispatch("setViewMode", e.detail)}
+            />
         </div>
     </div>
 
     <!-- Secondary Toolbar (Edit Mode) -->
     <div class="flex justify-end px-1">
-        <!-- Edit Mode Toggle -->
-        <div class="join">
-            <div class="tooltip tooltip-bottom" data-tip="Pop-out Editor Mode">
-                <button
-                    class={`btn btn-sm join-item gap-2 border-0 px-6 ${editMode === "modal" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/60"}`}
-                    on:click={() => dispatch("setEditMode", "modal")}
-                >
-                    <span class="material-symbols-rounded text-lg"
-                        >open_in_new</span
-                    >
-                    <span class="hidden 2xl:inline">Pop-out</span>
-                </button>
-            </div>
-            <div class="tooltip tooltip-bottom" data-tip="Sidebar Editor Mode">
-                <button
-                    class={`btn btn-sm join-item gap-2 border-0 px-6 ${editMode === "sidebar" ? "bg-base-200 text-base-content shadow-inner" : "btn-ghost text-base-content/60"}`}
-                    on:click={() => dispatch("setEditMode", "sidebar")}
-                >
-                    <span class="material-symbols-rounded text-lg"
-                        >view_sidebar</span
-                    >
-                    <span class="hidden 2xl:inline">Sidebar</span>
-                </button>
-            </div>
-        </div>
+        <ToggleButtonGroup
+            options={editModeOptions}
+            value={editMode}
+            on:change={(e) => dispatch("setEditMode", e.detail)}
+        />
     </div>
 </div>
