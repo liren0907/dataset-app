@@ -1,6 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import { open } from "@tauri-apps/plugin-dialog";
+    import { Button, BrowseInput } from "$lib/components/ui";
 
     export let showModal: boolean = false;
     export let currentDirectoryPath: string = "";
@@ -204,22 +205,11 @@
                     ><span class="label-text font-medium">Output Directory</span
                     ></label
                 >
-                <div class="join w-full">
-                    <input
-                        type="text"
-                        bind:value={outputDir}
-                        readonly
-                        placeholder="Select output directory..."
-                        class="input input-bordered join-item flex-1"
-                    />
-                    <button
-                        on:click={selectOutputDirectory}
-                        class="btn btn-ghost join-item"
-                    >
-                        <span class="material-symbols-rounded">folder_open</span
-                        >
-                    </button>
-                </div>
+                <BrowseInput
+                    value={outputDir}
+                    placeholder="Select output directory..."
+                    on:browse={selectOutputDirectory}
+                />
             </div>
 
             {#if exportMode === "yolo"}
@@ -324,15 +314,15 @@
 
         <!-- Footer -->
         <div class="modal-action">
-            <button
-                class="btn btn-ghost"
+            <Button
+                variant="ghost"
                 on:click={closeModalEvent}
                 disabled={localLoading}
             >
                 Cancel
-            </button>
-            <button
-                class="btn btn-primary"
+            </Button>
+            <Button
+                variant="primary"
                 on:click={handleRunExport}
                 disabled={localLoading ||
                     !outputDir ||
@@ -346,7 +336,7 @@
                     <span class="material-symbols-rounded">upload</span>
                     Run Export
                 {/if}
-            </button>
+            </Button>
         </div>
     </div>
     <form method="dialog" class="modal-backdrop">

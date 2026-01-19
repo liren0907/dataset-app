@@ -2,6 +2,7 @@
     import { createEventDispatcher } from "svelte";
     import { open } from "@tauri-apps/plugin-dialog";
     import { performCropAndRemap } from "$lib/services/datasetService";
+    import { Button, BrowseInput } from "$lib/components/ui";
 
     let internalCropSourceDir: string | null = null;
     let internalCropOutputDir: string | null = null;
@@ -90,22 +91,11 @@
                         >Crop Source Directory</span
                     >
                 </label>
-                <div class="join w-full">
-                    <input
-                        type="text"
-                        readonly
-                        placeholder="Select source directory for cropping..."
-                        value={internalCropSourceDir || ""}
-                        class="input input-bordered join-item flex-1"
-                    />
-                    <button
-                        on:click={() => selectDirectoryLocal("source")}
-                        class="btn btn-ghost join-item"
-                    >
-                        <span class="material-symbols-rounded">folder_open</span
-                        >
-                    </button>
-                </div>
+                <BrowseInput
+                    value={internalCropSourceDir || ""}
+                    placeholder="Select source directory for cropping..."
+                    on:browse={() => selectDirectoryLocal("source")}
+                />
             </div>
 
             <!-- Output Directory -->
@@ -115,22 +105,11 @@
                         >Crop Output Directory</span
                     >
                 </label>
-                <div class="join w-full">
-                    <input
-                        type="text"
-                        readonly
-                        placeholder="Select output directory for cropped results..."
-                        value={internalCropOutputDir || ""}
-                        class="input input-bordered join-item flex-1"
-                    />
-                    <button
-                        on:click={() => selectDirectoryLocal("output")}
-                        class="btn btn-ghost join-item"
-                    >
-                        <span class="material-symbols-rounded">folder_open</span
-                        >
-                    </button>
-                </div>
+                <BrowseInput
+                    value={internalCropOutputDir || ""}
+                    placeholder="Select output directory for cropped results..."
+                    on:browse={() => selectDirectoryLocal("output")}
+                />
                 <label class="label">
                     <span class="label-text-alt opacity-60"
                         >Results will be loaded into the viewer automatically
@@ -158,13 +137,14 @@
             </div>
 
             <!-- Run Button -->
-            <button
+            <Button
+                variant="primary"
+                fullWidth
                 on:click={handleRunCropAndRemapLocal}
                 disabled={internalCropLoading ||
                     !internalCropSourceDir ||
                     !internalCropOutputDir ||
                     !internalParentLabel}
-                class="btn btn-secondary btn-block"
             >
                 {#if internalCropLoading}
                     <span class="loading loading-spinner loading-sm"></span>
@@ -173,7 +153,7 @@
                     <span class="material-symbols-rounded">play_arrow</span>
                     Run Crop & Remap and Load Results
                 {/if}
-            </button>
+            </Button>
 
             <!-- Status Messages -->
             {#if internalCropStatusMessage}

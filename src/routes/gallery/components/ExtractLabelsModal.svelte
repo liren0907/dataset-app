@@ -175,11 +175,9 @@
 
                 <!-- Label Selection -->
                 <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium"
-                            >Labels to Extract</span
-                        >
-                    </label>
+                    <span class="label-text font-medium block mb-1"
+                        >Labels to Extract</span
+                    >
                     {#if datasetSummary?.label_counts && availableLabels.length > 0}
                         <p class="text-xs text-base-content/60 mb-2">
                             Click to toggle labels. By default, all are

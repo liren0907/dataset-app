@@ -2,6 +2,7 @@
     import { createEventDispatcher } from "svelte";
     import { open } from "@tauri-apps/plugin-dialog";
     import { performCropAndRemap } from "../datasetService";
+    import { Button, BrowseInput, SectionLabel } from "$lib/components/ui";
 
     export let isOpen: boolean = false;
 
@@ -106,65 +107,34 @@
 
                     <!-- Paths Configuration -->
                     <div class="space-y-4">
-                        <label
-                            class="text-xs font-bold text-base-content/40 uppercase tracking-wider"
-                            >I/O Configuration</label
-                        >
+                        <SectionLabel>I/O Configuration</SectionLabel>
 
-                        <!-- Source Path (Compact) -->
+                        <!-- Source Path -->
                         <div>
-                            <label
+                            <span
                                 class="text-[10px] font-semibold text-base-content/50 mb-1 block pl-1"
-                                >Source Dataset</label
+                                >Source Dataset</span
                             >
-                            <div
-                                class="flex items-center w-full px-2 py-1.5 rounded-lg border border-base-300 bg-base-100 focus-within:border-secondary focus-within:ring-1 focus-within:ring-secondary/20 transition-all"
-                            >
-                                <span
-                                    class="material-symbols-rounded text-secondary/70 text-sm ml-1"
-                                    >folder_open</span
-                                >
-                                <input
-                                    type="text"
-                                    bind:value={sourceDir}
-                                    readonly
-                                    placeholder="Select source..."
-                                    class="input input-ghost w-full h-8 text-xs focus:outline-none border-none bg-transparent px-2"
-                                />
-                                <button
-                                    on:click={() => selectDirectory("source")}
-                                    class="btn btn-sm btn-ghost bg-base-200 hover:bg-base-300 text-base-content/70 ml-2 px-4 rounded-md border-none font-normal"
-                                    >Browse</button
-                                >
-                            </div>
+                            <BrowseInput
+                                value={sourceDir}
+                                placeholder="Select source..."
+                                icon="folder_open"
+                                on:browse={() => selectDirectory("source")}
+                            />
                         </div>
 
                         <!-- Output Path -->
                         <div>
-                            <label
+                            <span
                                 class="text-[10px] font-semibold text-base-content/50 mb-1 block pl-1"
-                                >Output Destination</label
+                                >Output Destination</span
                             >
-                            <div
-                                class="flex items-center w-full px-2 py-1.5 rounded-lg border border-base-300 bg-base-100 focus-within:border-secondary focus-within:ring-1 focus-within:ring-secondary/20 transition-all"
-                            >
-                                <span
-                                    class="material-symbols-rounded text-secondary/70 text-sm ml-1"
-                                    >output</span
-                                >
-                                <input
-                                    type="text"
-                                    bind:value={outputDir}
-                                    readonly
-                                    placeholder="Select output..."
-                                    class="input input-ghost w-full h-8 text-xs focus:outline-none border-none bg-transparent px-2"
-                                />
-                                <button
-                                    on:click={() => selectDirectory("output")}
-                                    class="btn btn-sm btn-ghost bg-base-200 hover:bg-base-300 text-base-content/70 ml-2 px-4 rounded-md border-none font-normal"
-                                    >Browse</button
-                                >
-                            </div>
+                            <BrowseInput
+                                value={outputDir}
+                                placeholder="Select output..."
+                                icon="output"
+                                on:browse={() => selectDirectory("output")}
+                            />
                         </div>
                     </div>
                 </div>
@@ -219,10 +189,9 @@
 
                     <!-- Process Visualization -->
                     <div class="w-full max-w-sm">
-                        <label
-                            class="text-xs font-bold text-base-content/40 uppercase tracking-wider mb-6 block text-center"
-                            >Operation Parameters</label
-                        >
+                        <div class="text-center mb-6">
+                            <SectionLabel>Operation Parameters</SectionLabel>
+                        </div>
 
                         <div
                             class="bg-base-200/30 border border-base-200 rounded-2xl p-6 flex flex-col items-center gap-6"
@@ -291,18 +260,18 @@
                 <div
                     class="p-6 border-t border-base-100 bg-base-50/50 flex justify-end gap-3"
                 >
-                    <button
-                        class="btn btn-sm btn-ghost bg-base-200 hover:bg-base-300 text-base-content/70 border-none font-normal"
+                    <Button
+                        variant="ghost"
                         on:click={handleClose}
-                        disabled={localLoading}>Cancel</button
+                        disabled={localLoading}>Cancel</Button
                     >
-                    <button
-                        class="btn btn-sm bg-base-200 hover:bg-base-300 text-base-content border-none font-normal min-w-[140px]"
+                    <Button
                         on:click={handleRunCrop}
                         disabled={localLoading ||
                             !sourceDir ||
                             !outputDir ||
                             !parentLabel.trim()}
+                        minWidth="140px"
                     >
                         {#if localLoading}
                             <span class="loading loading-spinner loading-xs"
@@ -310,7 +279,7 @@
                         {:else}
                             Start Processing
                         {/if}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

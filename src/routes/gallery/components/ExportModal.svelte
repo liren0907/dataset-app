@@ -1,6 +1,12 @@
 <script lang="ts">
     import { createEventDispatcher, onMount } from "svelte";
     import { open } from "@tauri-apps/plugin-dialog";
+    import {
+        Button,
+        BrowseInput,
+        SelectionCard,
+        SectionLabel,
+    } from "$lib/components/ui";
 
     export let showModal: boolean = false;
     export let currentDirectoryPath: string = "";
@@ -125,62 +131,36 @@
 
                 <!-- Export Format Selection -->
                 <div class="flex flex-col gap-3 flex-1">
-                    <label
-                        class="text-xs font-bold text-base-content/40 uppercase tracking-wider"
-                        >Format</label
-                    >
+                    <SectionLabel>Format</SectionLabel>
 
-                    <button
-                        class={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left group
-                        ${exportMode === "yolo" ? "bg-base-100 border-primary shadow-sm" : "border-base-300 hover:bg-base-200/50"}`}
-                        on:click={() => (exportMode = "yolo")}
+                    <SelectionCard
+                        selected={exportMode === "yolo"}
+                        color="primary"
+                        on:select={() => (exportMode = "yolo")}
                     >
-                        <div
-                            class={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors
-                            ${exportMode === "yolo" ? "bg-primary/10 text-primary" : "bg-base-200 text-base-content/40 group-hover:bg-base-300"}`}
-                        >
-                            <span class="font-bold text-xs">YOLO</span>
-                        </div>
-                        <div>
-                            <span class="block font-medium text-sm"
-                                >YOLO Format</span
-                            >
-                            <span class="block text-[10px] text-base-content/50"
-                                >For detection models</span
-                            >
-                        </div>
-                    </button>
+                        <span slot="icon" class="font-bold text-xs">YOLO</span>
+                        <span slot="title">YOLO Format</span>
+                        <span slot="description">For detection models</span>
+                    </SelectionCard>
 
-                    <button
-                        class={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left group
-                        ${exportMode === "labelme" ? "bg-base-100 border-secondary shadow-sm" : "border-base-300 hover:bg-base-200/50"}`}
-                        on:click={() => (exportMode = "labelme")}
+                    <SelectionCard
+                        selected={exportMode === "labelme"}
+                        color="secondary"
+                        on:select={() => (exportMode = "labelme")}
                     >
-                        <div
-                            class={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors
-                            ${exportMode === "labelme" ? "bg-secondary/10 text-secondary" : "bg-base-200 text-base-content/40 group-hover:bg-base-300"}`}
+                        <span
+                            slot="icon"
+                            class="material-symbols-rounded text-sm"
+                            >data_object</span
                         >
-                            <span class="material-symbols-rounded text-sm"
-                                >data_object</span
-                            >
-                        </div>
-                        <div>
-                            <span class="block font-medium text-sm"
-                                >LabelMe JSON</span
-                            >
-                            <span class="block text-[10px] text-base-content/50"
-                                >Raw annotations</span
-                            >
-                        </div>
-                    </button>
+                        <span slot="title">LabelMe JSON</span>
+                        <span slot="description">Raw annotations</span>
+                    </SelectionCard>
                 </div>
 
                 <!-- Directories -->
                 <div class="space-y-3">
-                    <label
-                        class="text-xs font-bold text-base-content/40 uppercase tracking-wider"
-                        >Paths</label
-                    >
+                    <SectionLabel>Paths</SectionLabel>
 
                     <!-- Source Path (Compact) -->
                     <div
@@ -201,28 +181,12 @@
                     </div>
 
                     <!-- Output Path -->
-                    <div class="form-control">
-                        <div
-                            class="flex items-center w-full px-2 py-1.5 rounded-lg border border-base-300 bg-base-100 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 transition-all"
-                        >
-                            <span
-                                class="material-symbols-rounded text-primary/70 text-sm ml-1"
-                                >output</span
-                            >
-                            <input
-                                type="text"
-                                bind:value={outputDir}
-                                readonly
-                                placeholder="Select output..."
-                                class="input input-ghost w-full h-8 text-xs focus:outline-none border-none bg-transparent px-2"
-                            />
-                            <button
-                                on:click={selectOutputDirectory}
-                                class="btn btn-sm btn-ghost bg-base-200 hover:bg-base-300 text-base-content/70 ml-2 px-4 rounded-md border-none font-normal"
-                                >Browse</button
-                            >
-                        </div>
-                    </div>
+                    <BrowseInput
+                        value={outputDir}
+                        placeholder="Select output..."
+                        icon="output"
+                        on:browse={selectOutputDirectory}
+                    />
                 </div>
             </div>
 
@@ -264,9 +228,9 @@
                             >
                                 <!-- Shape Type -->
                                 <div class="col-span-2">
-                                    <label
+                                    <span
                                         class="text-xs font-semibold text-base-content/60 mb-2 block"
-                                        >Annotation Type</label
+                                        >Annotation Type</span
                                     >
                                     <div
                                         class="join w-full grid grid-cols-2 h-9"
@@ -290,9 +254,9 @@
 
                                 <!-- Split Ratios -->
                                 <div class="col-span-2">
-                                    <label
+                                    <span
                                         class="text-xs font-semibold text-base-content/60 mb-2 block"
-                                        >Dataset Split</label
+                                        >Dataset Split</span
                                     >
                                     <div class="flex items-center gap-3">
                                         <div
@@ -418,14 +382,14 @@
                 <div
                     class="p-6 border-t border-base-100 bg-base-50/50 flex justify-end gap-3"
                 >
-                    <button
-                        class="btn btn-sm btn-ghost bg-base-200 hover:bg-base-300 text-base-content/70 border-none font-normal"
-                        on:click={() => dispatch("closeModal")}>Cancel</button
+                    <Button
+                        variant="ghost"
+                        on:click={() => dispatch("closeModal")}>Cancel</Button
                     >
-                    <button
-                        class="btn btn-sm bg-base-200 hover:bg-base-300 text-base-content border-none font-normal min-w-[140px]"
+                    <Button
                         on:click={handleRunExport}
                         disabled={localLoading || !outputDir}
+                        minWidth="140px"
                     >
                         {#if localLoading}
                             <span class="loading loading-spinner loading-xs"
@@ -433,7 +397,7 @@
                         {:else}
                             Export Data
                         {/if}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>
