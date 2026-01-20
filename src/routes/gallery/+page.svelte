@@ -6,6 +6,7 @@
     import ExportModal from "./components/ExportModal.svelte";
     import ModalAnnotationViewer from "./components/ModalAnnotationViewer.svelte";
     import CropRemapTool from "./components/CropRemapTool.svelte";
+    import AdvancedCropRemapTool from "./components/AdvancedCropRemapTool.svelte";
     import GalleryNavbar from "./components/GalleryNavbar.svelte";
     import GalleryEmptyState from "./components/GalleryEmptyState.svelte";
 
@@ -87,7 +88,7 @@
                 autoAnnotationEnabled={$annotationStore.autoAnnotationEnabled}
                 annotating={$annotationStore.annotating}
                 showCropTool={$exportStore.showCropTool}
-                datasetSummary={$imageStore.datasetSummary}
+                showAdvancedCropTool={$exportStore.showAdvancedCropTool}
                 viewMode={$uiStore.viewMode}
                 editMode={$uiStore.editMode}
                 on:toggleMockMode={() =>
@@ -106,6 +107,9 @@
                 }}
                 on:toggleCropTool={() =>
                     ($exportStore.showCropTool = !$exportStore.showCropTool)}
+                on:toggleAdvancedCropTool={() =>
+                    ($exportStore.showAdvancedCropTool =
+                        !$exportStore.showAdvancedCropTool)}
                 on:setViewMode={(e) => ($uiStore.viewMode = e.detail)}
                 on:setEditMode={(e) => ($uiStore.editMode = e.detail)}
             />
@@ -218,6 +222,37 @@
         exportStore.handleCropCompleted(e.detail.outputDir)}
     on:close={() => ($exportStore.showCropTool = false)}
 />
+
+<!-- Advanced Crop & Remap Tool -->
+{#if $exportStore.showAdvancedCropTool}
+    <div
+        class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-8"
+    >
+        <div
+            class="bg-base-100 rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto"
+        >
+            <div
+                class="flex items-center justify-between p-4 border-b border-base-300"
+            >
+                <h2 class="text-xl font-bold">Advanced Crop & Remap</h2>
+                <button
+                    class="btn btn-sm btn-ghost btn-square"
+                    on:click={() => ($exportStore.showAdvancedCropTool = false)}
+                >
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+            <AdvancedCropRemapTool
+                currentDirectory={$imageStore.directoryPath}
+                cropToolOpen={$exportStore.showAdvancedCropTool}
+                on:cropCompleted={(e) => {
+                    exportStore.handleCropCompleted(e.detail.outputDir);
+                    $exportStore.showAdvancedCropTool = false;
+                }}
+            />
+        </div>
+    </div>
+{/if}
 
 <style>
 </style>

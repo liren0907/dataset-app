@@ -17,7 +17,7 @@
     export let annotating: boolean;
 
     export let showCropTool: boolean;
-    export let datasetSummary: DatasetSummary | null;
+    export let showAdvancedCropTool: boolean;
     export let viewMode: "grid" | "column" = "grid";
     export let editMode: "modal" | "sidebar" = "sidebar";
 
@@ -190,6 +190,15 @@
                 active={showCropTool}
                 variant={showCropTool ? "soft" : "ghost"}
                 on:click={() => dispatch("toggleCropTool")}
+            />
+
+            <!-- 4. Advanced Crop Tool -->
+            <IconButton
+                icon="auto_awesome"
+                tooltip="Advanced Crop with Preview"
+                active={showAdvancedCropTool}
+                variant={showAdvancedCropTool ? "soft" : "ghost"}
+                on:click={() => dispatch("toggleAdvancedCropTool")}
             />
 
             <div class="divider divider-horizontal mx-0 h-6"></div>

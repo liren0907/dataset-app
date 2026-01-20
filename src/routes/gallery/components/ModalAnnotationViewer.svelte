@@ -7,7 +7,7 @@
         type KonvaManager,
         type KonvaImageData,
         type KonvaAnnotation,
-    } from "./konvaService";
+    } from "../services/konvaService";
     import { mockGeneratePreview } from "../../../mocks/mockFileSystem";
 
     // Props

@@ -1,6 +1,11 @@
 <script lang="ts">
-    import { onMount, onDestroy, createEventDispatcher } from 'svelte';
-    import { createKonvaManager, type KonvaManager, type KonvaImageData, type KonvaAnnotation } from './konvaService';
+    import { onMount, onDestroy, createEventDispatcher } from "svelte";
+    import {
+        createKonvaManager,
+        type KonvaManager,
+        type KonvaImageData,
+        type KonvaAnnotation,
+    } from "../services/konvaService";
 
     // Props
     export let showModal: boolean = false;
@@ -38,7 +43,7 @@
         if (!imageData || !konvaContainer) return;
 
         try {
-            console.log('Initializing Konva viewer for image:', imageData.name);
+            console.log("Initializing Konva viewer for image:", imageData.name);
 
             // Calculate optimal stage dimensions
             const rect = konvaContainer.getBoundingClientRect();
@@ -46,17 +51,29 @@
             const stageHeight = Math.max(rect.height || 700, 700);
 
             // Initialize the stage
-            konvaManager.initializeStage(konvaContainer, stageWidth, stageHeight);
+            konvaManager.initializeStage(
+                konvaContainer,
+                stageWidth,
+                stageHeight,
+            );
 
             // Load image and annotations
-            await konvaManager.loadImageWithAnnotations(imageData, (scale, offsetX, offsetY) => {
-                konvaManager.drawAnnotations(imageData.annotations, scale, offsetX, offsetY);
-            });
+            await konvaManager.loadImageWithAnnotations(
+                imageData,
+                (scale, offsetX, offsetY) => {
+                    konvaManager.drawAnnotations(
+                        imageData.annotations,
+                        scale,
+                        offsetX,
+                        offsetY,
+                    );
+                },
+            );
 
             isInitialized = true;
-            console.log('Konva viewer initialized successfully');
+            console.log("Konva viewer initialized successfully");
         } catch (error) {
-            console.error('Failed to initialize Konva viewer:', error);
+            console.error("Failed to initialize Konva viewer:", error);
         }
     }
 
@@ -70,7 +87,7 @@
 
     // Close modal handler
     function handleClose(): void {
-        dispatch('close');
+        dispatch("close");
     }
 
     // Keyboard event handler
@@ -78,37 +95,53 @@
         if (!konvaManager) return;
 
         // Prevent default behavior for handled keys
-        const handledKeys = ['Delete', 'Backspace', 'a', 'A', 'Escape', '=', '+', '-', '_', '0', 'r', 'R'];
+        const handledKeys = [
+            "Delete",
+            "Backspace",
+            "a",
+            "A",
+            "Escape",
+            "=",
+            "+",
+            "-",
+            "_",
+            "0",
+            "r",
+            "R",
+        ];
 
-        if (handledKeys.includes(event.key) || (event.ctrlKey && event.key.toLowerCase() === 'a')) {
+        if (
+            handledKeys.includes(event.key) ||
+            (event.ctrlKey && event.key.toLowerCase() === "a")
+        ) {
             event.preventDefault();
         }
 
         switch (event.key.toLowerCase()) {
-            case 'escape':
+            case "escape":
                 handleClose();
                 break;
-            case 'delete':
-            case 'backspace':
+            case "delete":
+            case "backspace":
                 konvaManager.deleteSelectedAnnotation();
                 break;
-            case 'a':
+            case "a":
                 if (event.ctrlKey || event.metaKey) {
                     konvaManager.selectAllAnnotations();
                 }
                 break;
-            case '=':
-            case '+':
+            case "=":
+            case "+":
                 konvaManager.zoomIn();
                 break;
-            case '-':
-            case '_':
+            case "-":
+            case "_":
                 konvaManager.zoomOut();
                 break;
-            case '0':
+            case "0":
                 konvaManager.resetZoom();
                 break;
-            case 'r':
+            case "r":
                 konvaManager.fitToScreen();
                 break;
         }
@@ -156,7 +189,7 @@
         aria-labelledby="konva-viewer-title"
         on:click={handleClose}
         on:keydown={(e) => {
-            if (e.key === 'Escape') handleClose();
+            if (e.key === "Escape") handleClose();
         }}
         tabindex="-1"
     >
@@ -168,8 +201,15 @@
             on:keydown|stopPropagation
         >
             <!-- Header -->
-            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
-                <h3 id="konva-viewer-title" class="text-lg font-medium text-gray-900">{imageData.name}</h3>
+            <div
+                class="p-4 border-b border-gray-200 flex justify-between items-center"
+            >
+                <h3
+                    id="konva-viewer-title"
+                    class="text-lg font-medium text-gray-900"
+                >
+                    {imageData.name}
+                </h3>
                 <button
                     on:click={handleClose}
                     class="text-gray-400 hover:text-gray-600 text-2xl leading-none focus:outline-none focus:ring-2 focus:ring-gray-500 rounded"
@@ -182,7 +222,9 @@
             <!-- Content -->
             <div class="p-4">
                 <!-- Control Panel -->
-                <div class="flex flex-wrap items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
+                <div
+                    class="flex flex-wrap items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg"
+                >
                     <div class="text-sm text-gray-600 mr-4">Controls:</div>
 
                     <!-- Zoom Controls -->
@@ -264,11 +306,15 @@
 
                 <!-- Keyboard Shortcuts Info -->
                 <div class="text-xs text-gray-500 mb-4 bg-blue-50 p-2 rounded">
-                    <strong>Keyboard Shortcuts:</strong> Zoom (+/-), Reset (0), Fit (R), Select All (Ctrl+A), Delete (Del), Deselect (Esc), Close (Esc)
+                    <strong>Keyboard Shortcuts:</strong> Zoom (+/-), Reset (0), Fit
+                    (R), Select All (Ctrl+A), Delete (Del), Deselect (Esc), Close
+                    (Esc)
                 </div>
 
                 <!-- KonvaJS Canvas Container -->
-                <div class="relative max-w-full max-h-[70vh] overflow-hidden rounded-lg bg-gray-100">
+                <div
+                    class="relative max-w-full max-h-[70vh] overflow-hidden rounded-lg bg-gray-100"
+                >
                     <div
                         bind:this={konvaContainer}
                         class="w-full h-full min-h-[600px] border-2 border-gray-300 bg-gray-50 flex items-center justify-center"
@@ -277,24 +323,32 @@
                         aria-label="Interactive annotation viewer for {imageData.name}"
                     >
                         {#if !isInitialized}
-                            <div class="text-gray-500">Loading advanced canvas...</div>
+                            <div class="text-gray-500">
+                                Loading advanced canvas...
+                            </div>
                         {/if}
                     </div>
 
                     <!-- Status Indicators -->
                     {#if isInitialized}
-                        <div class="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded shadow z-10">
+                        <div
+                            class="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded shadow z-10"
+                        >
                             Enhanced KonvaJS
                         </div>
-                        <div class="absolute bottom-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow z-10">
-                            {konvaManager?.getAnnotationCount() || 0} annotations loaded
+                        <div
+                            class="absolute bottom-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow z-10"
+                        >
+                            {konvaManager?.getAnnotationCount() || 0} annotations
+                            loaded
                         </div>
                     {/if}
                 </div>
 
                 <!-- Footer Info -->
                 <div class="mt-4 text-sm text-gray-600 text-center">
-                    Advanced interactive annotations with zoom, pan, selection, and editing capabilities
+                    Advanced interactive annotations with zoom, pan, selection,
+                    and editing capabilities
                 </div>
             </div>
         </div>

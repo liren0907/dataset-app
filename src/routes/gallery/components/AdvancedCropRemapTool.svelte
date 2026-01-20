@@ -6,7 +6,7 @@
     import { onMount } from "svelte";
     import { createEventDispatcher } from "svelte";
     import KonvaViewer from "./KonvaViewer.svelte";
-    import type { KonvaImageData } from "./konvaService";
+    import type { KonvaImageData } from "../services/konvaService";
 
     // Props from parent (dataset-gallery-advanced)
     export let currentDirectory: string = ""; // Current gallery directory

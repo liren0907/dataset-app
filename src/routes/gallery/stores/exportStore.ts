@@ -10,6 +10,7 @@ export interface ExportState {
     pageExportError: string;
     pageExportSuccess: string;
     showCropTool: boolean;
+    showAdvancedCropTool: boolean;
     showExtractModal: boolean;
     extractLoading: boolean;
     extractError: string;
@@ -22,6 +23,7 @@ const initialState: ExportState = {
     pageExportError: "",
     pageExportSuccess: "",
     showCropTool: false,
+    showAdvancedCropTool: false,
     showExtractModal: false,
     extractLoading: false,
     extractError: "",
