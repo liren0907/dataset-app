@@ -15,7 +15,6 @@
     export let annotationType: "bounding_box" | "polygon" = "bounding_box";
     export let autoAnnotationEnabled: boolean;
     export let annotating: boolean;
-    export let autoAnnotating: boolean;
 
     export let showCropTool: boolean;
     export let datasetSummary: DatasetSummary | null;
@@ -191,14 +190,6 @@
                 active={showCropTool}
                 variant={showCropTool ? "soft" : "ghost"}
                 on:click={() => dispatch("toggleCropTool")}
-            />
-
-            <!-- 4. Extract Labels -->
-            <IconButton
-                icon="category"
-                tooltip="Extract Labels"
-                disabled={!directoryPath || !datasetSummary}
-                on:click={() => dispatch("openExtractModal")}
             />
 
             <div class="divider divider-horizontal mx-0 h-6"></div>

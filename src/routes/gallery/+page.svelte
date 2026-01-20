@@ -1,12 +1,11 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import DatasetSummaryCard from "./components/DatasetSummaryCard.svelte";
+    import DatasetSummary from "./components/DatasetSummary.svelte";
     import ImagePreviewPanel from "./components/ImagePreviewPanel.svelte";
     import ImageGallery from "./components/ImageGallery.svelte";
     import ExportModal from "./components/ExportModal.svelte";
     import ModalAnnotationViewer from "./components/ModalAnnotationViewer.svelte";
     import CropRemapTool from "./components/CropRemapTool.svelte";
-    import ExtractLabelsModal from "./components/ExtractLabelsModal.svelte";
     import GalleryNavbar from "./components/GalleryNavbar.svelte";
     import GalleryEmptyState from "./components/GalleryEmptyState.svelte";
 
@@ -16,38 +15,17 @@
     import { annotationStore } from "./stores/annotationStore";
     import { exportStore } from "./stores/exportStore";
 
-    // --- Initialization ---
-    // If auto-annotation is enabled in annotationStore and we load a page, we need to trigger it.
-    // However, the reactive trigger was extracted into the store logic in `loadImagesPage`. Check implementation.
-    // In `imageStore.loadImagesPage`, I added:
-    // `if (page === 1) generateLabelMeSummary();`
-    // Wait, the cross-store dependency for auto-annotation logic:
-    // Ideally `imageStore.loadImagesPage` should trigger `annotationStore.autoLoad...` if enabled.
-    // But `imageStore` doesn't import `annotationStore` (circular).
-    // So we can do it reactively here or via a coordinated action.
-
-    // Reactive: When images change, if enabled, trigger annotation.
-    // Better: We hook into the load completion.
-    // Current solution in code: `imageStore` handled it? No, I likely removed it to avoid circular dependency.
-    // Let's check `imageStore.ts`... I didn't include autoLoadAnnotationsForPage in loadImagesPage import.
-    // I need to add that trigger here in Svelte or make an "Action" that coordinates them.
-
-    // Simplest: Reactive statement here.
-    $: if (
-        $annotationStore.autoAnnotationEnabled &&
-        $imageStore.images.length > 0 &&
-        !$imageStore.loading
+    // --- Helper: Trigger Auto-Annotation ---
+    async function triggerAutoAnnotationIfNeeded(
+        page: number = $imageStore.currentPage,
     ) {
-        // This might re-trigger too often.
-        // Strategy: We'll stick to manual triggers or exact event callbacks if needed.
-        // Actually, let's keep it simple. If the user moves page, `loadImagesPage` runs.
-        // We can modify `loadImagesPage` to accept a callback or use a `store subscriber`.
+        if (
+            $annotationStore.autoAnnotationEnabled &&
+            $imageStore.images.length > 0
+        ) {
+            await annotationStore.autoLoadAnnotationsForPage(page);
+        }
     }
-
-    // Actually, looking at my `imageStore.ts` implementation:
-    // I REMOVED the auto-annotation call from `loadImagesPage`.
-    // So we need to restore that behavior.
-    // We can do it by modifying `handlePageChange`.
 
     onMount(async () => {
         const isTauri = typeof window !== "undefined" && "__TAURI__" in window;
@@ -67,29 +45,18 @@
     async function handlePageChange(event: CustomEvent) {
         const page = event.detail.page;
         await imageStore.loadImagesPage(page);
-        if ($annotationStore.autoAnnotationEnabled) {
-            await annotationStore.autoLoadAnnotationsForPage(page);
-        }
+        await triggerAutoAnnotationIfNeeded(page);
     }
 
-    // Auto-load annotations for the first page if loaded initially?
-    // We can watch `imageStore.currentPage` changes? No, `handlePageChange` covers UI clicks.
-    // Initial load? `selectDirectory` calls `loadImagesPage(1)`.
-    // We might need to override `selectDirectory` to also trigger annotation or just add a reactive block:
-
-    let previousImagesPath = "";
+    // Trigger auto-annotation on initial directory load
+    let lastLoadedDirectory = "";
     $: if (
         $imageStore.directoryPath &&
         $imageStore.images.length > 0 &&
-        $annotationStore.autoAnnotationEnabled &&
-        $imageStore.directoryPath !== previousImagesPath
+        $imageStore.directoryPath !== lastLoadedDirectory
     ) {
-        // Quick fix for initial load auto-annotation if we want strictly 100% parity
-        // But let's assume `handlePageChange` is the main driver for pagination.
-        // For initial load, maybe just let the user see raw images first or trigger it manually.
-        // Or simply:
-        previousImagesPath = $imageStore.directoryPath;
-        annotationStore.autoLoadAnnotationsForPage($imageStore.currentPage);
+        lastLoadedDirectory = $imageStore.directoryPath;
+        triggerAutoAnnotationIfNeeded();
     }
 </script>
 
@@ -119,7 +86,6 @@
                 annotationType={$annotationStore.annotationType}
                 autoAnnotationEnabled={$annotationStore.autoAnnotationEnabled}
                 annotating={$annotationStore.annotating}
-                autoAnnotating={$annotationStore.autoAnnotating}
                 showCropTool={$exportStore.showCropTool}
                 datasetSummary={$imageStore.datasetSummary}
                 viewMode={$uiStore.viewMode}
@@ -140,11 +106,6 @@
                 }}
                 on:toggleCropTool={() =>
                     ($exportStore.showCropTool = !$exportStore.showCropTool)}
-                on:openExtractModal={() => {
-                    $exportStore.extractError = "";
-                    $exportStore.extractSuccess = "";
-                    $exportStore.showExtractModal = true;
-                }}
                 on:setViewMode={(e) => ($uiStore.viewMode = e.detail)}
                 on:setEditMode={(e) => ($uiStore.editMode = e.detail)}
             />
@@ -158,11 +119,9 @@
 
             <!-- Main Content Area -->
 
-            <!-- 1. Dataset Summary Card -->
+            <!-- 1. Dataset Summary -->
             <div class="mb-8">
-                <DatasetSummaryCard
-                    datasetSummary={$imageStore.datasetSummary}
-                />
+                <DatasetSummary datasetSummary={$imageStore.datasetSummary} />
             </div>
 
             <!-- 2. Image Gallery and Loading States -->
@@ -251,15 +210,6 @@
         }}
     />
 {/if}
-
-<!-- Extract Labels Modal -->
-<ExtractLabelsModal
-    isOpen={$exportStore.showExtractModal}
-    sourceDir={$imageStore.directoryPath}
-    datasetSummary={$imageStore.datasetSummary}
-    on:extract={(e) => exportStore.handleExtractLabels(e.detail)}
-    on:close={() => ($exportStore.showExtractModal = false)}
-/>
 
 <!-- Crop & Remap Modal -->
 <CropRemapTool
