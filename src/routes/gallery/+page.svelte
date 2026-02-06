@@ -9,12 +9,28 @@
     import AdvancedCropRemapTool from "./components/AdvancedCropRemapTool.svelte";
     import GalleryNavbar from "./components/GalleryNavbar.svelte";
     import GalleryEmptyState from "./components/GalleryEmptyState.svelte";
+    import CroppedDatasetCard from "./components/CroppedDatasetCard.svelte";
+    import CroppedDatasetPreviewModal from "./components/CroppedDatasetPreviewModal.svelte";
+    import KonvaViewer from "./components/KonvaViewer.svelte";
+    import { generateAnnotatedPreviews } from "./services/datasetService";
+    import type { KonvaImageData } from "./services/konvaService";
 
     // Import separated stores
     import { imageStore } from "./stores/imageStore";
     import { uiStore } from "./stores/uiStore";
     import { annotationStore } from "./stores/annotationStore";
     import { exportStore } from "./stores/exportStore";
+
+    const PREVIEW_SAMPLE_COUNT = 8;
+
+    let showCroppedPreviewModal: boolean = false;
+    let croppedPreviewLoading: boolean = false;
+    let croppedPreviewError: string = "";
+    let croppedPreviewImages: KonvaImageData[] = [];
+    let croppedPreviewOutputPath: string = "";
+    let selectedPreviewImage: KonvaImageData | null = null;
+    let reopenPreviewAfterKonva: boolean = false;
+    const previewCache: Map<string, KonvaImageData[]> = new Map();
 
     // --- Helper: Trigger Auto-Annotation ---
     async function triggerAutoAnnotationIfNeeded(
@@ -47,6 +63,71 @@
         const page = event.detail.page;
         await imageStore.loadImagesPage(page);
         await triggerAutoAnnotationIfNeeded(page);
+    }
+
+    async function openCroppedPreview(outputPath: string) {
+        croppedPreviewOutputPath = outputPath;
+        croppedPreviewError = "";
+        showCroppedPreviewModal = true;
+        selectedPreviewImage = null;
+
+        const cached = previewCache.get(outputPath);
+        if (cached) {
+            croppedPreviewImages = cached;
+            return;
+        }
+
+        const isTauri = typeof window !== "undefined" && "__TAURI__" in window;
+        if (!isTauri) {
+            croppedPreviewImages = [];
+            croppedPreviewError =
+                "Preview is only available in the Tauri desktop app.";
+            return;
+        }
+
+        croppedPreviewLoading = true;
+        croppedPreviewImages = [];
+        try {
+            const images = await generateAnnotatedPreviews(
+                outputPath,
+                PREVIEW_SAMPLE_COUNT,
+            );
+            if (!images.length) {
+                croppedPreviewError = "No previews available for this dataset.";
+            } else {
+                croppedPreviewImages = images;
+                previewCache.set(outputPath, images);
+            }
+        } catch (err: any) {
+            croppedPreviewError =
+                err?.message || "Failed to generate previews.";
+        } finally {
+            croppedPreviewLoading = false;
+        }
+    }
+
+    function closeCroppedPreview() {
+        showCroppedPreviewModal = false;
+        croppedPreviewLoading = false;
+        croppedPreviewError = "";
+        croppedPreviewImages = [];
+        croppedPreviewOutputPath = "";
+        selectedPreviewImage = null;
+        reopenPreviewAfterKonva = false;
+    }
+
+    function handleSelectPreviewImage(image: KonvaImageData) {
+        selectedPreviewImage = image;
+        reopenPreviewAfterKonva = true;
+        showCroppedPreviewModal = false;
+    }
+
+    function handlePreviewViewerClose() {
+        selectedPreviewImage = null;
+        if (reopenPreviewAfterKonva) {
+            showCroppedPreviewModal = true;
+            reopenPreviewAfterKonva = false;
+        }
     }
 
     // Trigger auto-annotation on initial directory load
@@ -125,8 +206,36 @@
 
             <!-- 1. Dataset Summary -->
             <div class="mb-8">
-                <DatasetSummary datasetSummary={$imageStore.datasetSummary} />
+                <DatasetSummary 
+                    datasetSummary={$imageStore.datasetSummary} 
+                    on:initiateCrop={(e) => exportStore.openCropModalWithLabel(e.detail.label)}
+                />
             </div>
+
+            <!-- Cropped Datasets Section -->
+            {#if $exportStore.croppedDatasets.length > 0}
+                <div class="mb-8">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="material-symbols-rounded text-success">check_circle</span>
+                        <h3 class="font-bold text-base-content">Cropped Datasets ({$exportStore.croppedDatasets.length})</h3>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {#each $exportStore.croppedDatasets as dataset (dataset.outputPath)}
+                            <CroppedDatasetCard
+                                outputPath={dataset.outputPath}
+                                imageCount={dataset.imageCount}
+                                parentLabel={dataset.parentLabel}
+                                childLabels={dataset.childLabels}
+                                createdAt={dataset.createdAt}
+                                on:preview={(e) =>
+                                    openCroppedPreview(e.detail.outputPath)}
+                                on:openInGallery={(e) => exportStore.openCroppedDatasetInGallery(e.detail.outputPath)}
+                                on:remove={(e) => exportStore.removeCroppedDataset(e.detail.outputPath)}
+                            />
+                        {/each}
+                    </div>
+                </div>
+            {/if}
 
             <!-- 2. Image Gallery and Loading States -->
             <div
@@ -198,6 +307,25 @@
     on:runExport={(event) => exportStore.runUnifiedExport(event.detail)}
 />
 
+<!-- Cropped Dataset Preview Modal -->
+<CroppedDatasetPreviewModal
+    isOpen={showCroppedPreviewModal}
+    loading={croppedPreviewLoading}
+    error={croppedPreviewError}
+    outputPath={croppedPreviewOutputPath}
+    images={croppedPreviewImages}
+    sampleCount={PREVIEW_SAMPLE_COUNT}
+    on:close={closeCroppedPreview}
+    on:selectImage={(e) => handleSelectPreviewImage(e.detail.image)}
+/>
+
+<!-- Konva Viewer for Preview -->
+<KonvaViewer
+    showModal={selectedPreviewImage !== null}
+    imageData={selectedPreviewImage}
+    on:close={handlePreviewViewerClose}
+/>
+
 <!-- Modal Annotation Viewer (Pop-out Mode) -->
 {#if $uiStore.showAnnotationModal && $uiStore.selectedImage}
     <ModalAnnotationViewer
@@ -225,8 +353,14 @@
 
 <!-- Advanced Crop & Remap Tool -->
 {#if $exportStore.showAdvancedCropTool}
+    <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
     <div
         class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-8"
+        on:click|self={() => exportStore.closeCropModal()}
+        on:keydown={(e) => e.key === "Escape" && exportStore.closeCropModal()}
+        role="dialog"
+        aria-modal="true"
+        tabindex="-1"
     >
         <div
             class="bg-base-100 rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto"
@@ -234,10 +368,16 @@
             <div
                 class="flex items-center justify-between p-4 border-b border-base-300"
             >
-                <h2 class="text-xl font-bold">Advanced Crop & Remap</h2>
+                <h2 class="text-xl font-bold flex items-center gap-2">
+                    <span class="material-symbols-rounded text-primary">crop</span>
+                    Advanced Crop & Remap
+                    {#if $exportStore.cropModalParentLabel}
+                        <span class="badge badge-primary">{$exportStore.cropModalParentLabel}</span>
+                    {/if}
+                </h2>
                 <button
                     class="btn btn-sm btn-ghost btn-square"
-                    on:click={() => ($exportStore.showAdvancedCropTool = false)}
+                    on:click={() => exportStore.closeCropModal()}
                 >
                     <span class="material-symbols-rounded">close</span>
                 </button>
@@ -245,9 +385,13 @@
             <AdvancedCropRemapTool
                 currentDirectory={$imageStore.directoryPath}
                 cropToolOpen={$exportStore.showAdvancedCropTool}
+                preSelectedParentLabel={$exportStore.cropModalParentLabel}
                 on:cropCompleted={(e) => {
-                    exportStore.handleCropCompleted(e.detail.outputDir);
-                    $exportStore.showAdvancedCropTool = false;
+                    exportStore.handleCropCompleted(e.detail.outputDir, {
+                        parentLabel: $exportStore.cropModalParentLabel,
+                        childLabels: e.detail.childLabels || [],
+                        imageCount: e.detail.imageCount || 0
+                    });
                 }}
             />
         </div>

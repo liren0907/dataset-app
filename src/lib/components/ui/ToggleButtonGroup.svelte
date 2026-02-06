@@ -26,7 +26,7 @@
     {#each options as option}
         <div class="tooltip" data-tip={option.tooltip}>
             <button
-                class="btn {sizeClass} join-item border-none hover:bg-base-200 transition-all duration-200"
+                class="btn {sizeClass} join-item border-none hover:bg-base-200 transition-all duration-200 gap-2 px-4"
                 class:bg-base-200={value === option.value}
                 class:shadow-inner={value === option.value}
                 class:text-base-content={value === option.value}
@@ -40,7 +40,7 @@
                     >
                 {/if}
                 {#if option.label}
-                    <span class="ml-2">{option.label}</span>
+                    <span>{option.label}</span>
                 {/if}
             </button>
         </div>

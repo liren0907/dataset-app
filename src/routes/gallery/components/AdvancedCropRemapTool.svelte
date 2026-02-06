@@ -11,6 +11,7 @@
     // Props from parent (dataset-gallery-advanced)
     export let currentDirectory: string = ""; // Current gallery directory
     export let cropToolOpen: boolean = false; // Accordion open state
+    export let preSelectedParentLabel: string = ""; // Pre-selected parent label from DatasetSummary click
 
     // Event dispatcher for communication with parent
     const dispatch = createEventDispatcher();
@@ -46,6 +47,11 @@
         if (sourceDir) {
             analyzeDataset();
         }
+    }
+
+    // Reactive: Auto-select parent label when pre-selected from DatasetSummary
+    $: if (preSelectedParentLabel && availableLabels.includes(preSelectedParentLabel)) {
+        selectedParentLabel = preSelectedParentLabel;
     }
 
     // Handle keyboard events for modal
@@ -298,8 +304,23 @@
 
             successMessage = String(message);
 
-            // Dispatch completion event to parent (gallery) with output directory
-            dispatch("cropCompleted", { outputDir: outputDir });
+            // Parse result to get image count if available
+            let imageCount = 0;
+            try {
+                // Try to extract count from message (e.g., "Processed 150 images")
+                const match = String(message).match(/(\d+)\s*image/i);
+                if (match) {
+                    imageCount = parseInt(match[1], 10);
+                }
+            } catch {}
+
+            // Dispatch completion event to parent (gallery) with output directory and details
+            dispatch("cropCompleted", { 
+                outputDir: outputDir,
+                parentLabel: selectedParentLabel,
+                childLabels: selectedChildLabels,
+                imageCount: imageCount
+            });
         } catch (err) {
             console.error("Error running processing:", err);
             errorMessage = `Processing failed: ${err instanceof Error ? err.message : String(err)}`;

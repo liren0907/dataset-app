@@ -1,6 +1,12 @@
 <script lang="ts">
+    import { createEventDispatcher } from "svelte";
     import type { DatasetSummary } from "../services/datasetService";
+    
     export let datasetSummary: DatasetSummary | null = null;
+
+    const dispatch = createEventDispatcher<{
+        initiateCrop: { label: string };
+    }>();
 
     function formatPercentage(value: number, total: number): string {
         if (!total || total === 0) return "0.0%";
@@ -10,6 +16,10 @@
     function formatAverage(value: number, count: number): string {
         if (!count || count === 0) return "0.0";
         return (value / count).toFixed(1);
+    }
+
+    function handleLabelClick(label: string) {
+        dispatch("initiateCrop", { label });
     }
 
     // Provide default values for empty state
@@ -91,15 +101,18 @@
                 class="flex items-center gap-2 overflow-x-auto no-scrollbar mask-linear-fade pb-1"
             >
                 {#each sortedLabelCounts as [label, count]}
-                    <div
-                        class="badge badge-neutral gap-1.5 py-3 px-3 border-base-300 bg-base-200 text-base-content whitespace-nowrap flex-shrink-0"
+                    <button
+                        on:click={() => handleLabelClick(label)}
+                        class="badge badge-neutral gap-1.5 py-3 px-3 border-base-300 bg-base-200 text-base-content whitespace-nowrap flex-shrink-0 hover:bg-primary hover:text-primary-content hover:border-primary transition-all duration-200 cursor-pointer group"
+                        title="Click to crop around '{label}'"
                     >
                         <span class="font-medium text-xs">{label}</span>
                         <span
-                            class="badge badge-sm badge-ghost p-0 h-4 min-w-[16px] text-[10px] bg-base-content/10 text-base-content/70"
+                            class="badge badge-sm badge-ghost p-0 h-4 min-w-[16px] text-[10px] bg-base-content/10 text-base-content/70 group-hover:bg-primary-content/20 group-hover:text-primary-content"
                             >{count}</span
                         >
-                    </div>
+                        <span class="material-symbols-rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity">crop</span>
+                    </button>
                 {/each}
             </div>
             <!-- Scroll Details Hint -->

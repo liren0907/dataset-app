@@ -1,79 +1,164 @@
 # Gallery UI Unification Plan
 
-## Goal
-Standardize the UI components within the `/gallery` route to ensure design consistency, reduce code duplication, and improve maintainability. This plan builds upon the "Flat Gray" aesthetic established in the `ExportModal` and `CropRemapTool` refactoring.
+> **Last Updated**: 2026-02-06  
+> **Status**: Mostly Complete ✅
 
-## 1. Existing Shared Components (Ready)
-The following components exist in `src/lib/components/ui/` and are ready for wider adoption:
-- `Button` (Flat Gray style)
-- `BrowseInput` (Directory selection with icon)
-- `SectionLabel` (Uppercase header labels)
-- `SelectionCard` (Selectable option cards)
-- `SplitPaneModal` (35/65 split layout)
+## Completed Work
 
-## 2. New Components to Create
-Identify and extract repeated patterns in `GalleryNavbar` and other modals into shared components.
+The following phases have been completed:
 
-### 2.1 IconButton
-**Purpose**: Replace the frequent `btn btn-ghost btn-sm btn-square` pattern in the navbar.
-**Features**:
-- Icon slot or prop
-- Tooltip integration
-- Active/Inactive states (e.g., Mock Mode toggle)
-- Loading state
+- ✅ **Shared Component Library** - All 12 UI components created in `src/lib/components/ui/`
+- ✅ **Phase 1: Navbar Unification** - `GalleryNavbar.svelte` now uses `IconButton`, `ToggleButtonGroup`, `IconSegmentedControl`
+- ✅ **Phase 2: Modal Cleanup** - `ExportModal.svelte` uses `SplitPaneModal`, `Button`, `LabelBadge`, `Alert`, etc.
 
-### 2.2 ToggleButtonGroup
-**Purpose**: Standardize segmented controls like "View Mode" (Grid/List) and "Annotation Type" (Box/Polygon).
-**Features**:
-- List of options
-- Active state styling (`bg-base-200 shadow-inner`)
-- Icons and Labels
+---
 
-### 2.3 Alert
-**Purpose**: Standardize error and success messages found in modals.
-**Features**:
-- Variants: `error`, `success`, `info`, `warning`
-- Icon integration
-- Close functionality (optional)
+## Remaining Work
 
-### 2.4 LabelBadge
-**Purpose**: Standardize label tags used in `ExtractLabelsModal` and filter chips.
-**Features**:
-- Clickable/Toggleable
-- Active/Inactive styles (strikethrough for excluded)
-- Count display
+### Phase 3: Split Pane Standardization (Partial)
 
-### 2.5 SimpleModal
-**Purpose**: A generic modal wrapper for non-split layouts (like `ExtractLabelsModal`).
-**Features**:
-- Title
-- Close button
-- Click-outside-to-close
+**Targets**:
+- `CropRemapTool.svelte` - Still uses custom layout
+- `AdvancedCropRemapTool.svelte` - Still uses custom layout
 
-## 3. Refactoring Targets
+**Action**: Refactor these to use the shared `SplitPaneModal` component for layout consistency.
 
-### Phase 1: Navbar Unification
-**Target**: `src/routes/gallery/components/GalleryNavbar.svelte`
-- Replace manual icon buttons with `IconButton`
-- Replace manual toggle groups with `ToggleButtonGroup`
-- **Benefit**: drastically reduces template boilerplate in the navbar.
+**Benefit**: Ensures exact layout consistency (width ratios, padding, scrollbars) across all complex tools.
 
-### Phase 2: Modal Cleanup
-**Target**: `src/routes/gallery/components/ExtractLabelsModal.svelte`
-- Adopt `SimpleModal` wrapper
-- Use `Button` for actions
-- Use `LabelBadge` for label selection list
-- Use `Alert` for error messages
+---
 
-### Phase 3: Split Pane Standardization
-**Target**: `ExportModal.svelte` and `CropRemapTool.svelte`
-- Currently, these implement their own split layout structure manually.
-- **Action**: Refactor them to wrap their content in the shared `SplitPaneModal` component.
-- **Benefit**: Ensures exact layout consistency (width ratios, padding, scrollbars) across all complex tools.
+## Component Reference Tree
 
-## 4. Execution Roadmap
+快速開發參考：元件層級、Props、Events、Store 連結
 
-1.  **Create New Components**: Implement `IconButton`, `ToggleButtonGroup`, `Alert`, `LabelBadge`, `SimpleModal` in `src/lib/components/ui/`.
-2.  **Refactor Navbar**: detailed pass on `GalleryNavbar.svelte`.
-3.  **Refactor ExtractLabelsModal**: detailed pass on `ExtractLabelsModal.svelte`.
-4.  **Adopt SplitPaneModal**: Update `ExportModal` and `CropRemapTool` to use the shared layout wrapper.
+### Stores (狀態管理)
+
+| Store | 位置 | 主要狀態 |
+|-------|------|---------|
+| `imageStore` | `stores/imageStore.ts` | `directoryPath`, `images`, `loading`, `currentPage`, `totalPages`, `datasetSummary`, `isMockMode` |
+| `uiStore` | `stores/uiStore.ts` | `viewMode` (grid/column), `editMode` (modal/sidebar), `selectedImage`, `showAnnotationModal` |
+| `annotationStore` | `stores/annotationStore.ts` | `annotating`, `annotationType` (bounding_box/polygon), `autoAnnotationEnabled` |
+| `exportStore` | `stores/exportStore.ts` | `showActualExportModal`, `showCropTool`, `showAdvancedCropTool`, `croppedDatasets`, `cropModalParentLabel` |
+
+### Main Page Structure
+
+```
+/gallery (+page.svelte)
+│
+├── GalleryNavbar ─────────────────────────────────────────────────
+│   Props: isMockMode, loading, directoryPath, images, annotationType,
+│          autoAnnotationEnabled, annotating, showCropTool, 
+│          showAdvancedCropTool, viewMode, editMode
+│   │
+│   ├── on:toggleMockMode ──────→ imageStore.setMockMode()
+│   ├── on:selectDirectory ─────→ imageStore.selectDirectory()
+│   ├── on:setAnnotationType ───→ $annotationStore.annotationType = value
+│   ├── on:toggleAutoAnnotation → $annotationStore.autoAnnotationEnabled = !value
+│   ├── on:annotateImages ──────→ annotationStore.annotateImages()
+│   ├── on:openExportModal ─────→ $exportStore.showActualExportModal = true
+│   ├── on:toggleCropTool ──────→ $exportStore.showCropTool = !value
+│   ├── on:toggleAdvancedCropTool → $exportStore.showAdvancedCropTool = !value
+│   ├── on:setViewMode ─────────→ $uiStore.viewMode = value
+│   └── on:setEditMode ─────────→ $uiStore.editMode = value
+│
+├── DatasetSummary ────────────────────────────────────────────────
+│   Props: datasetSummary
+│   │
+│   └── on:initiateCrop ────────→ exportStore.openCropModalWithLabel(label)
+│       (點擊 label badge 會觸發 AdvancedCropRemapTool 並預選該 label)
+│
+├── CroppedDatasetCard ────────────────────────────────────────────
+│   Props: outputPath, imageCount, parentLabel, childLabels, createdAt
+│   │
+│   ├── on:preview ─────────────→ openCroppedPreview(outputPath)
+│   ├── on:openInGallery ───────→ exportStore.openCroppedDatasetInGallery()
+│   └── on:remove ──────────────→ exportStore.removeCroppedDataset()
+│
+├── ImageGallery ──────────────────────────────────────────────────
+│   Props: images, viewMode, currentPage, totalPages, pageSize, selectedImage
+│   │
+│   ├── on:pageChange ──────────→ imageStore.loadImagesPage(page)
+│   │                             annotationStore.autoLoadAnnotationsForPage()
+│   └── on:imageClick ──────────→ if editMode === "modal":
+│                                   $uiStore.selectedImage = image
+│                                   $uiStore.showAnnotationModal = true
+│                                 else:
+│                                   $uiStore.selectedImage = image
+│
+├── ImagePreviewPanel (when editMode === "sidebar" && selectedImage)
+│   Props: selectedImage
+│   │
+│   └── on:close ───────────────→ $uiStore.selectedImage = null
+│
+├── GalleryEmptyState (when loading || !directoryPath || images.length === 0)
+│   Props: loading, directoryPath, images
+│   │
+│   └── on:selectDirectory ─────→ imageStore.selectDirectory()
+│
+└── [Modals / Tools] ──────────────────────────────────────────────
+
+    ├── ExportModal (when $exportStore.showActualExportModal)
+    │   Props: showModal, currentDirectoryPath, currentDatasetSummary
+    │   │
+    │   ├── on:closeModal ──────→ $exportStore.showActualExportModal = false
+    │   └── on:runExport ───────→ exportStore.runUnifiedExport(details)
+    │                             → datasetService.performDatasetExport()
+    │
+    ├── CropRemapTool (when $exportStore.showCropTool)
+    │   Props: isOpen
+    │   │
+    │   ├── on:cropCompleted ───→ exportStore.handleCropCompleted(outputDir)
+    │   └── on:close ───────────→ $exportStore.showCropTool = false
+    │
+    ├── AdvancedCropRemapTool (when $exportStore.showAdvancedCropTool)
+    │   Props: currentDirectory, cropToolOpen, preSelectedParentLabel
+    │   │
+    │   └── on:cropCompleted ───→ exportStore.handleCropCompleted(outputDir, details)
+    │       (details: parentLabel, childLabels, imageCount)
+    │
+    ├── ModalAnnotationViewer (when $uiStore.showAnnotationModal && $uiStore.selectedImage)
+    │   Props: showModal, selectedImage, autoAnnotationEnabled, isMockMode
+    │   │
+    │   ├── on:close ───────────→ $uiStore.showAnnotationModal = false
+    │   │                         $uiStore.selectedImage = null
+    │   └── on:save ────────────→ (annotation data preserved)
+    │
+    ├── CroppedDatasetPreviewModal (when showCroppedPreviewModal)
+    │   Props: isOpen, loading, error, outputPath, images, sampleCount
+    │   │
+    │   ├── on:close ───────────→ closeCroppedPreview()
+    │   └── on:selectImage ─────→ handleSelectPreviewImage(image)
+    │                             → Opens KonvaViewer
+    │
+    └── KonvaViewer (when selectedPreviewImage !== null)
+        Props: showModal, imageData
+        │
+        └── on:close ───────────→ handlePreviewViewerClose()
+```
+
+### Services (後端調用)
+
+| Service | 位置 | 主要功能 |
+|---------|------|---------|
+| `datasetService.ts` | `services/datasetService.ts` | 圖片列表、標註、匯出 |
+| `konvaService.ts` | `services/konvaService.ts` | Konva.js 渲染 |
+
+**datasetService 常用函數：**
+- `fetchPaginatedImages(path, page, pageSize)` → Tauri: `get_paginated_images`
+- `fetchDatasetSummary(path)` → Tauri: `get_labelme_summary`
+- `performAutoAnnotation(path, page, pageSize)` → Tauri: `auto_annotate_images`
+- `performDatasetExport(params)` → Tauri: `export_to_yolo_new` / `extract_labels`
+- `performCropAndRemap(...)` → Tauri: `crop_and_remap_annotations`
+- `generateAnnotatedPreviews(...)` → Tauri: `generate_annotated_previews`
+
+### UI Components (共用元件)
+
+位置: `src/lib/components/ui/`
+
+```
+Button, IconButton, BrowseInput, SectionLabel,
+SelectionCard, SplitPaneModal, SimpleModal,
+Alert, LabelBadge, ToggleButtonGroup, IconSegmentedControl
+```
+
+**Import**: `import { Button, Alert, ... } from "$lib/components/ui";`

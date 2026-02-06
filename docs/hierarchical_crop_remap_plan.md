@@ -69,3 +69,74 @@ To implement a seamless, hierarchical workflow for creating cropped datasets dir
 ## 4. Risks & Considerations
 *   **Performance**: Generating previews for large cropped datasets might be slow. We should limit the preview to ~5-10 random images.
 *   **State Persistence**: If the user refreshes `+page.svelte`, the "Cropped Results" list might disappear unless stored in a persistent store or local storage. For now, ephemeral state is acceptable.
+
+---
+
+## 5. Implementation Status
+
+> Last Updated: 2026-02-05
+
+### Completed ✅
+
+#### Phase 1: Component Refactoring (AdvancedCropRemapTool)
+| Item | Status | Details |
+|------|--------|---------|
+| `preSelectedParentLabel` prop | ✅ Done | Added prop to accept pre-selected label from DatasetSummary |
+| Reactive auto-selection | ✅ Done | Auto-selects parent label when `preSelectedParentLabel` is provided |
+| Enhanced `cropCompleted` event | ✅ Done | Now emits `{ outputDir, parentLabel, childLabels, imageCount }` |
+
+**File**: `src/routes/gallery/components/AdvancedCropRemapTool.svelte`
+
+#### Phase 2: DatasetSummary Enhancements
+| Item | Status | Details |
+|------|--------|---------|
+| Clickable label badges | ✅ Done | Labels are now `<button>` elements with hover effects |
+| `initiateCrop` event | ✅ Done | Dispatches `{ label: string }` when a label is clicked |
+| Visual feedback | ✅ Done | Hover turns primary color + shows crop icon |
+
+**File**: `src/routes/gallery/components/DatasetSummary.svelte`
+
+#### Phase 3: Cropped Results Management
+| Item | Status | Details |
+|------|--------|---------|
+| `CroppedDatasetCard.svelte` | ✅ Done | New component displaying output path, image count, labels, timestamp |
+| Action buttons | ✅ Done | Preview, Open in Gallery, Remove |
+| Store state (`croppedDatasets`) | ✅ Done | Array of `CroppedDataset` objects in `exportStore.ts` |
+| Store methods | ✅ Done | `openCropModalWithLabel()`, `closeCropModal()`, `addCroppedDataset()`, `removeCroppedDataset()`, `openCroppedDatasetInGallery()` |
+
+**Files**:
+- `src/routes/gallery/components/CroppedDatasetCard.svelte` (NEW)
+- `src/routes/gallery/stores/exportStore.ts`
+
+#### Phase 4: Integration
+| Item | Status | Details |
+|------|--------|---------|
+| Import CroppedDatasetCard | ✅ Done | Added to `+page.svelte` |
+| Wire DatasetSummary → Crop Modal | ✅ Done | `on:initiateCrop` → `exportStore.openCropModalWithLabel()` |
+| Cropped Datasets section | ✅ Done | Displays below Dataset Summary when results exist |
+| Modal header with label badge | ✅ Done | Shows pre-selected label in modal title |
+| Pass `preSelectedParentLabel` | ✅ Done | Prop passed to AdvancedCropRemapTool |
+
+**File**: `src/routes/gallery/+page.svelte`
+
+---
+
+### Pending 🚧
+
+| Item | Priority | Notes |
+|------|----------|-------|
+| Preview button functionality | Medium | Currently logs to console; needs modal with random samples |
+| State persistence | Low | Cropped datasets list resets on page refresh (acceptable for now) |
+| Konva preview in CroppedDatasetCard | Medium | Use `generate_annotated_previews` for preview modal |
+
+---
+
+### Files Modified Summary
+
+| File | Action |
+|------|--------|
+| `src/routes/gallery/+page.svelte` | Modified |
+| `src/routes/gallery/components/DatasetSummary.svelte` | Modified |
+| `src/routes/gallery/components/AdvancedCropRemapTool.svelte` | Modified |
+| `src/routes/gallery/stores/exportStore.ts` | Modified |
+| `src/routes/gallery/components/CroppedDatasetCard.svelte` | **Created** |

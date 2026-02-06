@@ -67,90 +67,85 @@
     ];
 </script>
 
-<div class="flex flex-col gap-4 mb-6">
-    <!-- Navbar Toolbar (Modern Minimalist) -->
+<div class="flex flex-col gap-2 mb-6">
+    <!-- Row 1: Data Source Selection -->
     <div
-        class="navbar bg-base-100 min-h-0 h-14 border border-base-200 shadow-sm rounded-lg px-3 gap-2"
+        class="navbar bg-base-100 min-h-0 h-12 border border-base-200 shadow-sm rounded-lg px-3 gap-2"
     >
-        <!-- Left: Directory & Breadcrumbs -->
-        <div class="flex items-center gap-2 flex-1 min-w-0">
-            <!-- Mock Mode Toggle -->
-            <IconButton
-                icon="science"
-                variant={isMockMode ? "soft" : "ghost"}
-                active={isMockMode}
-                tooltip={isMockMode
-                    ? "Switch to Real Data"
-                    : "Switch to Mock Data"}
-                on:click={() => dispatch("toggleMockMode")}
-            />
+        <!-- Mock Mode Toggle -->
+        <IconButton
+            icon="science"
+            variant={isMockMode ? "soft" : "ghost"}
+            active={isMockMode}
+            tooltip={isMockMode ? "Switch to Real Data" : "Switch to Mock Data"}
+            on:click={() => dispatch("toggleMockMode")}
+        />
 
-            <div class="divider divider-horizontal mx-0 h-6"></div>
+        <div class="divider divider-horizontal mx-0 h-6"></div>
 
-            <!-- Open Directory Button -->
-            <!-- Open Directory Button -->
-            <IconButton
-                icon="folder_open"
-                tooltip="Open Project Directory"
-                disabled={loading}
-                {loading}
-                variant="ghost"
-                on:click={() => dispatch("selectDirectory")}
-            />
+        <!-- Open Directory Button -->
+        <IconButton
+            icon="folder_open"
+            tooltip="Open Project Directory"
+            disabled={loading}
+            {loading}
+            variant="ghost"
+            on:click={() => dispatch("selectDirectory")}
+        />
 
-            <div class="divider divider-horizontal mx-0 h-6"></div>
+        <div class="divider divider-horizontal mx-0 h-6"></div>
 
-            <!-- Breadcrumbs -->
-            {#if directoryPath}
-                <div class="breadcrumbs text-sm ml-1 hidden sm:block">
-                    <ul>
+        <!-- Breadcrumbs -->
+        {#if directoryPath}
+            <div class="breadcrumbs text-sm ml-1 hidden sm:block">
+                <ul>
+                    <li>
+                        <span class="text-base-content/50">Project</span>
+                    </li>
+                    {#each splitPath(directoryPath) as part, i}
                         <li>
-                            <span class="text-base-content/50">Project</span>
+                            <span
+                                class={`font-medium ${i === 1 ? "text-base-content" : "text-base-content/70"}`}
+                            >
+                                {part}
+                            </span>
                         </li>
-                        {#each splitPath(directoryPath) as part, i}
-                            <li>
-                                <span
-                                    class={`font-medium ${i === 1 ? "text-base-content" : "text-base-content/70"}`}
-                                >
-                                    {part}
-                                </span>
-                            </li>
-                        {/each}
-                    </ul>
-                </div>
-                <!-- Mobile fallback for path -->
-                <div
-                    class="text-sm font-medium text-base-content truncated sm:hidden"
-                >
-                    {directoryPath.split("/").pop()}
-                </div>
-            {:else}
-                <span class="text-sm text-base-content/50 italic ml-1"
-                    >No directory selected</span
-                >
-            {/if}
-        </div>
+                    {/each}
+                </ul>
+            </div>
+            <!-- Mobile fallback for path -->
+            <div
+                class="text-sm font-medium text-base-content truncated sm:hidden"
+            >
+                {directoryPath.split("/").pop()}
+            </div>
+        {:else}
+            <span class="text-sm text-base-content/50 italic ml-1"
+                >No directory selected</span
+            >
+        {/if}
+    </div>
 
-        <!-- Right: Tools & Actions -->
-        <div class="flex items-center gap-1 sm:gap-2 flex-none">
+    <!-- Row 2: Tools & Actions -->
+    <div
+        class="navbar bg-base-100 min-h-0 h-12 border border-base-200 shadow-sm rounded-lg px-3 gap-2"
+    >
+        <!-- Left: Annotation Tools -->
+        <div class="flex items-center gap-1 sm:gap-2">
             <!-- Annotation Type Toggle -->
             {#if directoryPath && images.length > 0}
-                <div class="hidden lg:block">
-                    <IconSegmentedControl
-                        options={annotationOptions}
-                        value={annotationType}
-                        on:change={(e) =>
-                            dispatch("setAnnotationType", e.detail)}
-                    />
-                </div>
-                <div
-                    class="divider divider-horizontal mx-0 h-6 hidden lg:flex"
-                ></div>
+                <IconSegmentedControl
+                    options={annotationOptions}
+                    value={annotationType}
+                    on:change={(e) => dispatch("setAnnotationType", e.detail)}
+                />
+                <div class="divider divider-horizontal mx-0 h-6"></div>
             {/if}
 
             <!-- Auto-load Toggle -->
             <IconButton
                 icon="autorenew"
+                label="Auto"
                 active={autoAnnotationEnabled}
                 variant={autoAnnotationEnabled ? "soft" : "ghost"}
                 tooltip={autoAnnotationEnabled
@@ -160,64 +155,69 @@
                 on:click={() => dispatch("toggleAutoAnnotation")}
             />
 
-            <div
-                class="divider divider-horizontal mx-0 h-6 hidden lg:flex"
-            ></div>
-
-            <!-- Actions Group -->
-
-            <!-- 1. Load Annotations -->
+            <!-- Load Annotations -->
             <IconButton
                 icon="label"
+                label="Load"
                 tooltip="Load Annotations"
                 disabled={!directoryPath || images.length === 0 || annotating}
                 loading={annotating}
                 on:click={() => dispatch("annotateImages")}
             />
+        </div>
 
-            <!-- 2. Export -->
+        <div class="divider divider-horizontal mx-0 h-6"></div>
+
+        <!-- Center: Export & Crop Tools -->
+        <div class="flex items-center gap-1 sm:gap-2">
+            <!-- Export -->
             <IconButton
                 icon="ios_share"
+                label="Export"
                 tooltip="Export Dataset"
                 disabled={!directoryPath || images.length === 0}
                 on:click={() => dispatch("openExportModal")}
             />
 
-            <!-- 3. Crop Tool -->
+            <!-- Crop Tool -->
             <IconButton
                 icon="crop"
+                label="Crop"
                 tooltip="Crop & Remap Tool"
                 active={showCropTool}
                 variant={showCropTool ? "soft" : "ghost"}
                 on:click={() => dispatch("toggleCropTool")}
             />
 
-            <!-- 4. Advanced Crop Tool -->
+            <!-- Advanced Crop Tool -->
             <IconButton
                 icon="auto_awesome"
+                label="Preview"
                 tooltip="Advanced Crop with Preview"
                 active={showAdvancedCropTool}
                 variant={showAdvancedCropTool ? "soft" : "ghost"}
                 on:click={() => dispatch("toggleAdvancedCropTool")}
             />
+        </div>
 
-            <div class="divider divider-horizontal mx-0 h-6"></div>
-
+        <!-- Right: View Controls -->
+        <div class="flex-1"></div>
+        <div class="flex items-center gap-2">
             <!-- View Mode Toggle -->
             <IconSegmentedControl
                 options={viewModeOptions}
                 value={viewMode}
                 on:change={(e) => dispatch("setViewMode", e.detail)}
             />
-        </div>
-    </div>
 
-    <!-- Secondary Toolbar (Edit Mode) -->
-    <div class="flex justify-end px-1">
-        <ToggleButtonGroup
-            options={editModeOptions}
-            value={editMode}
-            on:change={(e) => dispatch("setEditMode", e.detail)}
-        />
+            <div class="divider divider-horizontal mx-0 h-6"></div>
+
+            <!-- Edit Mode Toggle -->
+            <ToggleButtonGroup
+                options={editModeOptions}
+                value={editMode}
+                on:change={(e) => dispatch("setEditMode", e.detail)}
+            />
+        </div>
     </div>
 </div>

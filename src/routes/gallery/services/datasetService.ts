@@ -1,5 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
+import { appDataDir } from "@tauri-apps/api/path";
 import { safeConvertFileSrc } from "../utils/tauriUtils";
+import type { KonvaImageData } from "./konvaService";
 
 // Interface for the structure of an image object from the backend (basic version)
 interface BackendImage {
@@ -36,6 +38,19 @@ export interface FetchPaginatedImagesResult {
     processedImages: ProcessedImage[];
     totalImages: number;
     totalPages: number;
+}
+
+function isTauriEnvironment(): boolean {
+    return typeof window !== "undefined" && (window as any).__TAURI__ !== undefined;
+}
+
+function joinPath(base: string, segment: string): string {
+    const needsSeparator = !base.endsWith("/") && !base.endsWith("\\");
+    return `${base}${needsSeparator ? "/" : ""}${segment}`;
+}
+
+function getFilename(path: string): string {
+    return path.split(/[/\\]/).pop() || "Preview";
 }
 
 // Helper function to process images with smart loading strategy
@@ -112,6 +127,53 @@ export async function fetchPaginatedImages(
         const errorMessage = err instanceof Error ? err.message : String(err);
         throw new Error(`Failed to fetch images from service: ${errorMessage}`);
     }
+}
+
+/**
+ * Generates annotated preview images for a directory and returns Konva-ready data.
+ * @param sourceDir The directory path.
+ * @param numPreviews Number of preview images to generate.
+ * @returns A promise that resolves to KonvaImageData[].
+ */
+export async function generateAnnotatedPreviews(
+    sourceDir: string,
+    numPreviews: number
+): Promise<KonvaImageData[]> {
+    if (!sourceDir || !sourceDir.trim()) {
+        throw new Error("Source directory cannot be empty.");
+    }
+
+    if (!isTauriEnvironment()) {
+        throw new Error("Preview is only available in the Tauri desktop app.");
+    }
+
+    const appDataPath = await appDataDir();
+    const tempDir = joinPath(appDataPath, `previews_${Date.now()}`);
+
+    const resultStr = await invoke("generate_annotated_previews", {
+        sourceDir,
+        numPreviews,
+        tempDir,
+    }) as string | null;
+
+    if (!resultStr) {
+        throw new Error("No data received from preview service.");
+    }
+
+    const data = JSON.parse(resultStr) as { annotated_images?: any[] };
+    const annotatedImages = data?.annotated_images || [];
+
+    if (!Array.isArray(annotatedImages) || annotatedImages.length === 0) {
+        return [];
+    }
+
+    return annotatedImages.map((img, index) => ({
+        id: `preview_${index}`,
+        path: img.path,
+        previewUrl: safeConvertFileSrc(img.path),
+        name: img.name || getFilename(img.path),
+        annotations: Array.isArray(img.annotations) ? img.annotations : [],
+    })) as KonvaImageData[];
 }
 
 // Interface for the detailed image data (can be partial, as we merge it)
