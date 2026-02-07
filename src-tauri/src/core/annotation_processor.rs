@@ -40,8 +40,12 @@ pub fn process_parent_child_annotations<F>(
     progress_callback: Option<F>,
 ) -> Result<String, String>
 where
-    F: Fn(usize, usize, String) + Send + 'static,
+    F: Fn(usize, usize, String) + Send + Sync + 'static,
 {
+    use rayon::prelude::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Arc;
+
     let source_dir = Path::new(source_dir_str);
     let output_dir = Path::new(output_dir_str);
 
@@ -66,14 +70,35 @@ where
         .collect();
 
     let total_files = glob_results.len();
-    let mut processed_files_count = 0;
-    let mut total_processed_parents = 0;
-    let mut error_files = Vec::new();
 
-    for (index, entry) in glob_results.into_iter().enumerate() {
-        if let Some(cb) = &progress_callback {
-            let message = format!("Processing file {} of {}", index + 1, total_files);
-            cb(index + 1, total_files, message);
+    // Use atomic counters for thread-safe progress tracking across parallel threads
+    let processed_files_count = Arc::new(AtomicUsize::new(0));
+    let total_processed_parents = Arc::new(AtomicUsize::new(0));
+    // Use a mutex to safely collect errors from multiple threads
+    let error_files = Arc::new(std::sync::Mutex::new(Vec::new()));
+
+    // Wrap callback in Arc to share across threads
+    // Note: The callback itself must be Thread-Safe (Sync)
+    let progress_callback = progress_callback.map(Arc::new);
+
+    // Use Rayon for parallel processing
+    glob_results.par_iter().enumerate().for_each(|(_index, entry)| {
+        // Create references to shared state for this thread
+        let processed_files_count_clone = Arc::clone(&processed_files_count);
+        let total_processed_parents_clone = Arc::clone(&total_processed_parents);
+        let error_files_clone = Arc::clone(&error_files);
+        let progress_callback_clone = progress_callback.as_ref().map(Arc::clone);
+
+        // We use a local counter for the *current* progress display, referencing the atomic global counter
+        // The original 'index' is not reliable for progress in parallel execution as order is not guaranteed.
+        // So we just increment the atomic counter to get the "Nth file processed" number.
+        let current_progress_count = processed_files_count_clone.fetch_add(1, Ordering::SeqCst) + 1;
+
+        if let Some(cb) = &progress_callback_clone {
+            // Note: Parallel threads might call this out of order or simultaneously.
+            // Ideally the callback handler (frontend) just updates a progress bar value.
+            let message = format!("Processing file {} of {}", current_progress_count, total_files);
+            cb(current_progress_count, total_files, message);
         }
 
         match entry {
@@ -83,10 +108,10 @@ where
                     .unwrap_or_default()
                     .to_string_lossy()
                     .to_string();
-                println!("Processing JSON: {}", file_name);
+                println!("Processing JSON (Parallel): {}", file_name);
 
                 match process_single_file(
-                    &json_path,
+                    json_path,
                     source_dir,
                     output_dir,
                     parent_label,
@@ -95,8 +120,7 @@ where
                 ) {
                     Ok(count) => {
                         if count > 0 {
-                            processed_files_count += 1;
-                            total_processed_parents += count;
+                            total_processed_parents_clone.fetch_add(count, Ordering::SeqCst);
                             println!(
                                 " -> Successfully processed {} parent instances in this file.",
                                 count
@@ -107,27 +131,33 @@ where
                     }
                     Err(e) => {
                         eprintln!(" -> Error processing {}: {}", file_name, e);
-                        error_files.push(format!("{}: {}", file_name, e));
+                        if let Ok(mut errors) = error_files_clone.lock() {
+                            errors.push(format!("{}: {}", file_name, e));
+                        }
                     }
                 }
             }
             Err(e) => eprintln!("Error accessing path via glob: {:?}", e),
         }
-    }
+    });
+
+    let final_processed_files = processed_files_count.load(Ordering::SeqCst);
+    let final_total_parents = total_processed_parents.load(Ordering::SeqCst);
+    let final_errors = error_files.lock().unwrap().clone();
 
     let summary = format!(
-        "Processing complete. Found valid parent annotations in {} files, successfully processing a total of {} parent instances.",
-        processed_files_count, total_processed_parents
+        "Processing complete. Found valid parent annotations in {} files checked, successfully processing a total of {} parent instances.",
+        final_processed_files, final_total_parents
     );
 
-    if error_files.is_empty() {
+    if final_errors.is_empty() {
         Ok(summary)
     } else {
         Err(format!(
             "{}\nEncountered errors in {} files:\n - {}",
             summary,
-            error_files.len(),
-            error_files.join("\n - ")
+            final_errors.len(),
+            final_errors.join("\n - ")
         ))
     }
 }
