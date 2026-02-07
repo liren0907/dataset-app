@@ -1,14 +1,8 @@
 <script lang="ts">
     import { invoke } from "@tauri-apps/api/core";
+    import { appDataDir } from "@tauri-apps/api/path";
     import { createEventDispatcher } from "svelte";
-    import {
-        IconButton,
-        Button,
-        BrowseInput,
-        LabelBadge,
-        Alert,
-    } from "$lib/components/ui";
-    import { open } from "@tauri-apps/plugin-dialog";
+    import { IconButton, Button, LabelBadge, Alert } from "$lib/components/ui";
 
     // Props
     export let currentDirectory: string = "";
@@ -18,7 +12,6 @@
     const dispatch = createEventDispatcher();
 
     // State
-    let outputDir: string = "";
     let datasetSummary: any = null;
     let availableLabels: string[] = [];
     let selectedParentLabel: string = "";
@@ -95,21 +88,6 @@
         );
     }
 
-    async function selectOutputDirectory() {
-        try {
-            const selected = await open({
-                directory: true,
-                multiple: false,
-                title: "Select Output Directory",
-            });
-            if (selected && typeof selected === "string") {
-                outputDir = selected;
-            }
-        } catch (err) {
-            console.error("Error selecting directory:", err);
-        }
-    }
-
     function toggleParent(label: string) {
         selectedParentLabel = label;
         // Reset child selection when parent changes
@@ -137,17 +115,22 @@
     }
 
     async function runCrop() {
-        if (!currentDirectory || !outputDir || !selectedParentLabel) return;
+        if (!currentDirectory || !selectedParentLabel) return;
 
         try {
             loading = true;
             errorMessage = null;
 
+            // Generate temp output directory path
+            const appData = await appDataDir();
+            const timestamp = Date.now();
+            const tempOutputDir = `${appData}cropped/${timestamp}_${selectedParentLabel}`;
+
             const message = await invoke("crop_and_remap_annotations", {
                 sourceDir: currentDirectory,
-                outputDir: outputDir,
+                outputDir: tempOutputDir,
                 parentLabel: selectedParentLabel,
-                childLabels: selectedChildLabels,
+                requiredChildLabelsStr: selectedChildLabels.join(","),
                 paddingFactor: paddingFactor,
             });
 
@@ -159,7 +142,7 @@
             if (match) imageCount = parseInt(match[1], 10);
 
             dispatch("cropCompleted", {
-                outputDir,
+                tempPath: tempOutputDir,
                 parentLabel: selectedParentLabel,
                 childLabels: selectedChildLabels,
                 imageCount,
@@ -172,10 +155,7 @@
     }
 
     $: canRun =
-        datasetLoaded &&
-        outputDir &&
-        selectedParentLabel &&
-        selectedChildLabels.length > 0;
+        datasetLoaded && selectedParentLabel && selectedChildLabels.length > 0;
 </script>
 
 <!-- Hierarchical Crop Panel -->
@@ -299,7 +279,7 @@
                 </div>
             {/if}
 
-            <!-- Step 3: Configure & Output -->
+            <!-- Step 3: Configure Padding -->
             {#if selectedParentLabel && selectedChildLabels.length > 0}
                 <div class="space-y-4">
                     <div class="flex items-center gap-2">
@@ -307,7 +287,7 @@
                             >3</span
                         >
                         <span class="font-semibold text-base-content"
-                            >Configure Output</span
+                            >Configure Padding</span
                         >
                     </div>
 
@@ -334,19 +314,6 @@
                                 >{paddingFactor.toFixed(1)}x</span
                             >
                         </div>
-                    </div>
-
-                    <!-- Output Directory -->
-                    <div class="form-control">
-                        <span class="text-sm font-medium mb-2"
-                            >Output Directory</span
-                        >
-                        <BrowseInput
-                            value={outputDir}
-                            placeholder="Select output directory..."
-                            icon="folder_open"
-                            on:browse={selectOutputDirectory}
-                        />
                     </div>
                 </div>
             {/if}

@@ -210,8 +210,7 @@
             <!-- Active Cropped Dataset Indicator -->
             {#if $exportStore.activeCroppedDatasetPath}
                 {@const activeDataset = $exportStore.croppedDatasets.find(
-                    (d) =>
-                        d.outputPath === $exportStore.activeCroppedDatasetPath,
+                    (d) => d.tempPath === $exportStore.activeCroppedDatasetPath,
                 )}
                 <div
                     class="mb-6 p-4 rounded-xl bg-primary/5 border border-primary/20"
@@ -289,7 +288,7 @@
                                 preSelectedParentLabel={$exportStore.cropModalParentLabel}
                                 on:cropCompleted={(e) => {
                                     exportStore.handleCropCompleted(
-                                        e.detail.outputDir,
+                                        e.detail.tempPath,
                                         {
                                             parentLabel:
                                                 e.detail.parentLabel || "",
@@ -319,23 +318,34 @@
                         </h3>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {#each $exportStore.croppedDatasets as dataset (dataset.outputPath)}
+                        {#each $exportStore.croppedDatasets as dataset (dataset.tempPath)}
                             <CroppedDatasetCard
-                                outputPath={dataset.outputPath}
+                                tempPath={dataset.tempPath}
+                                exportedPath={dataset.exportedPath}
                                 imageCount={dataset.imageCount}
                                 parentLabel={dataset.parentLabel}
                                 childLabels={dataset.childLabels}
                                 createdAt={dataset.createdAt}
                                 on:preview={(e) =>
-                                    openCroppedPreview(e.detail.outputPath)}
+                                    openCroppedPreview(e.detail.tempPath)}
                                 on:openInGallery={(e) =>
                                     exportStore.openCroppedDatasetInGallery(
-                                        e.detail.outputPath,
+                                        e.detail.tempPath,
                                     )}
                                 on:remove={(e) =>
                                     exportStore.removeCroppedDataset(
-                                        e.detail.outputPath,
+                                        e.detail.tempPath,
                                     )}
+                                on:export={async (e) => {
+                                    try {
+                                        await exportStore.exportCroppedDataset(
+                                            e.detail.tempPath,
+                                            e.detail.destPath,
+                                        );
+                                    } catch (err) {
+                                        console.error("Export failed:", err);
+                                    }
+                                }}
                             />
                         {/each}
                     </div>

@@ -6,7 +6,8 @@ import type { DatasetExportParams } from "../services/datasetService";
 import { imageStore } from "./imageStore";
 
 export interface CroppedDataset {
-    outputPath: string;
+    tempPath: string;  // Temp location where cropped files are stored
+    exportedPath?: string;  // Final exported location (optional, set after export)
     imageCount: number;
     parentLabel: string;
     childLabels: string[];
@@ -117,10 +118,10 @@ function createExportStore() {
             }
         },
 
-        handleCropCompleted: async (outputDir: string, details?: { imageCount?: number; parentLabel?: string; childLabels?: string[] }) => {
+        handleCropCompleted: async (tempPath: string, details?: { imageCount?: number; parentLabel?: string; childLabels?: string[] }) => {
             // Create a cropped dataset entry
             const croppedDataset: CroppedDataset = {
-                outputPath: outputDir,
+                tempPath: tempPath,
                 imageCount: details?.imageCount || 0,
                 parentLabel: details?.parentLabel || "",
                 childLabels: details?.childLabels || [],
@@ -132,6 +133,7 @@ function createExportStore() {
                     ...s,
                     showCropTool: false,
                     showAdvancedCropTool: false,
+                    showHierarchicalCrop: false,
                     cropModalParentLabel: "",
                     croppedDatasets: [...s.croppedDatasets, croppedDataset]
                 };
@@ -210,13 +212,13 @@ function createExportStore() {
         },
 
         // Remove a cropped dataset from the list
-        removeCroppedDataset: (outputPath: string) => {
+        removeCroppedDataset: (tempPath: string) => {
             update(s => {
                 const updated = {
                     ...s,
-                    croppedDatasets: s.croppedDatasets.filter(d => d.outputPath !== outputPath),
+                    croppedDatasets: s.croppedDatasets.filter(d => d.tempPath !== tempPath),
                     // If removing the active dataset, switch back to original
-                    activeCroppedDatasetPath: s.activeCroppedDatasetPath === outputPath ? null : s.activeCroppedDatasetPath
+                    activeCroppedDatasetPath: s.activeCroppedDatasetPath === tempPath ? null : s.activeCroppedDatasetPath
                 };
                 persistCroppedDatasets(updated.croppedDatasets);
                 return updated;
@@ -241,6 +243,28 @@ function createExportStore() {
             }));
             // Load original dataset back
             imageStore.loadFromPath(originalPath);
+        },
+
+        // Export cropped dataset from temp to user-selected destination
+        exportCroppedDataset: async (tempPath: string, destPath: string) => {
+            try {
+                // Use Tauri invoke to copy directory
+                const { invoke } = await import("@tauri-apps/api/core");
+                await invoke("copy_directory", { source: tempPath, destination: destPath });
+
+                // Update the dataset with exported path
+                update(s => {
+                    const updatedDatasets = s.croppedDatasets.map(d =>
+                        d.tempPath === tempPath ? { ...d, exportedPath: destPath } : d
+                    );
+                    persistCroppedDatasets(updatedDatasets);
+                    return { ...s, croppedDatasets: updatedDatasets };
+                });
+
+                return destPath;
+            } catch (err: any) {
+                throw new Error(`Failed to export: ${err.message || String(err)}`);
+            }
         }
     };
 }
