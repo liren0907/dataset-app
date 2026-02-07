@@ -14,7 +14,7 @@
     import CroppedDatasetSummary from "./components/CroppedDatasetSummary.svelte";
     import CroppedDatasetPreviewModal from "./components/CroppedDatasetPreviewModal.svelte";
     import KonvaViewer from "./components/KonvaViewer.svelte";
-    import { IconButton, Toast } from "$lib/components/ui";
+    import { IconButton, RawButton, Toast } from "$lib/components/ui";
     import { generateAnnotatedPreviews } from "./services/datasetService";
     import type { KonvaImageData } from "./services/konvaService";
 
@@ -267,7 +267,7 @@
                     <!-- Hierarchical Crop Toggle Button -->
                     {#if $imageStore.directoryPath && $imageStore.datasetSummary}
                         <div class="mt-4 flex justify-end">
-                            <IconButton
+                            <RawButton
                                 icon="account_tree"
                                 label="Hierarchical Crop"
                                 tooltip="Crop by parent label and remap children"
@@ -359,7 +359,7 @@
                                     .length})
                             </h3>
                         </div>
-                        <IconButton
+                        <RawButton
                             icon="delete_sweep"
                             label="Clear All"
                             tooltip="Clear all cropped dataset records"

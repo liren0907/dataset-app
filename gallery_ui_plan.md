@@ -1,6 +1,6 @@
 # Gallery UI Unification Plan
 
-> **Last Updated**: 2026-02-06  
+> **Last Updated**: 2026-02-07  
 > **Status**: Mostly Complete ✅
 
 ## Completed Work
@@ -35,10 +35,10 @@ The following phases have been completed:
 
 | Store | 位置 | 主要狀態 |
 |-------|------|---------|
-| `imageStore` | `stores/imageStore.ts` | `directoryPath`, `images`, `loading`, `currentPage`, `totalPages`, `datasetSummary`, `isMockMode` |
+| `imageStore` | `stores/imageStore.ts` | `directoryPath`, `images`, `loading`, `error`, `currentPage`, `pageSize`, `totalImages`, `totalPages`, `datasetSummary`, `isMockMode` |
 | `uiStore` | `stores/uiStore.ts` | `viewMode` (grid/column), `editMode` (modal/sidebar), `selectedImage`, `showAnnotationModal` |
-| `annotationStore` | `stores/annotationStore.ts` | `annotating`, `annotationType` (bounding_box/polygon), `autoAnnotationEnabled` |
-| `exportStore` | `stores/exportStore.ts` | `showActualExportModal`, `showCropTool`, `showAdvancedCropTool`, `croppedDatasets`, `cropModalParentLabel` |
+| `annotationStore` | `stores/annotationStore.ts` | `annotating`, `autoAnnotating`, `annotationType` (bounding_box/polygon), `autoAnnotationEnabled` |
+| `exportStore` | `stores/exportStore.ts` | `showActualExportModal`, `pageExportLoading`, `pageExportError`, `pageExportSuccess`, `showCropTool`, `showAdvancedCropTool`, `showHierarchicalCrop`, `croppedDatasets`, `cropModalParentLabel`, `activeCroppedDatasetPath`, `originalDirectoryPath`, `cropProcessing`, `cropProgressMessage`, `cropProgressCurrent`, `cropProgressTotal` |
 
 ### Main Page Structure
 
@@ -68,17 +68,19 @@ The following phases have been completed:
 │       (點擊 label badge 會觸發 AdvancedCropRemapTool 並預選該 label)
 │
 ├── CroppedDatasetCard ────────────────────────────────────────────
-│   Props: outputPath, imageCount, parentLabel, childLabels, createdAt
+│   Props: tempPath, exportedPath, imageCount, parentLabel, childLabels, createdAt
 │   │
-│   ├── on:preview ─────────────→ openCroppedPreview(outputPath)
-│   ├── on:openInGallery ───────→ exportStore.openCroppedDatasetInGallery()
-│   └── on:remove ──────────────→ exportStore.removeCroppedDataset()
+│   ├── on:preview ─────────────→ openCroppedPreview(tempPath)
+│   ├── on:openInGallery ───────→ exportStore.openCroppedDatasetInGallery(tempPath)
+│   └── on:remove ──────────────→ exportStore.removeCroppedDataset(tempPath)
 │
 ├── ImageGallery ──────────────────────────────────────────────────
-│   Props: images, viewMode, currentPage, totalPages, pageSize, selectedImage
+│   Props: images, totalImages, viewMode, currentPage, totalPages, pageSize, selectedImage,
+│          annotationType, loading, loadingMore
 │   │
-│   ├── on:pageChange ──────────→ imageStore.loadImagesPage(page)
+│   ├── on:loadPage ────────────→ imageStore.loadImagesPage(page)
 │   │                             annotationStore.autoLoadAnnotationsForPage()
+│   │                             Note: +page currently listens to `pageChange` and should be aligned.
 │   └── on:imageClick ──────────→ if editMode === "modal":
 │                                   $uiStore.selectedImage = image
 │                                   $uiStore.showAnnotationModal = true
