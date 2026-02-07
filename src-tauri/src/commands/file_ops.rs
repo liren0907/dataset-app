@@ -15,6 +15,12 @@ pub fn open_file_dialog() -> Result<String, String> {
     DialogHandler::select_video_file()
 }
 
+/// Check if a path exists (file or directory)
+#[tauri::command]
+pub fn path_exists(path: String) -> bool {
+    Path::new(&path).exists()
+}
+
 /// Copy a directory tree from source to destination
 #[tauri::command]
 pub fn copy_directory(source: String, destination: String) -> Result<String, String> {

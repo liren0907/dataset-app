@@ -13,16 +13,18 @@ use std::path::Path;
 
 #[tauri::command]
 pub fn crop_and_remap_annotations(
+    window: tauri::Window,
     source_dir: String,
     output_dir: String,
     parent_label: String,
     required_child_labels_str: String,
     padding_factor: f32,
-) -> Result<String, String> {
+) -> Result<(), String> {
     // Parse the comma-separated string into a vector of string references
-    let required_child_labels: Vec<&str> = required_child_labels_str
+    // Note: We need to own the strings for the thread move
+    let required_child_labels: Vec<String> = required_child_labels_str
         .split(',')
-        .map(|s| s.trim())
+        .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
         .collect();
 
@@ -40,14 +42,89 @@ pub fn crop_and_remap_annotations(
         source_dir, output_dir, parent_label, required_child_labels, padding_factor
     );
 
-    // Call the actual processing logic, passing the new argument
-    annotation_processor::process_parent_child_annotations(
-        &source_dir,
-        &output_dir,
-        &parent_label,
-        &required_child_labels,
-        padding_factor,
-    )
+    // Spawn a background task
+    tauri::async_runtime::spawn(async move {
+        // Create a channel or shared state if needed, or simply let the processor emit events
+        // Since the current processor is synchronous, we can run it here
+
+        // We need to modify the processor to accept a callback or emit events
+        // For now, let's wrap the blocking call and emit start/end,
+        // but ideally we should pass a callback to the processor for granular updates.
+
+        use tauri::Emitter;
+
+        // Emit start event
+        let _ = window.emit(
+            "crop-progress",
+            json!({
+                "current": 0,
+                "total": 0,
+                "message": "Starting crop process..."
+            }),
+        );
+
+        // Convert Vec<String> to Vec<&str> for the processor
+        let child_labels_refs: Vec<&str> =
+            required_child_labels.iter().map(|s| s.as_str()).collect();
+
+        // Call the processor
+        let window_clone = window.clone();
+        let result = annotation_processor::process_parent_child_annotations(
+            &source_dir,
+            &output_dir,
+            &parent_label,
+            &child_labels_refs,
+            padding_factor,
+            Some(move |current: usize, total: usize, message: String| {
+                let _ = window_clone.emit(
+                    "crop-progress",
+                    json!({
+                        "current": current,
+                        "total": total,
+                        "message": message
+                    }),
+                );
+            }),
+        );
+
+        match result {
+            Ok(message) => {
+                // Extract image count from message
+                let image_count = if let Some(captures) = regex::Regex::new(r"(\d+)\s*image")
+                    .ok()
+                    .and_then(|re| re.captures(&message))
+                {
+                    captures
+                        .get(1)
+                        .map(|m: regex::Match| m.as_str().parse::<i32>().unwrap_or(0))
+                        .unwrap_or(0)
+                } else {
+                    0
+                };
+
+                // Emit complete event
+                let _ = window.emit(
+                    "crop-complete",
+                    json!({
+                        "tempPath": output_dir, // Use camelCase to match frontend expectations
+                        "imageCount": image_count,
+                        "message": message
+                    }),
+                );
+            }
+            Err(e) => {
+                // Emit error event
+                let _ = window.emit(
+                    "crop-error",
+                    json!({
+                        "message": e
+                    }),
+                );
+            }
+        }
+    });
+
+    Ok(())
 }
 
 #[tauri::command]

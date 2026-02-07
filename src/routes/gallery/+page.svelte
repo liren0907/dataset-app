@@ -14,7 +14,7 @@
     import CroppedDatasetSummary from "./components/CroppedDatasetSummary.svelte";
     import CroppedDatasetPreviewModal from "./components/CroppedDatasetPreviewModal.svelte";
     import KonvaViewer from "./components/KonvaViewer.svelte";
-    import { IconButton } from "$lib/components/ui";
+    import { IconButton, Toast } from "$lib/components/ui";
     import { generateAnnotatedPreviews } from "./services/datasetService";
     import type { KonvaImageData } from "./services/konvaService";
 
@@ -52,6 +52,9 @@
         if (!isTauri) {
             console.log("🌍 Browser environment detected (No Tauri).");
             await imageStore.setMockMode(true);
+        } else {
+            // Validate cropped datasets - remove ones with missing temp paths
+            await exportStore.validateCroppedDatasets();
         }
     });
 
@@ -286,18 +289,9 @@
                                 currentDirectory={$imageStore.directoryPath}
                                 cropToolOpen={$exportStore.showHierarchicalCrop}
                                 preSelectedParentLabel={$exportStore.cropModalParentLabel}
-                                on:cropCompleted={(e) => {
-                                    exportStore.handleCropCompleted(
-                                        e.detail.tempPath,
-                                        {
-                                            parentLabel:
-                                                e.detail.parentLabel || "",
-                                            childLabels:
-                                                e.detail.childLabels || [],
-                                            imageCount:
-                                                e.detail.imageCount || 0,
-                                        },
-                                    );
+                                on:cropStart={(e) => {
+                                    // Run crop in background - closes panel immediately
+                                    exportStore.runCropInBackground(e.detail);
                                 }}
                             />
                         </div>
@@ -305,17 +299,82 @@
                 </div>
             {/if}
 
+            <!-- Crop Processing Progress Bar -->
+            {#if $exportStore.cropProcessing}
+                <div
+                    class="mb-6 p-4 bg-base-200 rounded-xl border border-primary/20"
+                >
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-3">
+                            <span
+                                class="loading loading-spinner loading-sm text-primary"
+                            ></span>
+                            <span class="font-medium text-primary"
+                                >{$exportStore.cropProgressMessage}</span
+                            >
+                        </div>
+                        {#if $exportStore.cropProgressTotal > 0}
+                            <span class="text-sm font-mono text-primary/80">
+                                {Math.round(
+                                    ($exportStore.cropProgressCurrent /
+                                        $exportStore.cropProgressTotal) *
+                                        100,
+                                )}%
+                            </span>
+                        {/if}
+                    </div>
+                    <div
+                        class="w-full bg-base-300 rounded-full h-2 overflow-hidden"
+                    >
+                        <div
+                            class="bg-primary h-full rounded-full transition-all duration-300"
+                            style="width: {$exportStore.cropProgressTotal > 0
+                                ? ($exportStore.cropProgressCurrent /
+                                      $exportStore.cropProgressTotal) *
+                                      100 +
+                                  '%'
+                                : '100%'}"
+                            class:animate-pulse={$exportStore.cropProgressTotal ===
+                                0}
+                        ></div>
+                    </div>
+
+                    <p class="text-xs text-base-content/50 mt-2">
+                        Processing in background... You can continue using the
+                        app.
+                    </p>
+                </div>
+            {/if}
+
             <!-- Cropped Datasets Section -->
             {#if $exportStore.croppedDatasets.length > 0}
                 <div class="mb-8">
-                    <div class="flex items-center gap-2 mb-4">
-                        <span class="material-symbols-rounded text-success"
-                            >check_circle</span
-                        >
-                        <h3 class="font-bold text-base-content">
-                            Cropped Datasets ({$exportStore.croppedDatasets
-                                .length})
-                        </h3>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-rounded text-success"
+                                >check_circle</span
+                            >
+                            <h3 class="font-bold text-base-content">
+                                Cropped Datasets ({$exportStore.croppedDatasets
+                                    .length})
+                            </h3>
+                        </div>
+                        <IconButton
+                            icon="delete_sweep"
+                            label="Clear All"
+                            tooltip="Clear all cropped dataset records"
+                            variant="ghost"
+                            size="sm"
+                            on:click={() => {
+                                if (
+                                    confirm(
+                                        "Clear all cropped dataset records? (Temp files will not be deleted)",
+                                    )
+                                ) {
+                                    exportStore.clearAllCroppedDatasets();
+                                }
+                            }}
+                        />
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {#each $exportStore.croppedDatasets as dataset (dataset.tempPath)}
@@ -516,6 +575,9 @@
         </div>
     </div>
 {/if}
+
+<!-- Toast Notifications -->
+<Toast />
 
 <style>
 </style>

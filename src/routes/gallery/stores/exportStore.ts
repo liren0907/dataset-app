@@ -31,6 +31,12 @@ export interface ExportState {
     cropModalParentLabel: string; // Pre-selected parent label for crop modal
     activeCroppedDatasetPath: string | null; // Currently active cropped dataset for gallery view
     originalDirectoryPath: string; // Original directory to switch back to
+    // Background crop processing
+    cropProcessing: boolean;
+    cropProgressMessage: string;
+    cropStartTime: number | null;
+    cropProgressCurrent: number;
+    cropProgressTotal: number;
 }
 
 const CROPPED_DATASETS_STORAGE_KEY = "croppedDatasets";
@@ -70,6 +76,35 @@ function persistCroppedDatasets(datasets: CroppedDataset[]): void {
     }
 }
 
+// Validate that temp paths still exist, filter out invalid ones
+async function validateAndFilterCroppedDatasets(datasets: CroppedDataset[]): Promise<CroppedDataset[]> {
+    if (datasets.length === 0) return [];
+
+    try {
+        const { invoke } = await import("@tauri-apps/api/core");
+        const validDatasets: CroppedDataset[] = [];
+
+        for (const dataset of datasets) {
+            const exists = await invoke<boolean>("path_exists", { path: dataset.tempPath });
+            if (exists) {
+                validDatasets.push(dataset);
+            } else {
+                console.log(`Removing invalid cropped dataset: ${dataset.tempPath}`);
+            }
+        }
+
+        // Persist the filtered list
+        if (validDatasets.length !== datasets.length) {
+            persistCroppedDatasets(validDatasets);
+        }
+
+        return validDatasets;
+    } catch (err) {
+        console.warn("Failed to validate cropped datasets:", err);
+        return datasets; // Return original on error
+    }
+}
+
 const initialState: ExportState = {
     showActualExportModal: false,
     pageExportLoading: false,
@@ -87,6 +122,12 @@ const initialState: ExportState = {
     cropModalParentLabel: "",
     activeCroppedDatasetPath: null,
     originalDirectoryPath: "",
+    // Background crop processing
+    cropProcessing: false,
+    cropProgressMessage: "",
+    cropStartTime: null,
+    cropProgressCurrent: 0,
+    cropProgressTotal: 0,
 };
 
 function createExportStore() {
@@ -133,7 +174,7 @@ function createExportStore() {
                     ...s,
                     showCropTool: false,
                     showAdvancedCropTool: false,
-                    showHierarchicalCrop: false,
+                    // Note: NOT closing showHierarchicalCrop so user can see success message
                     cropModalParentLabel: "",
                     croppedDatasets: [...s.croppedDatasets, croppedDataset]
                 };
@@ -264,6 +305,156 @@ function createExportStore() {
                 return destPath;
             } catch (err: any) {
                 throw new Error(`Failed to export: ${err.message || String(err)}`);
+            }
+        },
+
+        // Clear all cropped datasets from memory and localStorage
+        clearAllCroppedDatasets: () => {
+            update(s => {
+                persistCroppedDatasets([]);
+                return { ...s, croppedDatasets: [], activeCroppedDatasetPath: null };
+            });
+        },
+
+        // Validate and filter datasets (call on init)
+        validateCroppedDatasets: async () => {
+            const currentDatasets = loadCroppedDatasets();
+            const validDatasets = await validateAndFilterCroppedDatasets(currentDatasets);
+            update(s => ({ ...s, croppedDatasets: validDatasets }));
+        },
+
+        // Run crop in background without blocking UI (Event-based)
+        runCropInBackground: async (params: {
+            sourceDir: string;
+            parentLabel: string;
+            childLabels: string[];
+            paddingFactor: number;
+        }) => {
+            const { sourceDir, parentLabel, childLabels, paddingFactor } = params;
+
+            // Import modules
+            const { invoke } = await import("@tauri-apps/api/core");
+            const { listen } = await import("@tauri-apps/api/event");
+            const { appDataDir } = await import("@tauri-apps/api/path");
+            const { toastStore } = await import("$lib/stores/toastStore");
+
+            // Close panel and set processing state
+            const startTime = Date.now();
+            update(s => ({
+                ...s,
+                showHierarchicalCrop: false,
+                cropProcessing: true,
+                cropProgressMessage: `Starting crop for "${parentLabel}"...`,
+                cropStartTime: startTime,
+                cropProgressCurrent: 0,
+                cropProgressTotal: 0
+            }));
+
+            // Generate temp output directory path
+            try {
+                const appData = await appDataDir();
+                const timestamp = Date.now();
+                const tempOutputDir = `${appData}cropped/${timestamp}_${parentLabel}`;
+
+                let unlistenProgress: () => void;
+                let unlistenComplete: () => void;
+                let unlistenError: () => void;
+
+                // Cleanup function
+                const cleanup = () => {
+                    if (unlistenProgress) unlistenProgress();
+                    if (unlistenComplete) unlistenComplete();
+                    if (unlistenError) unlistenError();
+                };
+
+                // Listen for progress
+                unlistenProgress = await listen<any>("crop-progress", (event) => {
+                    update(s => ({
+                        ...s,
+                        cropProgressMessage: event.payload.message || "Processing...",
+                        cropProgressCurrent: event.payload.current || 0,
+                        cropProgressTotal: event.payload.total || 0
+                    }));
+                });
+
+                // Listen for completion
+                unlistenComplete = await listen<any>("crop-complete", (event) => {
+                    const elapsedSeconds = ((Date.now() - startTime) / 1000).toFixed(1);
+                    const { imageCount, tempPath } = event.payload;
+
+                    // Create cropped dataset entry
+                    const croppedDataset: CroppedDataset = {
+                        tempPath: tempPath, // from event payload
+                        imageCount,
+                        parentLabel,
+                        childLabels,
+                        createdAt: new Date()
+                    };
+
+                    update(s => {
+                        const updated = {
+                            ...s,
+                            cropProcessing: false,
+                            cropProgressMessage: "",
+                            cropStartTime: null,
+                            croppedDatasets: [...s.croppedDatasets, croppedDataset]
+                        };
+                        persistCroppedDatasets(updated.croppedDatasets);
+                        return updated;
+                    });
+
+                    toastStore.show(
+                        `Cropped ${imageCount} images from "${parentLabel}" in ${elapsedSeconds}s`,
+                        'success',
+                        6000
+                    );
+
+                    cleanup();
+                });
+
+                // Listen for error
+                unlistenError = await listen<any>("crop-error", (event) => {
+                    update(s => ({
+                        ...s,
+                        cropProcessing: false,
+                        cropProgressMessage: "",
+                        cropStartTime: null,
+                    }));
+
+                    toastStore.show(
+                        `Crop failed: ${event.payload.message}`,
+                        'error',
+                        8000
+                    );
+
+                    cleanup();
+                });
+
+                // Start the background process (this returns immediately now)
+                await invoke("crop_and_remap_annotations", {
+                    sourceDir,
+                    outputDir: tempOutputDir,
+                    parentLabel,
+                    requiredChildLabelsStr: childLabels.join(","),
+                    paddingFactor,
+                });
+
+            } catch (err: any) {
+                // Clear processing state on error
+                update(s => ({
+                    ...s,
+                    cropProcessing: false,
+                    cropProgressMessage: "",
+                    cropStartTime: null,
+                }));
+
+                // Show error toast
+                const { toastStore } = await import("$lib/stores/toastStore");
+                toastStore.show(
+                    `Failed to start crop: ${err.message || String(err)}`,
+                    'error',
+                    8000
+                );
             }
         }
     };

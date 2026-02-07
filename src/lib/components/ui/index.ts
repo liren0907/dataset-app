@@ -11,3 +11,4 @@ export { default as IconButton } from './IconButton.svelte';
 export { default as ToggleButtonGroup } from './ToggleButtonGroup.svelte';
 export { default as LabelBadge } from './LabelBadge.svelte';
 export { default as SimpleModal } from './SimpleModal.svelte';
+export { default as Toast } from './Toast.svelte';

@@ -1,6 +1,5 @@
 <script lang="ts">
     import { invoke } from "@tauri-apps/api/core";
-    import { appDataDir } from "@tauri-apps/api/path";
     import { createEventDispatcher } from "svelte";
     import { IconButton, Button, LabelBadge, Alert } from "$lib/components/ui";
 
@@ -22,6 +21,8 @@
     let loading: boolean = false;
     let successMessage: string | null = null;
     let errorMessage: string | null = null;
+    let processingMessage: string = "";
+    let startTime: number = 0;
 
     // Auto-analyze when directory is available
     $: if (currentDirectory && cropToolOpen && !datasetLoaded && !analyzing) {
@@ -114,48 +115,30 @@
         selectedChildLabels = [];
     }
 
-    async function runCrop() {
+    function runCrop() {
         if (!currentDirectory || !selectedParentLabel) return;
 
-        try {
-            loading = true;
-            errorMessage = null;
-
-            // Generate temp output directory path
-            const appData = await appDataDir();
-            const timestamp = Date.now();
-            const tempOutputDir = `${appData}cropped/${timestamp}_${selectedParentLabel}`;
-
-            const message = await invoke("crop_and_remap_annotations", {
-                sourceDir: currentDirectory,
-                outputDir: tempOutputDir,
-                parentLabel: selectedParentLabel,
-                requiredChildLabelsStr: selectedChildLabels.join(","),
-                paddingFactor: paddingFactor,
-            });
-
-            successMessage = String(message);
-
-            // Extract image count
-            let imageCount = 0;
-            const match = String(message).match(/(\d+)\s*image/i);
-            if (match) imageCount = parseInt(match[1], 10);
-
-            dispatch("cropCompleted", {
-                tempPath: tempOutputDir,
-                parentLabel: selectedParentLabel,
-                childLabels: selectedChildLabels,
-                imageCount,
-            });
-        } catch (err) {
-            errorMessage = `Processing failed: ${err instanceof Error ? err.message : String(err)}`;
-        } finally {
-            loading = false;
-        }
+        // Dispatch event with crop parameters - parent will handle background processing
+        dispatch("cropStart", {
+            sourceDir: currentDirectory,
+            parentLabel: selectedParentLabel,
+            childLabels: selectedChildLabels,
+            paddingFactor: paddingFactor,
+        });
     }
 
     $: canRun =
         datasetLoaded && selectedParentLabel && selectedChildLabels.length > 0;
+
+    // Calculate estimated time based on parent label count
+    $: estimatedTime = (() => {
+        if (!datasetLoaded || !selectedParentLabel) return null;
+        const count = datasetSummary?.label_counts?.[selectedParentLabel] || 0;
+        const seconds = Math.ceil(count * 0.5); // ~0.5 sec per image
+        if (seconds < 60) return `~${seconds} seconds`;
+        const minutes = Math.ceil(seconds / 60);
+        return `~${minutes} minute${minutes > 1 ? "s" : ""}`;
+    })();
 </script>
 
 <!-- Hierarchical Crop Panel -->
@@ -319,18 +302,45 @@
             {/if}
 
             <!-- Action Button -->
-            <div class="pt-4 border-t border-base-200">
+            <div class="pt-4 border-t border-base-200 space-y-3">
+                <!-- Processing Message -->
+                {#if loading && processingMessage}
+                    <div
+                        class="flex items-center gap-2 p-3 bg-primary/5 rounded-lg"
+                    >
+                        <span
+                            class="loading loading-spinner loading-sm text-primary"
+                        ></span>
+                        <span class="text-sm text-primary font-medium"
+                            >{processingMessage}</span
+                        >
+                    </div>
+                {/if}
+
                 <div class="flex items-center justify-between">
                     <div class="text-sm text-base-content/60">
-                        {#if datasetLoaded}
-                            <span class="font-semibold text-base-content"
-                                >{datasetSummary?.label_counts[
-                                    selectedParentLabel
-                                ] || 0}</span
-                            >
-                            <span class="font-medium text-primary"
-                                >{selectedParentLabel}</span
-                            > instances to crop
+                        {#if loading}
+                            <span class="text-primary">Processing...</span>
+                        {:else if datasetLoaded && selectedParentLabel}
+                            <div class="flex flex-col gap-0.5">
+                                <div>
+                                    <span
+                                        class="font-semibold text-base-content"
+                                        >{datasetSummary?.label_counts?.[
+                                            selectedParentLabel
+                                        ] || 0}</span
+                                    >
+                                    <span class="font-medium text-primary"
+                                        >{selectedParentLabel}</span
+                                    >
+                                    instances to crop
+                                </div>
+                                {#if estimatedTime && canRun}
+                                    <div class="text-xs text-base-content/50">
+                                        ⏱️ Estimated time: {estimatedTime}
+                                    </div>
+                                {/if}
+                            </div>
                         {/if}
                     </div>
                     <IconButton

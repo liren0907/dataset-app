@@ -18,6 +18,7 @@ pub fn run() {
             // File operations
             commands::file_ops::read_file_content,
             commands::file_ops::open_file_dialog,
+            commands::file_ops::path_exists,
             commands::file_ops::copy_directory,
             // Drawing commands
             commands::drawing::draw_bounding_boxes,
