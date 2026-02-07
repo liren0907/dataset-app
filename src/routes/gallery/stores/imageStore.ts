@@ -51,6 +51,11 @@ function createImageStore() {
         set,
         update,
 
+        // Get current directory path
+        getDirectoryPath: (): string => {
+            return get({ subscribe }).directoryPath;
+        },
+
         setMockMode: async (enabled: boolean) => {
             update(s => ({ ...s, isMockMode: enabled, images: [], directoryPath: "", datasetSummary: null, currentPage: 1, error: "" }));
             const state = get({ subscribe });
@@ -190,6 +195,18 @@ function createImageStore() {
                 console.warn(`Page: Failed to generate LabelMe summary: ${err.message}`);
                 update(s => ({ ...s, datasetSummary: null }));
             }
+        },
+
+        // Load images from a specific directory path (used for switching datasets)
+        loadFromPath: async (directoryPath: string) => {
+            if (!directoryPath.trim()) {
+                update(s => ({ ...s, error: "Invalid directory path: path is empty" }));
+                return;
+            }
+
+            update(s => ({ ...s, directoryPath, currentPage: 1, images: [], loading: true, error: "" }));
+            console.log("Loading from path:", directoryPath);
+            await imageStore.loadImagesPage(1);
         },
     };
 }

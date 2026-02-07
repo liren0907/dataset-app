@@ -7,11 +7,14 @@
     import ModalAnnotationViewer from "./components/ModalAnnotationViewer.svelte";
     import CropRemapTool from "./components/CropRemapTool.svelte";
     import AdvancedCropRemapTool from "./components/AdvancedCropRemapTool.svelte";
+    import HierarchicalCrop from "./components/HierarchicalCrop.svelte";
     import GalleryNavbar from "./components/GalleryNavbar.svelte";
     import GalleryEmptyState from "./components/GalleryEmptyState.svelte";
     import CroppedDatasetCard from "./components/CroppedDatasetCard.svelte";
+    import CroppedDatasetSummary from "./components/CroppedDatasetSummary.svelte";
     import CroppedDatasetPreviewModal from "./components/CroppedDatasetPreviewModal.svelte";
     import KonvaViewer from "./components/KonvaViewer.svelte";
+    import { IconButton } from "$lib/components/ui";
     import { generateAnnotatedPreviews } from "./services/datasetService";
     import type { KonvaImageData } from "./services/konvaService";
 
@@ -204,20 +207,116 @@
 
             <!-- Main Content Area -->
 
-            <!-- 1. Dataset Summary -->
-            <div class="mb-8">
-                <DatasetSummary 
-                    datasetSummary={$imageStore.datasetSummary} 
-                    on:initiateCrop={(e) => exportStore.openCropModalWithLabel(e.detail.label)}
-                />
-            </div>
+            <!-- Active Cropped Dataset Indicator -->
+            {#if $exportStore.activeCroppedDatasetPath}
+                {@const activeDataset = $exportStore.croppedDatasets.find(
+                    (d) =>
+                        d.outputPath === $exportStore.activeCroppedDatasetPath,
+                )}
+                <div
+                    class="mb-6 p-4 rounded-xl bg-primary/5 border border-primary/20"
+                >
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-rounded text-primary"
+                                >crop</span
+                            >
+                            <div>
+                                <div class="font-semibold text-base-content">
+                                    Viewing Cropped Dataset: <span
+                                        class="text-primary"
+                                        >{activeDataset?.parentLabel ||
+                                            "Unknown"}</span
+                                    >
+                                </div>
+                                <div class="text-sm text-base-content/60">
+                                    {activeDataset?.imageCount || 0} images from
+                                    <span class="font-mono text-xs"
+                                        >{$exportStore.activeCroppedDatasetPath
+                                            ?.split("/")
+                                            .pop()}</span
+                                    >
+                                </div>
+                            </div>
+                        </div>
+                        <IconButton
+                            icon="arrow_back"
+                            label="Back to Original"
+                            tooltip="Switch back to original dataset"
+                            variant="ghost"
+                            on:click={() =>
+                                exportStore.switchToOriginal(
+                                    $exportStore.originalDirectoryPath,
+                                )}
+                        />
+                    </div>
+                </div>
+            {/if}
+
+            <!-- 1. Dataset Summary (Original) -->
+            {#if !$exportStore.activeCroppedDatasetPath}
+                <div class="mb-8">
+                    <DatasetSummary
+                        datasetSummary={$imageStore.datasetSummary}
+                        on:initiateCrop={(e) =>
+                            exportStore.openCropModalWithLabel(e.detail.label)}
+                    />
+
+                    <!-- Hierarchical Crop Toggle Button -->
+                    {#if $imageStore.directoryPath && $imageStore.datasetSummary}
+                        <div class="mt-4 flex justify-end">
+                            <IconButton
+                                icon="account_tree"
+                                label="Hierarchical Crop"
+                                tooltip="Crop by parent label and remap children"
+                                active={$exportStore.showHierarchicalCrop}
+                                variant={$exportStore.showHierarchicalCrop
+                                    ? "soft"
+                                    : "ghost"}
+                                on:click={() =>
+                                    ($exportStore.showHierarchicalCrop =
+                                        !$exportStore.showHierarchicalCrop)}
+                            />
+                        </div>
+                    {/if}
+
+                    <!-- Hierarchical Crop Tool -->
+                    {#if $exportStore.showHierarchicalCrop}
+                        <div class="mt-4">
+                            <HierarchicalCrop
+                                currentDirectory={$imageStore.directoryPath}
+                                cropToolOpen={$exportStore.showHierarchicalCrop}
+                                preSelectedParentLabel={$exportStore.cropModalParentLabel}
+                                on:cropCompleted={(e) => {
+                                    exportStore.handleCropCompleted(
+                                        e.detail.outputDir,
+                                        {
+                                            parentLabel:
+                                                e.detail.parentLabel || "",
+                                            childLabels:
+                                                e.detail.childLabels || [],
+                                            imageCount:
+                                                e.detail.imageCount || 0,
+                                        },
+                                    );
+                                }}
+                            />
+                        </div>
+                    {/if}
+                </div>
+            {/if}
 
             <!-- Cropped Datasets Section -->
             {#if $exportStore.croppedDatasets.length > 0}
                 <div class="mb-8">
                     <div class="flex items-center gap-2 mb-4">
-                        <span class="material-symbols-rounded text-success">check_circle</span>
-                        <h3 class="font-bold text-base-content">Cropped Datasets ({$exportStore.croppedDatasets.length})</h3>
+                        <span class="material-symbols-rounded text-success"
+                            >check_circle</span
+                        >
+                        <h3 class="font-bold text-base-content">
+                            Cropped Datasets ({$exportStore.croppedDatasets
+                                .length})
+                        </h3>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {#each $exportStore.croppedDatasets as dataset (dataset.outputPath)}
@@ -229,8 +328,14 @@
                                 createdAt={dataset.createdAt}
                                 on:preview={(e) =>
                                     openCroppedPreview(e.detail.outputPath)}
-                                on:openInGallery={(e) => exportStore.openCroppedDatasetInGallery(e.detail.outputPath)}
-                                on:remove={(e) => exportStore.removeCroppedDataset(e.detail.outputPath)}
+                                on:openInGallery={(e) =>
+                                    exportStore.openCroppedDatasetInGallery(
+                                        e.detail.outputPath,
+                                    )}
+                                on:remove={(e) =>
+                                    exportStore.removeCroppedDataset(
+                                        e.detail.outputPath,
+                                    )}
                             />
                         {/each}
                     </div>
@@ -369,10 +474,14 @@
                 class="flex items-center justify-between p-4 border-b border-base-300"
             >
                 <h2 class="text-xl font-bold flex items-center gap-2">
-                    <span class="material-symbols-rounded text-primary">crop</span>
+                    <span class="material-symbols-rounded text-primary"
+                        >crop</span
+                    >
                     Advanced Crop & Remap
                     {#if $exportStore.cropModalParentLabel}
-                        <span class="badge badge-primary">{$exportStore.cropModalParentLabel}</span>
+                        <span class="badge badge-primary"
+                            >{$exportStore.cropModalParentLabel}</span
+                        >
                     {/if}
                 </h2>
                 <button
@@ -390,7 +499,7 @@
                     exportStore.handleCropCompleted(e.detail.outputDir, {
                         parentLabel: $exportStore.cropModalParentLabel,
                         childLabels: e.detail.childLabels || [],
-                        imageCount: e.detail.imageCount || 0
+                        imageCount: e.detail.imageCount || 0,
                     });
                 }}
             />

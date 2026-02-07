@@ -20,6 +20,7 @@ export interface ExportState {
     pageExportSuccess: string;
     showCropTool: boolean;
     showAdvancedCropTool: boolean;
+    showHierarchicalCrop: boolean;
     showExtractModal: boolean;
     extractLoading: boolean;
     extractError: string;
@@ -27,6 +28,8 @@ export interface ExportState {
     // Hierarchical crop-remap state
     croppedDatasets: CroppedDataset[];
     cropModalParentLabel: string; // Pre-selected parent label for crop modal
+    activeCroppedDatasetPath: string | null; // Currently active cropped dataset for gallery view
+    originalDirectoryPath: string; // Original directory to switch back to
 }
 
 const CROPPED_DATASETS_STORAGE_KEY = "croppedDatasets";
@@ -73,6 +76,7 @@ const initialState: ExportState = {
     pageExportSuccess: "",
     showCropTool: false,
     showAdvancedCropTool: false,
+    showHierarchicalCrop: false,
     showExtractModal: false,
     extractLoading: false,
     extractError: "",
@@ -80,6 +84,8 @@ const initialState: ExportState = {
     // Hierarchical crop-remap state
     croppedDatasets: loadCroppedDatasets(),
     cropModalParentLabel: "",
+    activeCroppedDatasetPath: null,
+    originalDirectoryPath: "",
 };
 
 function createExportStore() {
@@ -136,16 +142,14 @@ function createExportStore() {
 
         // Open cropped dataset in gallery (navigate to the output directory)
         openCroppedDatasetInGallery: async (outputPath: string) => {
-            // Update Image Store to load the cropped dataset
-            imageStore.update(s => ({
+            // Save original directory before switching
+            update(s => ({
                 ...s,
-                directoryPath: outputPath,
-                currentPage: 1,
-                images: [],
-                datasetSummary: null,
-                error: ""
+                originalDirectoryPath: s.originalDirectoryPath || imageStore.getDirectoryPath(),
+                activeCroppedDatasetPath: outputPath
             }));
-            await imageStore.loadImagesPage(1);
+            // Load the cropped dataset
+            await imageStore.loadFromPath(outputPath);
         },
 
         handleExtractLabels: async (details: { sourceDir: string, outputDir: string, includedLabels: string[] }) => {
@@ -210,11 +214,33 @@ function createExportStore() {
             update(s => {
                 const updated = {
                     ...s,
-                    croppedDatasets: s.croppedDatasets.filter(d => d.outputPath !== outputPath)
+                    croppedDatasets: s.croppedDatasets.filter(d => d.outputPath !== outputPath),
+                    // If removing the active dataset, switch back to original
+                    activeCroppedDatasetPath: s.activeCroppedDatasetPath === outputPath ? null : s.activeCroppedDatasetPath
                 };
                 persistCroppedDatasets(updated.croppedDatasets);
                 return updated;
             });
+        },
+
+        // Set active cropped dataset for gallery view
+        setActiveCroppedDataset: (outputPath: string) => {
+            update(s => ({
+                ...s,
+                activeCroppedDatasetPath: outputPath
+            }));
+            // Load the cropped dataset into imageStore
+            imageStore.loadFromPath(outputPath);
+        },
+
+        // Switch back to original dataset
+        switchToOriginal: (originalPath: string) => {
+            update(s => ({
+                ...s,
+                activeCroppedDatasetPath: null
+            }));
+            // Load original dataset back
+            imageStore.loadFromPath(originalPath);
         }
     };
 }
