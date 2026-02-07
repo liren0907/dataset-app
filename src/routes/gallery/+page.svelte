@@ -15,6 +15,7 @@
     import CroppedDatasetPreviewModal from "./components/CroppedDatasetPreviewModal.svelte";
     import KonvaViewer from "./components/KonvaViewer.svelte";
     import { IconButton, RawButton, Toast } from "$lib/components/ui";
+    import { confirm as tauriConfirm } from "@tauri-apps/plugin-dialog";
     import { generateAnnotatedPreviews } from "./services/datasetService";
     import type { KonvaImageData } from "./services/konvaService";
 
@@ -134,6 +135,21 @@
             showCroppedPreviewModal = true;
             reopenPreviewAfterKonva = false;
         }
+    }
+
+    async function confirmClearAll(): Promise<boolean> {
+        const message =
+            "Clear all cropped dataset records? (Temp files will not be deleted)";
+        const isTauri = typeof window !== "undefined" && "__TAURI__" in window;
+        if (isTauri) {
+            return await tauriConfirm(message, {
+                title: "Clear Cropped Datasets",
+                kind: "warning",
+                okLabel: "Clear",
+                cancelLabel: "Cancel",
+            });
+        }
+        return typeof window !== "undefined" ? window.confirm(message) : false;
     }
 
     // Trigger auto-annotation on initial directory load
@@ -365,12 +381,8 @@
                             tooltip="Clear all cropped dataset records"
                             variant="ghost"
                             size="sm"
-                            on:click={() => {
-                                if (
-                                    confirm(
-                                        "Clear all cropped dataset records? (Temp files will not be deleted)",
-                                    )
-                                ) {
+                            on:click={async () => {
+                                if (await confirmClearAll()) {
                                     exportStore.clearAllCroppedDatasets();
                                 }
                             }}
