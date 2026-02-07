@@ -222,17 +222,23 @@
                                 >(to keep in cropped images)</span
                             >
                         </div>
-                        <div class="flex gap-1">
+                        <div class="flex items-center gap-3">
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                on:click={selectAllChildren}>All</Button
+                                on:click={selectAllChildren}
                             >
+                                Select All
+                            </Button>
+                            <div class="w-px h-4 bg-base-300"></div>
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                on:click={clearChildren}>Clear</Button
+                                on:click={clearChildren}
+                                class="text-error/70 hover:text-error hover:bg-error/10"
                             >
+                                Clear
+                            </Button>
                         </div>
                     </div>
                     <div

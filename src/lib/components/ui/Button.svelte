@@ -11,6 +11,8 @@
     export let disabled: boolean = false;
     export let type: "button" | "submit" | "reset" = "button";
     export let minWidth: string | null = null;
+    let className: string = "";
+    export { className as class };
 
     const dispatch = createEventDispatcher();
 
@@ -34,7 +36,7 @@
 
 <button
     {type}
-    class="{baseClass} {sizeClass} {variantClass}"
+    class="{baseClass} {sizeClass} {variantClass} {className}"
     {style}
     {disabled}
     on:click={handleClick}

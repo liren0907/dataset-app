@@ -45,22 +45,8 @@
         dispatch("remove", { tempPath });
     }
 
-    async function handleExport() {
-        try {
-            const selected = await open({
-                directory: true,
-                multiple: false,
-                title: "Select Export Destination",
-            });
-            if (selected && typeof selected === "string") {
-                exporting = true;
-                dispatch("export", { tempPath, destPath: selected });
-            }
-        } catch (err) {
-            console.error("Error selecting directory:", err);
-        } finally {
-            exporting = false;
-        }
+    function handleExportClick() {
+        dispatch("export", { tempPath, destPath: "" }); // destPath not needed for modal trigger
     }
 
     $: isExported = !!exportedPath;
@@ -157,7 +143,7 @@
                 icon="visibility"
                 label="Preview"
                 tooltip="Preview cropped images"
-                variant="ghost"
+                variant="soft"
                 size="sm"
                 on:click={handlePreview}
             />
@@ -165,7 +151,7 @@
                 icon="folder_open"
                 label="Open in Gallery"
                 tooltip="View in gallery"
-                variant="ghost"
+                variant="soft"
                 size="sm"
                 on:click={handleOpenInGallery}
             />
@@ -177,7 +163,7 @@
                     variant="soft"
                     size="sm"
                     loading={exporting}
-                    on:click={handleExport}
+                    on:click={handleExportClick}
                 />
             {:else}
                 <span class="text-xs text-success flex items-center gap-1">

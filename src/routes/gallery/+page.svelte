@@ -63,6 +63,7 @@
     function handleKeydown(event: KeyboardEvent) {
         if (event.key === "Escape" && $uiStore.selectedImage) {
             $uiStore.selectedImage = null;
+            $uiStore.showAnnotationModal = false;
         }
     }
 
@@ -407,15 +408,12 @@
                                     exportStore.removeCroppedDataset(
                                         e.detail.tempPath,
                                     )}
-                                on:export={async (e) => {
-                                    try {
-                                        await exportStore.exportCroppedDataset(
-                                            e.detail.tempPath,
-                                            e.detail.destPath,
-                                        );
-                                    } catch (err) {
-                                        console.error("Export failed:", err);
-                                    }
+                                on:export={() => {
+                                    exportStore.update((s) => ({
+                                        ...s,
+                                        showActualExportModal: true,
+                                        currentExportDataset: dataset,
+                                    }));
                                 }}
                             />
                         {/each}
@@ -485,12 +483,23 @@
 <!-- Unified Export Modal -->
 <ExportModal
     bind:showModal={$exportStore.showActualExportModal}
-    currentDirectoryPath={$imageStore.directoryPath}
+    currentDirectoryPath={$exportStore.currentExportDataset?.tempPath ||
+        $imageStore.directoryPath}
     currentDatasetSummary={$imageStore.datasetSummary}
     on:closeModal={() => {
         $exportStore.showActualExportModal = false;
+        $exportStore.currentExportDataset = null;
     }}
-    on:runExport={(event) => exportStore.runUnifiedExport(event.detail)}
+    on:runExport={(event) => {
+        // Use the unified export which handles both cases
+        exportStore.runUnifiedExport({
+            ...event.detail,
+            // If we have a specific dataset context, ensure we use its path
+            sourceDir:
+                $exportStore.currentExportDataset?.tempPath ||
+                event.detail.sourceDir,
+        });
+    }}
 />
 
 <!-- Cropped Dataset Preview Modal -->
@@ -515,13 +524,12 @@
 <!-- Modal Annotation Viewer (Pop-out Mode) -->
 {#if $uiStore.showAnnotationModal && $uiStore.selectedImage}
     <ModalAnnotationViewer
-        bind:showModal={$uiStore.showAnnotationModal}
+        showModal={$uiStore.showAnnotationModal}
         selectedImage={$uiStore.selectedImage}
         autoAnnotationEnabled={$annotationStore.autoAnnotationEnabled}
         isMockMode={$imageStore.isMockMode}
         on:close={() => {
-            $uiStore.showAnnotationModal = false;
-            $uiStore.selectedImage = null;
+            uiStore.resetSelection();
         }}
         on:save={(e) => {
             console.log("Annotation retained/saved via modal");

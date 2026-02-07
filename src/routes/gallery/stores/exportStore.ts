@@ -48,7 +48,16 @@ function loadCroppedDatasets(): CroppedDataset[] {
         if (!raw) return [];
         const parsed = JSON.parse(raw);
         if (!Array.isArray(parsed)) return [];
-        return parsed.map((item) => ({
+
+        // Deduplicate by tempPath immediately on load
+        const uniqueParams = new Map();
+        parsed.forEach(item => {
+            if (item.tempPath && !uniqueParams.has(item.tempPath)) {
+                uniqueParams.set(item.tempPath, item);
+            }
+        });
+
+        return Array.from(uniqueParams.values()).map((item: any) => ({
             ...item,
             createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
         })) as CroppedDataset[];
@@ -176,7 +185,9 @@ function createExportStore() {
                     showAdvancedCropTool: false,
                     // Note: NOT closing showHierarchicalCrop so user can see success message
                     cropModalParentLabel: "",
-                    croppedDatasets: [...s.croppedDatasets, croppedDataset]
+                    croppedDatasets: s.croppedDatasets.some(d => d.tempPath === tempPath)
+                        ? s.croppedDatasets
+                        : [...s.croppedDatasets, croppedDataset]
                 };
                 persistCroppedDatasets(updated.croppedDatasets);
                 return updated;
@@ -397,7 +408,9 @@ function createExportStore() {
                             cropProcessing: false,
                             cropProgressMessage: "",
                             cropStartTime: null,
-                            croppedDatasets: [...s.croppedDatasets, croppedDataset]
+                            croppedDatasets: s.croppedDatasets.some(d => d.tempPath === tempPath)
+                                ? s.croppedDatasets
+                                : [...s.croppedDatasets, croppedDataset]
                         };
                         persistCroppedDatasets(updated.croppedDatasets);
                         return updated;
