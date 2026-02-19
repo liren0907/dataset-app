@@ -9,6 +9,8 @@
     export let size: "sm" | "md" | "lg" = "sm";
     export let variant: "ghost" | "soft" = "ghost";
     export let disabled: boolean = false;
+    let className: string = "";
+    export { className as class };
 
     const dispatch = createEventDispatcher();
 
@@ -41,7 +43,7 @@
 <div class="tooltip tooltip-bottom" data-tip={tooltip}>
     <button
         type="button"
-        class="btn {sizeClass} {variantClass} {activeClass} {shapeClass}"
+        class="btn {sizeClass} {variantClass} {activeClass} {shapeClass} {className}"
         {disabled}
         class:loading
         on:click={handleClick}

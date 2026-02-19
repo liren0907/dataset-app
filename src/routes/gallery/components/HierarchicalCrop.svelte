@@ -1,7 +1,13 @@
 <script lang="ts">
     import { invoke } from "@tauri-apps/api/core";
     import { createEventDispatcher } from "svelte";
-    import { IconButton, Button, LabelBadge, Alert } from "$lib/components/ui";
+    import {
+        IconButton,
+        Button,
+        LabelBadge,
+        Alert,
+        RawButton,
+    } from "$lib/components/ui";
 
     // Props
     export let currentDirectory: string = "";
@@ -223,22 +229,22 @@
                             >
                         </div>
                         <div class="flex items-center gap-3">
-                            <Button
+                            <RawButton
+                                icon="select_all"
+                                label="Select All"
                                 variant="ghost"
                                 size="sm"
                                 on:click={selectAllChildren}
-                            >
-                                Select All
-                            </Button>
+                            />
                             <div class="w-px h-4 bg-base-300"></div>
-                            <Button
+                            <RawButton
+                                icon="close"
+                                label="Clear"
                                 variant="ghost"
                                 size="sm"
                                 on:click={clearChildren}
                                 class="text-error/70 hover:text-error hover:bg-error/10"
-                            >
-                                Clear
-                            </Button>
+                            />
                         </div>
                     </div>
                     <div

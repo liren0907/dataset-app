@@ -31,11 +31,7 @@
 			label: "Legacy Gallery",
 			icon: "history",
 		},
-		{
-			href: "/crop-remap",
-			label: "Crop & Remap",
-			icon: "crop",
-		},
+
 		{
 			href: "/crop-remap-component",
 			label: "Crop Component",

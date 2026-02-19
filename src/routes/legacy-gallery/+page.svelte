@@ -41,6 +41,19 @@
                 "Dataset summary",
             ],
         },
+        {
+            href: "/crop-remap",
+            title: "Standalone Crop Tool",
+            icon: "crop",
+            description:
+                "Dedicated page for advanced crop and remap operations (Legacy).",
+            features: [
+                "Parent/Child Label",
+                "Padding Control",
+                "Batch Processing",
+                "Dynamic Analysis",
+            ],
+        },
     ];
 </script>
 
