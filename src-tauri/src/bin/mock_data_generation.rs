@@ -1,5 +1,5 @@
-use sentinelai_panel_lib::core::directory_handler::DirectoryHandler;
-use sentinelai_panel_lib::core::image_annotator::ImageAnnotator;
+use dataset_app_lib::core::directory_handler::DirectoryHandler;
+use dataset_app_lib::core::image_annotator::ImageAnnotator;
 use std::env;
 use std::fs;
 
@@ -33,7 +33,7 @@ fn main() {
     // Fetch all (page 1, huge page size)
     let paginated_json_result = DirectoryHandler::get_paginated_images(mock_data_str, 1, 1000);
 
-    let images_json = match paginated_json_result {
+    let images_json: String = match paginated_json_result {
         Ok(json) => json,
         Err(e) => panic!("❌ Failed to get images: {}", e),
     };
@@ -44,7 +44,7 @@ fn main() {
     println!("🏷️ Generating Annotation Data...");
     let annotations_json_result = ImageAnnotator::auto_annotate_images(mock_data_str, 1, 1000);
 
-    let annotations_json = match annotations_json_result {
+    let annotations_json: String = match annotations_json_result {
         Ok(json) => json,
         Err(e) => panic!("❌ Failed to get annotations: {}", e),
     };

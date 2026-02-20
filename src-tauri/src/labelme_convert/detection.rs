@@ -133,7 +133,7 @@ pub fn analyze_shapes(
     let count_4_points = *points_distribution.get(&4).unwrap_or(&0);
     let count_3_plus_points: usize = points_distribution
         .iter()
-        .filter(|(&k, _)| k >= 3)
+        .filter(|&(&k, _)| k >= 3)
         .map(|(_, &v)| v)
         .sum();
 
@@ -220,7 +220,7 @@ fn determine_format_with_confidence(
         // Check if points vary (true polygon) or are all the same count
         let unique_point_counts: Vec<_> = points_distribution
             .iter()
-            .filter(|(&k, &v)| k >= 3 && v > 0)
+            .filter(|&(&k, &v)| k >= 3 && v > 0)
             .collect();
 
         if unique_point_counts.len() > 1 {
@@ -285,10 +285,7 @@ pub fn detect_input_format(shapes: &[&Shape]) -> InputAnnotationFormat {
 pub fn detect_input_format_from_annotations(
     annotations: &[crate::labelme_convert::types::LabelMeAnnotation],
 ) -> InputAnnotationFormat {
-    let shapes: Vec<&Shape> = annotations
-        .iter()
-        .flat_map(|a| a.shapes.iter())
-        .collect();
+    let shapes: Vec<&Shape> = annotations.iter().flat_map(|a| a.shapes.iter()).collect();
 
     detect_input_format(&shapes)
 }
@@ -418,7 +415,9 @@ mod tests {
         let analysis = analyze_shapes(&shape_refs, 10, 10, &AnalysisConfig::default());
 
         // Should detect as polygon since 3+ points is the majority
-        assert!(analysis.confidence < 0.8 || analysis.input_format == InputAnnotationFormat::Polygon);
+        assert!(
+            analysis.confidence < 0.8 || analysis.input_format == InputAnnotationFormat::Polygon
+        );
     }
 
     #[test]
