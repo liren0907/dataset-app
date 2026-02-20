@@ -1,14 +1,14 @@
 <script lang="ts">
     import { onMount, onDestroy, createEventDispatcher, tick } from "svelte";
-    import { safeConvertFileSrc } from "../utils/tauriUtils";
+    import { safeConvertFileSrc } from "$lib/utils/tauriUtils";
     import { invoke } from "@tauri-apps/api/core";
     import {
         createKonvaManager,
         type KonvaManager,
         type KonvaImageData,
         type KonvaAnnotation,
-    } from "../services/konvaService";
-    import { mockGeneratePreview } from "../../../mocks/mockFileSystem";
+    } from "$lib/services/gallery/konvaService";
+    import { mockGeneratePreview } from "$lib/../mocks/mockFileSystem";
 
     // Props
     export let showModal: boolean = false;

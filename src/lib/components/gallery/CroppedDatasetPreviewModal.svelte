@@ -1,7 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import SimpleModal from "$lib/components/ui/SimpleModal.svelte";
-    import type { KonvaImageData } from "../services/konvaService";
+    import type { KonvaImageData } from "$lib/services/gallery/konvaService";
 
     export let isOpen: boolean = false;
     export let loading: boolean = false;

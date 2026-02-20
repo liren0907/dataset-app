@@ -1,6 +1,6 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
-    import type { DatasetSummary } from "../services/datasetService";
+    import type { DatasetSummary } from "$lib/services/gallery/datasetService";
     
     export let datasetSummary: DatasetSummary | null = null;
 

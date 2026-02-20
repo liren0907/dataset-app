@@ -1,29 +1,29 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import DatasetSummary from "./components/DatasetSummary.svelte";
-    import ImagePreviewPanel from "./components/ImagePreviewPanel.svelte";
-    import ImageGallery from "./components/ImageGallery.svelte";
-    import ExportModal from "./components/ExportModal.svelte";
-    import ModalAnnotationViewer from "./components/ModalAnnotationViewer.svelte";
-    import CropRemapTool from "./components/CropRemapTool.svelte";
-    import AdvancedCropRemapTool from "./components/AdvancedCropRemapTool.svelte";
-    import HierarchicalCrop from "./components/HierarchicalCrop.svelte";
-    import GalleryNavbar from "./components/GalleryNavbar.svelte";
-    import GalleryEmptyState from "./components/GalleryEmptyState.svelte";
-    import CroppedDatasetCard from "./components/CroppedDatasetCard.svelte";
-    import CroppedDatasetSummary from "./components/CroppedDatasetSummary.svelte";
-    import CroppedDatasetPreviewModal from "./components/CroppedDatasetPreviewModal.svelte";
-    import KonvaViewer from "./components/KonvaViewer.svelte";
+    import DatasetSummary from "$lib/components/gallery/DatasetSummary.svelte";
+    import ImagePreviewPanel from "$lib/components/gallery/ImagePreviewPanel.svelte";
+    import ImageGallery from "$lib/components/gallery/ImageGallery.svelte";
+    import ExportModal from "$lib/components/gallery/ExportModal.svelte";
+    import ModalAnnotationViewer from "$lib/components/gallery/ModalAnnotationViewer.svelte";
+    import CropRemapTool from "$lib/components/gallery/CropRemapTool.svelte";
+    import AdvancedCropRemapTool from "$lib/components/gallery/AdvancedCropRemapTool.svelte";
+    import HierarchicalCrop from "$lib/components/gallery/HierarchicalCrop.svelte";
+    import GalleryNavbar from "$lib/components/gallery/GalleryNavbar.svelte";
+    import GalleryEmptyState from "$lib/components/gallery/GalleryEmptyState.svelte";
+    import CroppedDatasetCard from "$lib/components/gallery/CroppedDatasetCard.svelte";
+    import CroppedDatasetSummary from "$lib/components/gallery/CroppedDatasetSummary.svelte";
+    import CroppedDatasetPreviewModal from "$lib/components/gallery/CroppedDatasetPreviewModal.svelte";
+    import KonvaViewer from "$lib/components/gallery/KonvaViewer.svelte";
     import { IconButton, RawButton, Toast } from "$lib/components/ui";
     import { confirm as tauriConfirm } from "@tauri-apps/plugin-dialog";
-    import { generateAnnotatedPreviews } from "./services/datasetService";
-    import type { KonvaImageData } from "./services/konvaService";
+    import { generateAnnotatedPreviews } from "$lib/services/gallery/datasetService";
+    import type { KonvaImageData } from "$lib/services/gallery/konvaService";
 
     // Import separated stores
-    import { imageStore } from "./stores/imageStore";
-    import { uiStore } from "./stores/uiStore";
-    import { annotationStore } from "./stores/annotationStore";
-    import { exportStore } from "./stores/exportStore";
+    import { imageStore } from "$lib/stores/gallery/imageStore";
+    import { uiStore } from "$lib/stores/gallery/uiStore";
+    import { annotationStore } from "$lib/stores/gallery/annotationStore";
+    import { exportStore } from "$lib/stores/gallery/exportStore";
 
     const PREVIEW_SAMPLE_COUNT = 8;
 

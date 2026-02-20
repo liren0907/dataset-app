@@ -18,10 +18,11 @@ The following phases have been completed:
 ### Phase 3: Split Pane Standardization (Partial)
 
 **Targets**:
-- `CropRemapTool.svelte` - Still uses custom layout
-- `AdvancedCropRemapTool.svelte` - Still uses custom layout
+- `CropRemapTool.svelte` - ✅ Done (Now uses SplitPaneModal layout)
+- `AdvancedCropRemapTool.svelte` - ⏳ Pending (Still uses custom layout)
+- `HierarchicalCrop.svelte` - ⏳ Pending (Still uses custom card layout)
 
-**Action**: Refactor these to use the shared `SplitPaneModal` component for layout consistency.
+**Action**: Refactor the pending components to use the shared `SplitPaneModal` component for layout consistency.
 
 **Benefit**: Ensures exact layout consistency (width ratios, padding, scrollbars) across all complex tools.
 

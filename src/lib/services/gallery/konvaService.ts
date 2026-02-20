@@ -2,7 +2,7 @@
 // Handles all KonvaJS-related functionality in a centralized way
 
 import Konva from 'konva';
-import { safeConvertFileSrc } from '../utils/tauriUtils';
+import { safeConvertFileSrc } from '$lib/utils/tauriUtils';
 
 export interface KonvaAnnotation {
     label?: string;

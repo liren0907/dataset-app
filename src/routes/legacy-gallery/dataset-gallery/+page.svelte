@@ -3,9 +3,9 @@
     import { open } from "@tauri-apps/plugin-dialog";
     import DatasetSummaryCard from "$lib/DatasetSummaryCard.svelte";
     import CropRemapTool from "$lib/CropRemapTool.svelte";
-    import ImageGallery from "$lib/ImageGallery.svelte";
-    import ImageViewerModal from "$lib/ImageViewerModal.svelte";
-    import ExportModal from "$lib/ExportModal.svelte";
+    import ImageGallery from "$lib/legacy-components/ImageGallery.svelte";
+    import ImageViewerModal from "$lib/legacy-components/ImageViewerModal.svelte";
+    import ExportModal from "$lib/legacy-components/ExportModal.svelte";
 
     // New Components
     import GalleryControls from "./components/GalleryControls.svelte";

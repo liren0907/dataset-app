@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { appDataDir } from "@tauri-apps/api/path";
-import { safeConvertFileSrc } from "../utils/tauriUtils";
+import { safeConvertFileSrc } from "$lib/utils/tauriUtils";
 import type { KonvaImageData } from "./konvaService";
 
 // Interface for the structure of an image object from the backend (basic version)

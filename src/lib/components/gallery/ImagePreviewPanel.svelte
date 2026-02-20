@@ -1,6 +1,6 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
-    import { safeConvertFileSrc } from "../utils/tauriUtils";
+    import { safeConvertFileSrc } from "$lib/utils/tauriUtils";
 
     // Props
     export let selectedImage: any = null;

@@ -1,8 +1,8 @@
 
 import { writable } from "svelte/store";
 import { browser } from "$app/environment";
-import { performDatasetExport } from "../services/datasetService";
-import type { DatasetExportParams } from "../services/datasetService";
+import { performDatasetExport } from "$lib/services/gallery/datasetService";
+import type { DatasetExportParams } from "$lib/services/gallery/datasetService";
 import { imageStore } from "./imageStore";
 
 export interface CroppedDataset {

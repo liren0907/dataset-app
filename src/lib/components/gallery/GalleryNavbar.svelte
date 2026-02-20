@@ -3,7 +3,7 @@
     import type {
         DatasetSummary,
         ProcessedImage,
-    } from "../services/datasetService";
+    } from "$lib/services/gallery/datasetService";
     import IconButton from "$lib/components/ui/IconButton.svelte";
     import ToggleButtonGroup from "$lib/components/ui/ToggleButtonGroup.svelte";
     import IconSegmentedControl from "$lib/components/ui/IconSegmentedControl.svelte";

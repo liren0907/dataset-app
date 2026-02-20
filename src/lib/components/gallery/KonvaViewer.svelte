@@ -5,7 +5,7 @@
         type KonvaManager,
         type KonvaImageData,
         type KonvaAnnotation,
-    } from "../services/konvaService";
+    } from "$lib/services/gallery/konvaService";
 
     // Props
     export let showModal: boolean = false;

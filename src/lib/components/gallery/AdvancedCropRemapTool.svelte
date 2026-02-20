@@ -1,12 +1,12 @@
 <script lang="ts">
     import { invoke } from "@tauri-apps/api/core";
-    import { safeConvertFileSrc } from "../utils/tauriUtils";
+    import { safeConvertFileSrc } from "$lib/utils/tauriUtils";
     import { open } from "@tauri-apps/plugin-dialog";
     import { appDataDir } from "@tauri-apps/api/path";
     import { onMount } from "svelte";
     import { createEventDispatcher } from "svelte";
     import KonvaViewer from "./KonvaViewer.svelte";
-    import type { KonvaImageData } from "../services/konvaService";
+    import type { KonvaImageData } from "$lib/services/gallery/konvaService";
 
     // Props from parent (dataset-gallery-advanced)
     export let currentDirectory: string = ""; // Current gallery directory
@@ -50,7 +50,10 @@
     }
 
     // Reactive: Auto-select parent label when pre-selected from DatasetSummary
-    $: if (preSelectedParentLabel && availableLabels.includes(preSelectedParentLabel)) {
+    $: if (
+        preSelectedParentLabel &&
+        availableLabels.includes(preSelectedParentLabel)
+    ) {
         selectedParentLabel = preSelectedParentLabel;
     }
 
@@ -315,11 +318,11 @@
             } catch {}
 
             // Dispatch completion event to parent (gallery) with output directory and details
-            dispatch("cropCompleted", { 
+            dispatch("cropCompleted", {
                 outputDir: outputDir,
                 parentLabel: selectedParentLabel,
                 childLabels: selectedChildLabels,
-                imageCount: imageCount
+                imageCount: imageCount,
             });
         } catch (err) {
             console.error("Error running processing:", err);

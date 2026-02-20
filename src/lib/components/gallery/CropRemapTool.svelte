@@ -5,7 +5,7 @@
         performCropAndRemap,
         fetchDatasetSummary,
         type DatasetSummary,
-    } from "../services/datasetService";
+    } from "$lib/services/gallery/datasetService";
     import {
         Button,
         BrowseInput,

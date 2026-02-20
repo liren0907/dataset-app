@@ -1,6 +1,6 @@
 
 import { writable } from "svelte/store";
-import type { ProcessedImage } from "../services/datasetService";
+import type { ProcessedImage } from "$lib/services/gallery/datasetService";
 
 export interface UIState {
     viewMode: "grid" | "column";

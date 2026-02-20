@@ -5,15 +5,15 @@ import { tick } from "svelte";
 import {
     fetchPaginatedImages,
     fetchDatasetSummary,
-} from "../services/datasetService";
+} from "$lib/services/gallery/datasetService";
 import type {
     ProcessedImage,
     DatasetSummary,
-} from "../services/datasetService";
+} from "$lib/services/gallery/datasetService";
 import {
     MOCK_DIRECTORY_PATH,
     mockGetImages,
-} from "../../../mocks/mockFileSystem";
+} from "$lib/../mocks/mockFileSystem";
 
 export interface ImageState {
     directoryPath: string;
