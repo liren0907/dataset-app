@@ -31,12 +31,6 @@
 			label: "Legacy Gallery",
 			icon: "history",
 		},
-
-		{
-			href: "/crop-remap-component",
-			label: "Crop Component",
-			icon: "straighten",
-		},
 	];
 </script>
 

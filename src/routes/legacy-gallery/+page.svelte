@@ -3,7 +3,7 @@
 
     const legacyPages = [
         {
-            href: "/dataset-gallery",
+            href: "/legacy-gallery/dataset-gallery",
             title: "Dataset Gallery",
             icon: "photo_library",
             description:
@@ -16,7 +16,7 @@
             ],
         },
         {
-            href: "/dataset-gallery-advanced",
+            href: "/legacy-gallery/dataset-gallery-advanced",
             title: "Advanced Gallery",
             icon: "palette",
             description:
@@ -29,7 +29,7 @@
             ],
         },
         {
-            href: "/imageViewer3",
+            href: "/legacy-gallery/imageViewer3",
             title: "Image Viewer",
             icon: "visibility",
             description:
@@ -42,7 +42,7 @@
             ],
         },
         {
-            href: "/crop-remap",
+            href: "/legacy-gallery/crop-remap",
             title: "Standalone Crop Tool",
             icon: "crop",
             description:
@@ -53,6 +53,14 @@
                 "Batch Processing",
                 "Dynamic Analysis",
             ],
+        },
+        {
+            href: "/legacy-gallery/crop-remap-component",
+            title: "Standalone Crop Component",
+            icon: "straighten",
+            description:
+                "A test page for the standalone crop and remap component UI (Legacy).",
+            features: ["Dataset Analysis", "Label Config", "Konva Preview"],
         },
     ];
 </script>
