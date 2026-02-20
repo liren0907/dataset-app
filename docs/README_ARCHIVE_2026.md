@@ -1,10 +1,8 @@
 # Dataset App
 
-![Dataset App Gallery](docs/dataset-app-gallery.png)
-
 A desktop application for exploring and processing image datasets annotated in LabelMe, with tools for visualization, conversion to YOLO, label extraction, basic auto-annotation, and crop/remap utilities. Built with SvelteKit (frontend) and Tauri v2 (Rust backend).
 
-**Version**: 0.1.0
+**Version**: 0.0.1
 
 ## Status and Caution
 - This project is under rapid development.
@@ -14,9 +12,7 @@ A desktop application for exploring and processing image datasets annotated in L
 - Dataset browsing with pagination and lazy previews
 - Image details and on-demand metadata loading
 - LabelMe dataset summary (label counts, annotation types, totals)
-- Export to YOLO / COCO (train/val/test splits, shape type, specific labels)
-- High-performance, asynchronous LabelMe conversion engine (`convert_labelme`)
-- Validate and detect LabelMe dataset layouts (2-point / 4-point / Polygon)
+- Export to YOLO (train/val/test splits, shape type, specific labels)
 - Extract specific labels from LabelMe datasets
 - Convert YOLO → LabelMe
 - Draw bounding boxes or polygons into rendered images
@@ -28,7 +24,7 @@ A desktop application for exploring and processing image datasets annotated in L
 
 ### Prerequisites
 - Node.js & Yarn
-- Rust toolchain (Requires **Rust Edition 2024** support)
+- Rust toolchain
 - **Windows**: LLVM (for OpenCV bindings) + OpenCV
 - **macOS/Linux**: OpenCV (via Homebrew/apt)
 
@@ -89,33 +85,20 @@ This will:
 ├─ docs/                        # Design and analysis docs
 ├─ src/                         # Frontend (SvelteKit)
 │  ├─ app.html, app.css
-│  ├─ lib/                      # Reusable components, stores, and API wrappers
-│  │  ├─ components/gallery/    # Unified gallery UI components
-│  │  ├─ services/gallery/      # Tauri API Invokes & data fetching
-│  │  ├─ stores/gallery/        # Svelte stores for state management
-│  │  └─ legacy-components/     # Deprecated or older components
+│  ├─ lib/                      # Components and services
+│  │  ├─ services/datasetService.ts
+│  │  └─ ... Svelte components
 │  ├─ routes/                   # Pages (+page.svelte / +page.ts)
-│  │  ├─ gallery/               # Main unified dataset view
-│  │  ├─ turbo-export/          # High-performance async exporter
-│  │  └─ legacy-gallery/        # Historical toolviews and pages
 │  └─ funcs/                    # Plain JS helpers
 ├─ src-tauri/                   # Backend (Rust, Tauri v2)
-│  ├─ src/main.rs               # Tauri app initialization and plugin wiring
-│  ├─ src/commands/             # Expressed Tauri APIs available to JS
-│  ├─ src/core/                 # Core backend processing and data structures
-│  ├─ src/labelme_convert/      # High-performance dataset format converter
-│  ├─ src/crop_remap/           # Bounding box & polygon remap logic
-│  ├─ Cargo.toml                # Rust dependencies (dataset_app_lib)
-│  └─ tauri.conf.json           # Tauri app configuration
+│  ├─ src/main.rs               # Tauri commands and wiring
+│  ├─ src/*.rs                  # Modules: handlers, converters, drawers
+│  ├─ Cargo.toml                # Rust dependencies
+│  └─ tauri.conf.json           # Tauri app config
 ├─ static/                      # Static assets
 ```
 
 ## Key Commands (Rust Backend)
-**Detailed Backend Architecture:**
-If you're interested in the Rust backend architecture and Tauri command details, please refer to [`docs/RUST_BACKEND.md`](docs/RUST_BACKEND.md) for comprehensive documentation including hierarchical code structure, function signatures, and implementation details.
-
-**Frontend ↔ Backend Integration Map:**
-To understand how frontend Svelte pages (`src/routes/*`) invoke specific backend functionality via Tauri commands, please review the mapping table at [`docs/ROUTE_BACKEND_MAP.md`](docs/ROUTE_BACKEND_MAP.md).
+**If you're interested in the Rust backend architecture and Tauri command details, please refer to [`docs/RUST_BACKEND.md`](docs/RUST_BACKEND.md) for comprehensive documentation including hierarchical code structure, function signatures, and implementation details.**
 
 See `src-tauri/src/main.rs` for the full list and signatures.
-
