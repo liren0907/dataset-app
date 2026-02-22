@@ -58,7 +58,10 @@ pub fn run() {
             commands::labelme_convert::analyze_labelme_dataset_async,
             // External module functions
             core::labelme2yolo::export_to_yolo_new,
-            core::preview::generate_single_annotated_preview
+            core::preview::generate_single_annotated_preview,
+            // Smart tools / AI inference
+            commands::smart_tools::auto_detect_objects,
+            commands::smart_tools::get_image_dimensions,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -26,6 +26,7 @@ tmp/
 
 # IDE
 .vscode/
+.claude/
 
 # Tauri
 src-tauri/target/
@@ -35,3 +36,4 @@ src-tauri/*.log
 
 # Mock data
 mock_data/
+

@@ -27,6 +27,11 @@
 			icon: "collections_bookmark",
 		},
 		{
+			href: "/fabric-annotator",
+			label: "Fabric Annotator",
+			icon: "brush",
+		},
+		{
 			href: "/legacy-gallery",
 			label: "Legacy Gallery",
 			icon: "history",
