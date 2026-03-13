@@ -48,6 +48,7 @@
     let selectedObject: any = null;
     let selectedObjects: any[] = [];
     let currentStrokeWidth = 2;
+    let currentShowVertexPoints = true;
 
     // Autosave
     let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -146,7 +147,9 @@
         const unsubscribeMode = fabricManager.on("modeChange", syncState);
         const unsubscribeSettings = fabricSettings.subscribe(settings => {
             currentStrokeWidth = settings.baseStrokeWidth;
+            currentShowVertexPoints = settings.showVertexPoints;
             fabricManager?.setBaseStrokeWidth(settings.baseStrokeWidth);
+            fabricManager?.setShowVertexPoints(settings.showVertexPoints);
         });
 
         const resizeObserver = new ResizeObserver((entries) => {
@@ -179,6 +182,10 @@
 
     function handleStrokeWidthChange(event: CustomEvent<number>) {
         fabricSettings.setBaseStrokeWidth(event.detail);
+    }
+
+    function handleToggleVertexPoints() {
+        fabricSettings.toggleVertexPoints();
     }
 
     /** Derive the LabelMe JSON path from an image path */
@@ -478,6 +485,7 @@
         {isPolygonDrawing}
         {isPolylineDrawing}
         strokeWidth={currentStrokeWidth}
+        showVertexPoints={currentShowVertexPoints}
         on:setMode={setModeFromEvent}
         on:triggerFileInput={triggerFileInput}
         on:triggerDirectoryInput={triggerDirectoryInput}
@@ -487,6 +495,7 @@
         on:finishPolyline={finishPolyline}
         on:resetPolyline={resetPolyline}
         on:strokeWidthChange={handleStrokeWidthChange}
+        on:toggleVertexPoints={handleToggleVertexPoints}
     />
 
     <!-- Stats Dashboard Overlay -->

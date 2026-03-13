@@ -8,6 +8,7 @@
     export let isPolygonDrawing = false;
     export let isPolylineDrawing = false;
     export let strokeWidth = 2;
+    export let showVertexPoints = true;
 
     const dispatch = createEventDispatcher<{
         setMode: Mode;
@@ -19,6 +20,7 @@
         finishPolyline: void;
         resetPolyline: void;
         strokeWidthChange: number;
+        toggleVertexPoints: void;
     }>();
 
     const toolOptions = [
@@ -95,6 +97,16 @@
             {strokeWidth}
         </span>
     </div>
+
+    <!-- Vertex Points Toggle -->
+    <button
+        class="btn btn-ghost btn-xs gap-1"
+        class:btn-active={showVertexPoints}
+        title={showVertexPoints ? "Hide Vertex Points" : "Show Vertex Points"}
+        on:click={() => dispatch('toggleVertexPoints')}
+    >
+        <span class="material-symbols-rounded text-[18px]">scatter_plot</span>
+    </button>
 
     <!-- Polygon Actions (contextual) -->
     {#if mode === "polygon" && isPolygonDrawing}

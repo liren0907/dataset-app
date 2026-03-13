@@ -101,6 +101,9 @@ export class FabricManager {
     private static readonly KEYPOINT_STROKE_RATIO = 0.75;
     private static readonly GUIDE_LINE_STROKE_RATIO = 0.5;
 
+    // Vertex points visibility
+    private showVertexPoints = true;
+
     // Selection
     private selectedObject: any = null;
     private selectedObjects: any[] = [];
@@ -677,6 +680,7 @@ export class FabricManager {
             evented: false,
             originX: "center",
             originY: "center",
+            visible: this.showVertexPoints,
         });
         this.currentPolygonPointsVisual.push(pointVisual);
         this.canvas.add(pointVisual);
@@ -771,6 +775,7 @@ export class FabricManager {
             evented: false,
             originX: "center",
             originY: "center",
+            visible: this.showVertexPoints,
         });
         this.currentPolylinePointsVisual.push(pointVisual);
         this.canvas.add(pointVisual);
@@ -1145,6 +1150,25 @@ export class FabricManager {
             (polygon as any).annotationId = poly.id;
             (polygon as any).annotationType = "polygon";
             this.canvas.add(polygon);
+
+            if (this.showVertexPoints) {
+                const zoom = this.canvas.getZoom();
+                for (const pt of canvasPoints) {
+                    const dot = new fabric.Circle({
+                        radius: 3 / zoom,
+                        fill: "blue",
+                        left: pt.x,
+                        top: pt.y,
+                        originX: "center",
+                        originY: "center",
+                        selectable: false,
+                        evented: false,
+                    });
+                    (dot as any).annotationId = poly.id;
+                    (dot as any).isVertexDot = true;
+                    this.canvas.add(dot);
+                }
+            }
         }
 
         // Redraw polylines
@@ -1161,6 +1185,25 @@ export class FabricManager {
             (polyline as any).annotationId = line.id;
             (polyline as any).annotationType = "polyline";
             this.canvas.add(polyline);
+
+            if (this.showVertexPoints) {
+                const zoom = this.canvas.getZoom();
+                for (const cp of canvasPoints) {
+                    const dot = new fabric.Circle({
+                        radius: 3 / zoom,
+                        fill: "#f59e0b",
+                        left: cp.x,
+                        top: cp.y,
+                        originX: "center",
+                        originY: "center",
+                        selectable: false,
+                        evented: false,
+                    });
+                    (dot as any).annotationId = line.id;
+                    (dot as any).isVertexDot = true;
+                    this.canvas.add(dot);
+                }
+            }
         }
 
         // Redraw keypoints
@@ -1415,8 +1458,26 @@ export class FabricManager {
             if ((obj as any).isVertexHandle) {
                 obj.set("strokeWidth", keypointStroke);
             }
+            if ((obj as any).isVertexDot) {
+                (obj as any).set("radius", 3 / zoom);
+            }
         }
         this.canvas.requestRenderAll();
+    }
+
+    /** Toggle vertex points visibility and redraw */
+    public setShowVertexPoints(show: boolean): void {
+        this.showVertexPoints = show;
+        // Update drawing-time temp points
+        for (const p of this.currentPolygonPointsVisual) {
+            p.set("visible", show);
+        }
+        for (const p of this.currentPolylinePointsVisual) {
+            p.set("visible", show);
+        }
+        // Redraw completed annotations (adds/removes vertex dots)
+        this.redrawFromState();
+        this.emit("update");
     }
 
     // --- Event System ---
