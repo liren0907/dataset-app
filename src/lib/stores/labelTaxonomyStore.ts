@@ -6,13 +6,7 @@ export interface LabelClass {
     shortcut: number | null; // 1-9 for quick assignment
 }
 
-const DEFAULT_CLASSES: LabelClass[] = [
-    { name: 'car', color: '#ef4444', shortcut: 1 },
-    { name: 'person', color: '#3b82f6', shortcut: 2 },
-    { name: 'bicycle', color: '#22c55e', shortcut: 3 },
-    { name: 'traffic_light', color: '#f59e0b', shortcut: 4 },
-    { name: 'sign', color: '#a855f7', shortcut: 5 },
-];
+const DEFAULT_CLASSES: LabelClass[] = [];
 
 const PALETTE = [
     '#ef4444', '#3b82f6', '#22c55e', '#f59e0b', '#a855f7',

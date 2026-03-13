@@ -96,6 +96,11 @@ export class FabricManager {
     private readonly START_POINT_RADIUS = 3;
     private readonly START_POINT_HIGHLIGHT_RADIUS = 7;
 
+    // Stroke width configuration
+    private baseStrokeWidth = 2;
+    private static readonly KEYPOINT_STROKE_RATIO = 0.75;
+    private static readonly GUIDE_LINE_STROKE_RATIO = 0.5;
+
     // Selection
     private selectedObject: any = null;
     private selectedObjects: any[] = [];
@@ -345,7 +350,7 @@ export class FabricManager {
                     left, top, width, height,
                     fill: "rgba(255, 0, 0, 0.1)",
                     stroke: "red",
-                    strokeWidth: 2,
+                    strokeWidth: this.getZoomAdaptiveStroke(),
                     selectable: true,
                     hasControls: true,
                 });
@@ -369,7 +374,7 @@ export class FabricManager {
                 const polygon = new fabric.Polygon(canvasPoints, {
                     fill: "rgba(0, 0, 255, 0.3)",
                     stroke: "blue",
-                    strokeWidth: 2,
+                    strokeWidth: this.getZoomAdaptiveStroke(),
                     selectable: true,
                     hasControls: true,
                     objectCaching: false,
@@ -394,7 +399,7 @@ export class FabricManager {
                 const polyline = new fabric.Polyline(canvasPoints, {
                     fill: "transparent",
                     stroke: "#f59e0b",
-                    strokeWidth: 2,
+                    strokeWidth: this.getZoomAdaptiveStroke(),
                     selectable: true,
                     hasControls: true,
                     objectCaching: false,
@@ -418,7 +423,7 @@ export class FabricManager {
                     radius: 5,
                     fill: "#ec4899",
                     stroke: "#be185d",
-                    strokeWidth: 1.5,
+                    strokeWidth: this.getZoomAdaptiveStroke(FabricManager.KEYPOINT_STROKE_RATIO),
                     originX: "center",
                     originY: "center",
                     selectable: true,
@@ -452,6 +457,7 @@ export class FabricManager {
         if (zoom < 0.01) zoom = 0.01;
 
         this.canvas.zoomToPoint({ x: (opt.e as WheelEvent).offsetX, y: (opt.e as WheelEvent).offsetY }, zoom);
+        this.updateAllStrokes();
         opt.e.preventDefault();
         opt.e.stopPropagation();
     }
@@ -486,7 +492,7 @@ export class FabricManager {
                 height: 0,
                 fill: "rgba(255, 0, 0, 0.1)",
                 stroke: "red",
-                strokeWidth: 2 / this.canvas.getZoom(),
+                strokeWidth: this.getZoomAdaptiveStroke(),
                 selectable: true,
                 hasControls: true,
             });
@@ -501,7 +507,7 @@ export class FabricManager {
                 radius: 5,
                 fill: "#ec4899",
                 stroke: "#be185d",
-                strokeWidth: 1.5,
+                strokeWidth: this.getZoomAdaptiveStroke(FabricManager.KEYPOINT_STROKE_RATIO),
                 originX: "center",
                 originY: "center",
                 selectable: true,
@@ -556,7 +562,7 @@ export class FabricManager {
                 top: Math.min(this.startPoint.y, pointer.y),
                 width: Math.abs(width),
                 height: Math.abs(height),
-                strokeWidth: 2 / this.canvas.getZoom(), // Adjust stroke width with zoom
+                strokeWidth: this.getZoomAdaptiveStroke(),
             });
             this.canvas.requestRenderAll(); // Optimization: use requestRenderAll
         } else if (this.mode === "polygon" && this.currentCanvasPolygonPoints.length > 0) {
@@ -678,7 +684,7 @@ export class FabricManager {
         if (this.currentCanvasPolygonPoints.length > 1) {
             const prev = this.currentCanvasPolygonPoints[this.currentCanvasPolygonPoints.length - 2];
             const segment = new fabric.Line([prev.x, prev.y, canvasPoint.x, canvasPoint.y], {
-                stroke: "blue", strokeWidth: 2, selectable: false, evented: false
+                stroke: "blue", strokeWidth: this.getZoomAdaptiveStroke(), selectable: false, evented: false
             });
             this.currentPolygonSegments.push(segment);
             this.canvas.add(segment);
@@ -692,7 +698,7 @@ export class FabricManager {
         // Setup new temp line
         this.currentPolygonLine = new fabric.Line(
             [canvasPoint.x, canvasPoint.y, canvasPoint.x, canvasPoint.y],
-            { stroke: "rgba(0, 0, 255, 0.5)", strokeWidth: 1, selectable: false, evented: false }
+            { stroke: "rgba(0, 0, 255, 0.5)", strokeWidth: this.getZoomAdaptiveStroke(FabricManager.GUIDE_LINE_STROKE_RATIO), selectable: false, evented: false }
         );
         this.canvas.add(this.currentPolygonLine);
         this.canvas.renderAll();
@@ -706,7 +712,7 @@ export class FabricManager {
         const visualPolygon = new fabric.Polygon([...this.currentCanvasPolygonPoints], {
             fill: "rgba(0,0,255,0.3)",
             stroke: "blue",
-            strokeWidth: 2,
+            strokeWidth: this.getZoomAdaptiveStroke(),
             selectable: true,
             hasControls: true,
             objectCaching: false,
@@ -774,7 +780,7 @@ export class FabricManager {
             const prev = this.currentCanvasPolylinePoints[this.currentCanvasPolylinePoints.length - 2];
             const segment = new fabric.Line(
                 [prev.x, prev.y, canvasPoint.x, canvasPoint.y],
-                { stroke: "#f59e0b", strokeWidth: 2, selectable: false, evented: false }
+                { stroke: "#f59e0b", strokeWidth: this.getZoomAdaptiveStroke(), selectable: false, evented: false }
             );
             this.currentPolylineSegments.push(segment);
             this.canvas.add(segment);
@@ -793,7 +799,7 @@ export class FabricManager {
             {
                 fill: "transparent",
                 stroke: "#f59e0b",
-                strokeWidth: 2,
+                strokeWidth: this.getZoomAdaptiveStroke(),
                 selectable: true,
                 hasControls: true,
                 objectCaching: false,
@@ -1113,7 +1119,7 @@ export class FabricManager {
                 height: Math.abs(p2.y - p1.y),
                 fill: "rgba(255, 0, 0, 0.1)",
                 stroke: "red",
-                strokeWidth: 2,
+                strokeWidth: this.getZoomAdaptiveStroke(),
                 selectable: true,
                 hasControls: true,
             });
@@ -1131,7 +1137,7 @@ export class FabricManager {
             const polygon = new fabric.Polygon(canvasPoints, {
                 fill: "rgba(0, 0, 255, 0.3)",
                 stroke: "blue",
-                strokeWidth: 2,
+                strokeWidth: this.getZoomAdaptiveStroke(),
                 selectable: true,
                 hasControls: true,
                 objectCaching: false,
@@ -1147,7 +1153,7 @@ export class FabricManager {
             const polyline = new fabric.Polyline(canvasPoints.map(cp => ({ x: cp.x, y: cp.y })), {
                 fill: "transparent",
                 stroke: "#f59e0b",
-                strokeWidth: 2,
+                strokeWidth: this.getZoomAdaptiveStroke(),
                 selectable: true,
                 hasControls: true,
                 objectCaching: false,
@@ -1166,7 +1172,7 @@ export class FabricManager {
                 radius: 5,
                 fill: "#ec4899",
                 stroke: "#be185d",
-                strokeWidth: 1.5,
+                strokeWidth: this.getZoomAdaptiveStroke(FabricManager.KEYPOINT_STROKE_RATIO),
                 originX: "center",
                 originY: "center",
                 selectable: true,
@@ -1261,7 +1267,7 @@ export class FabricManager {
             selectable: false,
             evented: false,
             stroke: "cyan",
-            strokeWidth: 2,
+            strokeWidth: this.getZoomAdaptiveStroke(),
         });
 
         // Create draggable handles for each vertex
@@ -1292,7 +1298,7 @@ export class FabricManager {
             radius: 5,
             fill: "cyan",
             stroke: "#0e7490",
-            strokeWidth: 1.5,
+            strokeWidth: this.getZoomAdaptiveStroke(FabricManager.KEYPOINT_STROKE_RATIO),
             originX: "center",
             originY: "center",
             selectable: true,
@@ -1361,7 +1367,7 @@ export class FabricManager {
                 selectable: true,
                 evented: true,
                 stroke: "blue",
-                strokeWidth: 2,
+                strokeWidth: this.getZoomAdaptiveStroke(),
             });
         }
 
@@ -1376,6 +1382,41 @@ export class FabricManager {
         this.saveState();
         this.canvas.renderAll();
         this.emit("update");
+    }
+
+    // --- Stroke Width Management ---
+
+    /** Returns the effective stroke width for the current zoom level */
+    private getZoomAdaptiveStroke(ratio = 1): number {
+        const zoom = this.canvas?.getZoom() ?? 1;
+        return (this.baseStrokeWidth * ratio) / zoom;
+    }
+
+    /** Update base stroke width and refresh all canvas objects */
+    public setBaseStrokeWidth(value: number): void {
+        this.baseStrokeWidth = value;
+        this.updateAllStrokes();
+    }
+
+    /** Recalculate stroke width for all annotation objects on canvas */
+    private updateAllStrokes(): void {
+        if (!this.canvas) return;
+        const zoom = this.canvas.getZoom();
+        const standardStroke = this.baseStrokeWidth / zoom;
+        const keypointStroke = (this.baseStrokeWidth * FabricManager.KEYPOINT_STROKE_RATIO) / zoom;
+
+        for (const obj of this.canvas.getObjects()) {
+            const type = (obj as any).annotationType;
+            if (type === "bbox" || type === "polygon" || type === "polyline") {
+                obj.set("strokeWidth", standardStroke);
+            } else if (type === "keypoint") {
+                obj.set("strokeWidth", keypointStroke);
+            }
+            if ((obj as any).isVertexHandle) {
+                obj.set("strokeWidth", keypointStroke);
+            }
+        }
+        this.canvas.requestRenderAll();
     }
 
     // --- Event System ---

@@ -17,8 +17,9 @@
     import DatasetStats from "$lib/components/fabric/DatasetStats.svelte";
     import FabricToolbar from "$lib/components/fabric/FabricToolbar.svelte";
     import ImageGallery from "$lib/components/fabric/ImageGallery.svelte";
-    import { shortcutMap } from "$lib/stores/labelTaxonomyStore";
+    import { shortcutMap, labelTaxonomy } from "$lib/stores/labelTaxonomyStore";
     import { imageStatusStore } from "$lib/stores/imageStatusStore";
+    import { fabricSettings } from "$lib/stores/fabricSettingsStore";
     import { fly } from "svelte/transition";
 
     let parentElement: HTMLDivElement;
@@ -46,6 +47,7 @@
     let showStats = false;
     let selectedObject: any = null;
     let selectedObjects: any[] = [];
+    let currentStrokeWidth = 2;
 
     // Autosave
     let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -142,6 +144,10 @@
 
         const unsubscribeUpdate = fabricManager.on("update", syncState);
         const unsubscribeMode = fabricManager.on("modeChange", syncState);
+        const unsubscribeSettings = fabricSettings.subscribe(settings => {
+            currentStrokeWidth = settings.baseStrokeWidth;
+            fabricManager?.setBaseStrokeWidth(settings.baseStrokeWidth);
+        });
 
         const resizeObserver = new ResizeObserver((entries) => {
             for (const entry of entries) {
@@ -157,6 +163,7 @@
         return () => {
             unsubscribeUpdate();
             unsubscribeMode();
+            unsubscribeSettings();
             resizeObserver.disconnect();
             fabricManager?.dispose();
         };
@@ -168,6 +175,10 @@
 
     function setMode(newMode: Mode) {
         fabricManager?.setMode(newMode);
+    }
+
+    function handleStrokeWidthChange(event: CustomEvent<number>) {
+        fabricSettings.setBaseStrokeWidth(event.detail);
     }
 
     /** Derive the LabelMe JSON path from an image path */
@@ -212,6 +223,12 @@
             );
             if (labelmeData.shapes && Array.isArray(labelmeData.shapes)) {
                 fabricManager.loadAnnotations(labelmeData.shapes);
+                // Sync label classes from loaded annotations into taxonomy
+                for (const shape of labelmeData.shapes) {
+                    if (shape.label) {
+                        labelTaxonomy.addClass(shape.label);
+                    }
+                }
             }
         } catch (err) {
             console.log(
@@ -460,6 +477,7 @@
         {mode}
         {isPolygonDrawing}
         {isPolylineDrawing}
+        strokeWidth={currentStrokeWidth}
         on:setMode={setModeFromEvent}
         on:triggerFileInput={triggerFileInput}
         on:triggerDirectoryInput={triggerDirectoryInput}
@@ -468,6 +486,7 @@
         on:resetPolygon={resetPolygon}
         on:finishPolyline={finishPolyline}
         on:resetPolyline={resetPolyline}
+        on:strokeWidthChange={handleStrokeWidthChange}
     />
 
     <!-- Stats Dashboard Overlay -->
