@@ -1,12 +1,13 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
     import type { DatasetSummary } from "$lib/services/gallery/datasetService";
-    
-    export let datasetSummary: DatasetSummary | null = null;
 
-    const dispatch = createEventDispatcher<{
-        initiateCrop: { label: string };
-    }>();
+    let {
+        datasetSummary = null,
+        oninitiatecrop,
+    }: {
+        datasetSummary?: DatasetSummary | null;
+        oninitiatecrop?: (data: { label: string }) => void;
+    } = $props();
 
     function formatPercentage(value: number, total: number): string {
         if (!total || total === 0) return "0.0%";
@@ -19,21 +20,23 @@
     }
 
     function handleLabelClick(label: string) {
-        dispatch("initiateCrop", { label });
+        oninitiatecrop?.({ label });
     }
 
     // Provide default values for empty state
-    $: summary = datasetSummary || {
+    let summary = $derived(datasetSummary || {
         total_images: 0,
         images_with_annotations: 0,
         total_annotations: 0,
         unique_labels: 0,
         label_counts: {},
         annotation_types: [],
-    };
+    });
 
-    $: sortedLabelCounts = Object.entries(summary.label_counts || {}).sort(
-        ([, countA], [, countB]) => (countB as number) - (countA as number),
+    let sortedLabelCounts = $derived(
+        Object.entries(summary.label_counts || {}).sort(
+            ([, countA], [, countB]) => (countB as number) - (countA as number),
+        ),
     );
 </script>
 
@@ -102,7 +105,7 @@
             >
                 {#each sortedLabelCounts as [label, count]}
                     <button
-                        on:click={() => handleLabelClick(label)}
+                        onclick={() => handleLabelClick(label)}
                         class="badge badge-neutral gap-1.5 py-3 px-3 border-base-300 bg-base-200 text-base-content whitespace-nowrap flex-shrink-0 hover:bg-primary hover:text-primary-content hover:border-primary transition-all duration-200 cursor-pointer group"
                         title="Click to crop around '{label}'"
                     >

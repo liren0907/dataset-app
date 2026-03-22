@@ -7,21 +7,21 @@
     import LabelConfigurator from "./components/LabelConfigurator.svelte";
     import StatusAlerts from "./components/StatusAlerts.svelte";
 
-    let sourceDir: string | null = null;
-    let outputDir: string | null = null;
+    let sourceDir: string | null = $state(null);
+    let outputDir: string | null = $state(null);
 
     // Dynamic label selection
-    let datasetSummary: any = null;
-    let availableLabels: string[] = [];
-    let selectedParentLabel: string = "person";
-    let selectedChildLabels: string[] = [];
-    let datasetLoaded: boolean = false;
-    let analyzing: boolean = false;
-    let paddingFactor: number = 1.2;
+    let datasetSummary: any = $state(null);
+    let availableLabels: string[] = $state([]);
+    let selectedParentLabel: string = $state("person");
+    let selectedChildLabels: string[] = $state([]);
+    let datasetLoaded: boolean = $state(false);
+    let analyzing: boolean = $state(false);
+    let paddingFactor: number = $state(1.2);
 
-    let loading: boolean = false;
-    let successMessage: string | null = null;
-    let errorMessage: string | null = null;
+    let loading: boolean = $state(false);
+    let successMessage: string | null = $state(null);
+    let errorMessage: string | null = $state(null);
 
     async function selectDirectory(type: "source" | "output") {
         try {
@@ -221,7 +221,7 @@
                         label="Source Directory"
                         placeholder="Select source directory..."
                         value={sourceDir}
-                        on:browse={() => selectDirectory("source")}
+                        onbrowse={() => selectDirectory("source")}
                     />
 
                     <div class="divider my-2">Analysis</div>
@@ -230,7 +230,7 @@
                         {analyzing}
                         {datasetLoaded}
                         disabled={!sourceDir || analyzing}
-                        on:analyze={analyzeDataset}
+                        onanalyze={analyzeDataset}
                     />
                 </div>
             </div>
@@ -290,7 +290,7 @@
                         label="Output Directory"
                         placeholder="Select output directory..."
                         value={outputDir}
-                        on:browse={() => selectDirectory("output")}
+                        onbrowse={() => selectDirectory("output")}
                     />
                 </div>
             </div>
@@ -309,7 +309,7 @@
 
                     <div class="flex-1 flex flex-col justify-center">
                         <button
-                            on:click={runProcessing}
+                            onclick={runProcessing}
                             disabled={loading ||
                                 !sourceDir ||
                                 !outputDir ||

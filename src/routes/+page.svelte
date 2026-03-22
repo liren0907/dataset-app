@@ -2,7 +2,7 @@
     import { onMount, onDestroy } from "svelte";
     import { listen } from "@tauri-apps/api/event";
 
-    let isDragHover: boolean = false;
+    let isDragHover: boolean = $state(false);
 
     let unlistenDrop: (() => void) | null = null;
     let unlistenHover: (() => void) | null = null;

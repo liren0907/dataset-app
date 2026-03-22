@@ -44,7 +44,8 @@ const initialState: ImageState = {
 };
 
 function createImageStore() {
-    const { subscribe, set, update } = writable<ImageState>(initialState);
+    const _store = writable<ImageState>(initialState);
+    const { subscribe, set, update } = _store;
 
     return {
         subscribe,
@@ -53,12 +54,12 @@ function createImageStore() {
 
         // Get current directory path
         getDirectoryPath: (): string => {
-            return get({ subscribe }).directoryPath;
+            return get(_store).directoryPath;
         },
 
         setMockMode: async (enabled: boolean) => {
             update(s => ({ ...s, isMockMode: enabled, images: [], directoryPath: "", datasetSummary: null, currentPage: 1, error: "" }));
-            const state = get({ subscribe });
+            const state = get(_store);
             if (state.isMockMode) {
                 await imageStore.loadMockData();
             }
@@ -103,7 +104,7 @@ function createImageStore() {
         },
 
         selectDirectory: async () => {
-            const state = get({ subscribe });
+            const state = get(_store);
             if (state.isMockMode) {
                 await imageStore.loadMockData();
                 return;
@@ -138,7 +139,7 @@ function createImageStore() {
         },
 
         loadImagesPage: async (page: number) => {
-            const state = get({ subscribe });
+            const state = get(_store);
             if (state.isMockMode) {
                 await imageStore.loadMockData();
                 return;
@@ -185,7 +186,7 @@ function createImageStore() {
         },
 
         generateLabelMeSummary: async () => {
-            const state = get({ subscribe });
+            const state = get(_store);
             if (!state.directoryPath) return;
 
             try {

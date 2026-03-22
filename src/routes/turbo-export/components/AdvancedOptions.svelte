@@ -8,12 +8,12 @@
 	} from '../stores/exportStore';
 
 	// 是否為 LabelMe 輸出格式
-	$: isLabelMeOutput = $outputTarget === 'labelme';
+	let isLabelMeOutput = $derived($outputTarget === 'labelme');
 </script>
 
 <section class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
 	<button
-		on:click={() => showAdvanced.update(v => !v)}
+		onclick={() => showAdvanced.update(v => !v)}
 		class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
 	>
 		<h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -40,7 +40,7 @@
 					<input
 						type="number"
 						value={$workerCount}
-						on:input={(e) => workerCount.set(parseInt(e.currentTarget.value) || 0)}
+						oninput={(e) => workerCount.set(parseInt(e.currentTarget.value) || 0)}
 						min="0"
 						max="32"
 						class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -57,7 +57,7 @@
 						<input
 							type="number"
 							value={$randomSeed}
-							on:input={(e) => randomSeed.set(parseInt(e.currentTarget.value) || 0)}
+							oninput={(e) => randomSeed.set(parseInt(e.currentTarget.value) || 0)}
 							min="0"
 							class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
 						/>
@@ -72,7 +72,7 @@
 					<input
 						type="checkbox"
 						checked={$removeImageData}
-						on:change={() => removeImageData.update(v => !v)}
+						onchange={() => removeImageData.update(v => !v)}
 						class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
 					/>
 					<div>

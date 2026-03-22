@@ -1,16 +1,29 @@
 <script lang="ts">
     import { Accordion, AccordionItem } from "flowbite-svelte";
-    import { createEventDispatcher } from "svelte";
 
-    export let isOpen: boolean;
-    export let sourceDir: string | null;
-    export let outputDir: string | null;
-    export let parentLabel: string;
-    export let loading: boolean;
-    export let statusMessage: string | null;
-    export let isError: boolean;
-
-    const dispatch = createEventDispatcher();
+    let {
+        isOpen = $bindable(),
+        sourceDir,
+        outputDir,
+        parentLabel = $bindable(),
+        loading,
+        statusMessage,
+        isError,
+        onselectsource,
+        onselectoutput,
+        onruncrop,
+    }: {
+        isOpen: boolean;
+        sourceDir: string | null;
+        outputDir: string | null;
+        parentLabel: string;
+        loading: boolean;
+        statusMessage: string | null;
+        isError: boolean;
+        onselectsource?: () => void;
+        onselectoutput?: () => void;
+        onruncrop?: () => void;
+    } = $props();
 </script>
 
 <Accordion class="mb-6 border border-gray-200 rounded-lg" bind:open={isOpen}>
@@ -33,7 +46,7 @@
                         class="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 text-sm truncate"
                     />
                     <button
-                        on:click={() => dispatch("selectSource")}
+                        onclick={() => onselectsource?.()}
                         class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md border border-gray-300 text-sm"
                     >
                         Browse...
@@ -55,7 +68,7 @@
                         class="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 text-sm truncate"
                     />
                     <button
-                        on:click={() => dispatch("selectOutput")}
+                        onclick={() => onselectoutput?.()}
                         class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md border border-gray-300 text-sm"
                     >
                         Browse...
@@ -90,7 +103,7 @@
             <!-- Run Button -->
             <div class="pt-2">
                 <button
-                    on:click={() => dispatch("runCrop")}
+                    onclick={() => onruncrop?.()}
                     disabled={loading ||
                         !sourceDir ||
                         !outputDir ||

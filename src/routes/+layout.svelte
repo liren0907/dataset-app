@@ -3,8 +3,10 @@
 	import Sidebar from "./Sidebar.svelte";
 	import "../app.css";
 
-	let theme = "light";
-	let isSidebarExpanded = true;
+	let { children } = $props();
+
+	let theme = $state("light");
+	let isSidebarExpanded = $state(true);
 
 	onMount(() => {
 		// Check for saved theme or system preference
@@ -31,9 +33,6 @@
 		isSidebarExpanded = !isSidebarExpanded;
 		// localStorage.setItem("sidebarExpanded", String(isSidebarExpanded));
 	}
-
-	// Export for child components if needed (rarely used this way in SvelteKit layouts but keeping pattern)
-	export { theme, toggleTheme };
 </script>
 
 <!-- 
@@ -59,7 +58,7 @@
 					class="absolute top-4 left-4 z-30 print:hidden transition-all duration-300"
 				>
 					<button
-						on:click={toggleSidebar}
+						onclick={toggleSidebar}
 						class="btn btn-circle btn-ghost btn-sm shadow-sm bg-base-100 hover:bg-base-200 border border-base-200"
 						title="Open Sidebar"
 					>
@@ -75,7 +74,7 @@
 			<div
 				class="w-full px-6 py-8 pt-16 lg:pt-8 transition-all duration-300"
 			>
-				<slot />
+				{@render children()}
 			</div>
 		</main>
 	</div>

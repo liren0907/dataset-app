@@ -1,23 +1,31 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
-    import { open } from "@tauri-apps/plugin-dialog";
     import { IconButton } from "$lib/components/ui";
 
-    export let tempPath: string;
-    export let exportedPath: string | undefined = undefined;
-    export let imageCount: number = 0;
-    export let parentLabel: string = "";
-    export let childLabels: string[] = [];
-    export let createdAt: Date = new Date();
+    let {
+        tempPath,
+        exportedPath = undefined,
+        imageCount = 0,
+        parentLabel = "",
+        childLabels = [],
+        createdAt = new Date(),
+        onpreview,
+        onopeningallery,
+        onremove,
+        onexport,
+    }: {
+        tempPath: string;
+        exportedPath?: string | undefined;
+        imageCount?: number;
+        parentLabel?: string;
+        childLabels?: string[];
+        createdAt?: Date;
+        onpreview?: (data: { tempPath: string }) => void;
+        onopeningallery?: (data: { tempPath: string }) => void;
+        onremove?: (data: { tempPath: string }) => void;
+        onexport?: (data: { tempPath: string; destPath: string }) => void;
+    } = $props();
 
-    const dispatch = createEventDispatcher<{
-        preview: { tempPath: string };
-        openInGallery: { tempPath: string };
-        remove: { tempPath: string };
-        export: { tempPath: string; destPath: string };
-    }>();
-
-    let exporting = false;
+    let exporting = $state(false);
 
     function formatPath(path: string): string {
         // Show only the last 2 segments of the path
@@ -34,23 +42,23 @@
     }
 
     function handlePreview() {
-        dispatch("preview", { tempPath });
+        onpreview?.({ tempPath });
     }
 
     function handleOpenInGallery() {
-        dispatch("openInGallery", { tempPath });
+        onopeningallery?.({ tempPath });
     }
 
     function handleRemove() {
-        dispatch("remove", { tempPath });
+        onremove?.({ tempPath });
     }
 
     function handleExportClick() {
-        dispatch("export", { tempPath, destPath: "" }); // destPath not needed for modal trigger
+        onexport?.({ tempPath, destPath: "" });
     }
 
-    $: isExported = !!exportedPath;
-    $: displayPath = exportedPath || tempPath;
+    let isExported = $derived(!!exportedPath);
+    let displayPath = $derived(exportedPath || tempPath);
 </script>
 
 <div
@@ -93,7 +101,7 @@
                 </div>
             </div>
             <button
-                on:click={handleRemove}
+                onclick={handleRemove}
                 class="btn btn-ghost btn-xs btn-square text-base-content/40 hover:text-error hover:bg-error/10"
                 title="Remove from list"
             >
@@ -120,7 +128,7 @@
             </div>
             {#if childLabels.length > 0}
                 <div class="flex items-center gap-1">
-                    <span class="text-base-content/40">→</span>
+                    <span class="text-base-content/40">-></span>
                     <div class="flex gap-1">
                         {#each childLabels.slice(0, 3) as child}
                             <span class="badge badge-xs badge-outline"
@@ -145,7 +153,7 @@
                 tooltip="Preview cropped images"
                 variant="soft"
                 size="sm"
-                on:click={handlePreview}
+                onclick={handlePreview}
             />
             <IconButton
                 icon="folder_open"
@@ -153,7 +161,7 @@
                 tooltip="View in gallery"
                 variant="soft"
                 size="sm"
-                on:click={handleOpenInGallery}
+                onclick={handleOpenInGallery}
             />
             {#if !isExported}
                 <IconButton
@@ -163,7 +171,7 @@
                     variant="soft"
                     size="sm"
                     loading={exporting}
-                    on:click={handleExportClick}
+                    onclick={handleExportClick}
                 />
             {:else}
                 <span class="text-xs text-success flex items-center gap-1">

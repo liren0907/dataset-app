@@ -4,16 +4,18 @@
     import { open } from '@tauri-apps/plugin-dialog';
     import { appDataDir } from '@tauri-apps/api/path';
     import { onMount } from 'svelte';
-    import { createEventDispatcher } from 'svelte';
     import KonvaViewer from './KonvaViewer.svelte';
     import type { KonvaImageData } from './konvaService';
 
-    // Props from parent (dataset-gallery-advanced)
-    export let currentDirectory: string = ''; // Current gallery directory
-    export let cropToolOpen: boolean = false; // Accordion open state
-
-    // Event dispatcher for communication with parent
-    const dispatch = createEventDispatcher();
+    let {
+        currentDirectory = '',
+        cropToolOpen = $bindable(false),
+        oncropcompleted,
+    }: {
+        currentDirectory: string;
+        cropToolOpen: boolean;
+        oncropcompleted?: (detail: { outputDir: string }) => void;
+    } = $props();
 
     // State variables
     let sourceDir: string | null = null;
@@ -41,12 +43,14 @@
     let previewModalImage: KonvaImageData | null = null;
 
     // Reactive: Auto-set source directory from gallery when available
-    $: if (currentDirectory && !sourceDir && cropToolOpen) {
-        sourceDir = currentDirectory;
-        if (sourceDir) {
-            analyzeDataset();
+    $effect(() => {
+        if (currentDirectory && !sourceDir && cropToolOpen) {
+            sourceDir = currentDirectory;
+            if (sourceDir) {
+                analyzeDataset();
+            }
         }
-    }
+    });
 
     // Handle keyboard events for modal
     function handleKeydown(event: KeyboardEvent) {
@@ -274,8 +278,8 @@
 
             successMessage = String(message);
 
-            // Dispatch completion event to parent (gallery) with output directory
-            dispatch('cropCompleted', { outputDir: outputDir });
+            // Notify parent of completion
+            oncropcompleted?.({ outputDir: outputDir });
 
         } catch (err) {
             console.error("Error running processing:", err);
@@ -300,7 +304,7 @@
     }
 </script>
 
-<svelte:window on:keydown={handleKeydown} on:resize={handleResize} />
+<svelte:window onkeydown={handleKeydown} onresize={handleResize} />
 
 <div class="advanced-crop-remap-tool">
     <div class="space-y-4">
@@ -317,7 +321,7 @@
                     class="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm truncate"
                 />
                 <button
-                    on:click={() => selectDirectory('source')}
+                    onclick={() => selectDirectory('source')}
                     class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md border border-gray-300 text-sm"
                     disabled={analyzing}
                 >
@@ -374,7 +378,7 @@
                                     <button
                                         type="button"
                                         class="absolute inset-0 w-full h-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-                                        on:click={() => openPreviewModal(image)}
+                                        onclick={() => openPreviewModal(image)}
                                         aria-label={`View full size image: ${image.name}`}
                                     >
                                         <img
@@ -417,7 +421,7 @@
                     class="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm truncate"
                 />
                 <button
-                    on:click={() => selectDirectory('output')}
+                    onclick={() => selectDirectory('output')}
                     class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md border border-gray-300 text-sm"
                 >
                     Browse...
@@ -524,7 +528,7 @@
     <!-- Run Button -->
     <div class="mt-6">
         <button
-            on:click={runProcessing}
+            onclick={runProcessing}
             disabled={loading || !sourceDir || !outputDir || !datasetLoaded || !selectedParentLabel || selectedChildLabels.length === 0}
             class="w-full inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -569,8 +573,8 @@
         role="dialog"
         aria-modal="true"
         aria-labelledby="preview-modal-title"
-        on:click={closePreviewModal}
-        on:keydown={(e) => {
+        onclick={closePreviewModal}
+        onkeydown={(e) => {
             if (e.key === 'Escape') closePreviewModal();
         }}
         tabindex="-1"
@@ -579,13 +583,13 @@
         <div
             class="bg-white rounded-lg shadow-xl max-w-6xl max-h-[95vh] overflow-hidden"
             role="document"
-            on:click|stopPropagation
-            on:keydown|stopPropagation
+            onclick={(e) => e.stopPropagation()}
+            onkeydown={(e) => e.stopPropagation()}
         >
             <div class="p-4 border-b border-gray-200 flex justify-between items-center">
                 <h3 id="preview-modal-title" class="text-lg font-medium text-gray-900">{previewModalImage.name}</h3>
                 <button
-                    on:click={closePreviewModal}
+                    onclick={closePreviewModal}
                     class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
                 >
                     ×
@@ -593,7 +597,7 @@
             </div>
             <div class="p-4">
                 <!-- Use KonvaViewer component for advanced annotation viewing -->
-                <KonvaViewer {previewModalImage} on:close={closePreviewModal} />
+                <KonvaViewer {previewModalImage} onclose={closePreviewModal} />
             </div>
         </div>
     </div>

@@ -1,13 +1,14 @@
 <script lang="ts">
-    import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+    import { onMount, onDestroy } from 'svelte';
     import { createKonvaManager, type KonvaManager, type KonvaImageData } from './konvaService';
 
-    // Props
-    export let selectedImage: any = null; // ProcessedImage from parent
-    export let currentAnnotations: any[] = []; // Current annotations for editing
-
-    // Event dispatcher for communication with parent
-    const dispatch = createEventDispatcher();
+    let { selectedImage = null, currentAnnotations = [], onsave, oncancel, onclose }: {
+        selectedImage: any;
+        currentAnnotations: any[];
+        onsave?: (detail: { image: any; annotations: any[] }) => void;
+        oncancel?: () => void;
+        onclose?: () => void;
+    } = $props();
 
     // KonvaJS manager instance
     let konvaManager: KonvaManager;
@@ -18,25 +19,27 @@
     let editedAnnotations: any[] = [];
     let originalAnnotations: any[] = [];
 
-    // Initialize with props
-    $: if (currentAnnotations) {
-        editedAnnotations = [...currentAnnotations];
-        originalAnnotations = [...currentAnnotations];
-    }
-
-    // Sync with prop changes
-    $: if (selectedImage && currentAnnotations && selectedImage.previewUrl) {
-        editedAnnotations = [...currentAnnotations];
-        originalAnnotations = [...currentAnnotations];
-        console.log('AnnotationEditor: Props updated', {
-            imageName: selectedImage.name,
-            annotationsCount: currentAnnotations.length,
-            hasPreviewUrl: !!selectedImage.previewUrl
-        });
-        if (isInitialized) {
-            updateAnnotations();
+    $effect(() => {
+        if (currentAnnotations) {
+            editedAnnotations = [...currentAnnotations];
+            originalAnnotations = [...currentAnnotations];
         }
-    }
+    });
+
+    $effect(() => {
+        if (selectedImage && currentAnnotations && selectedImage.previewUrl) {
+            editedAnnotations = [...currentAnnotations];
+            originalAnnotations = [...currentAnnotations];
+            console.log('AnnotationEditor: Props updated', {
+                imageName: selectedImage.name,
+                annotationsCount: currentAnnotations.length,
+                hasPreviewUrl: !!selectedImage.previewUrl
+            });
+            if (isInitialized) {
+                updateAnnotations();
+            }
+        }
+    });
 
     onMount(() => {
         konvaManager = createKonvaManager();
@@ -49,13 +52,17 @@
     });
 
     // Reactive: Initialize when image is selected
-    $: if (selectedImage && !isInitialized) {
-        initializeEditor();
-    }
+    $effect(() => {
+        if (selectedImage && !isInitialized) {
+            initializeEditor();
+        }
+    });
 
-    $: if (!selectedImage && isInitialized) {
-        cleanupEditor();
-    }
+    $effect(() => {
+        if (!selectedImage && isInitialized) {
+            cleanupEditor();
+        }
+    });
 
     // Initialize the annotation editor
     async function initializeEditor(): Promise<void> {
@@ -142,7 +149,7 @@
     function handleSave(): void {
         // Get current annotations from Konva manager
         // For now, we'll assume the annotations are updated in the editedAnnotations array
-        dispatch('save', {
+        onsave?.({
             image: selectedImage,
             annotations: editedAnnotations
         });
@@ -152,12 +159,12 @@
     function handleCancel(): void {
         // Reset to original annotations
         editedAnnotations = [...originalAnnotations];
-        dispatch('cancel');
+        oncancel?.();
     }
 
     // Handle close/back to gallery
     function handleClose(): void {
-        dispatch('close');
+        onclose?.();
     }
 
     // Keyboard shortcuts
@@ -242,7 +249,7 @@
     }
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 {#if selectedImage}
 <div class="annotation-editor-panel bg-white/95 backdrop-blur rounded-xl shadow-xl border border-slate-200/60 overflow-hidden h-full flex flex-col">
@@ -250,7 +257,7 @@
     <div class="flex justify-between items-center p-4 border-b bg-slate-50">
         <div class="flex items-center gap-3">
             <button
-                on:click={handleClose}
+                onclick={handleClose}
                 class="text-slate-600 hover:text-slate-800 p-2 -ml-2 rounded-md hover:bg-slate-200 transition-colors"
                 aria-label="Back to gallery"
             >
@@ -267,13 +274,13 @@
         <!-- Action Buttons -->
         <div class="flex items-center gap-2">
             <button
-                on:click={handleCancel}
+                onclick={handleCancel}
                 class="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 transition-colors"
             >
                 Cancel
             </button>
             <button
-                on:click={handleSave}
+                onclick={handleSave}
                 class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors flex items-center gap-2"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
@@ -292,7 +299,7 @@
 
             <!-- Zoom Controls -->
             <button
-                on:click={handleZoomOut}
+                onclick={handleZoomOut}
                 class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
                 title="Zoom Out (-)"
                 aria-label="Zoom out"
@@ -300,7 +307,7 @@
                 🔍-
             </button>
             <button
-                on:click={handleResetZoom}
+                onclick={handleResetZoom}
                 class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
                 title="Reset Zoom (0)"
                 aria-label="Reset zoom"
@@ -308,7 +315,7 @@
                 100%
             </button>
             <button
-                on:click={handleZoomIn}
+                onclick={handleZoomIn}
                 class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
                 title="Zoom In (=)"
                 aria-label="Zoom in"
@@ -318,7 +325,7 @@
 
             <!-- Fit to Screen -->
             <button
-                on:click={handleFitToScreen}
+                onclick={handleFitToScreen}
                 class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded transition-colors ml-4"
                 title="Fit to Screen (R)"
                 aria-label="Fit to screen"
@@ -330,7 +337,7 @@
             <div class="ml-4 flex items-center gap-2">
                 <span class="text-sm text-slate-600">Annotations:</span>
                 <button
-                    on:click={handleSelectAll}
+                    onclick={handleSelectAll}
                     class="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white text-sm rounded transition-colors"
                     title="Select All (Ctrl+A)"
                     aria-label="Select all annotations"
@@ -338,7 +345,7 @@
                     Select All
                 </button>
                 <button
-                    on:click={handleDeselect}
+                    onclick={handleDeselect}
                     class="px-3 py-1 bg-slate-500 hover:bg-slate-600 text-white text-sm rounded transition-colors"
                     title="Deselect (Esc)"
                     aria-label="Deselect annotations"
@@ -346,7 +353,7 @@
                     Deselect
                 </button>
                 <button
-                    on:click={handleDeleteSelected}
+                    onclick={handleDeleteSelected}
                     class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded transition-colors"
                     title="Delete Selected (Del)"
                     aria-label="Delete selected annotations"

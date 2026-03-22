@@ -1,5 +1,5 @@
 <script lang="ts">
-    export let datasetSummary: any = null;
+    let { datasetSummary = null }: { datasetSummary: any } = $props();
 </script>
 
 {#if datasetSummary}

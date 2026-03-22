@@ -1,15 +1,27 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
-
-    // Props
-    export let outputPath: string = "";
-    export let parentLabel: string = "";
-    export let childLabels: string[] = [];
-    export let imageCount: number = 0;
-    export let isActive: boolean = false;
-    export let createdAt: Date = new Date();
-
-    const dispatch = createEventDispatcher();
+    let {
+        outputPath = "",
+        parentLabel = "",
+        childLabels = [],
+        imageCount = 0,
+        isActive = false,
+        createdAt = new Date(),
+        onswitch,
+        onexport,
+        onpreview,
+        onremove,
+    }: {
+        outputPath?: string;
+        parentLabel?: string;
+        childLabels?: string[];
+        imageCount?: number;
+        isActive?: boolean;
+        createdAt?: Date;
+        onswitch?: () => void;
+        onexport?: () => void;
+        onpreview?: () => void;
+        onremove?: () => void;
+    } = $props();
 
     function formatDate(date: Date): string {
         return new Intl.DateTimeFormat("en-US", {
@@ -111,7 +123,7 @@
                     class="btn btn-sm gap-2 {isActive
                         ? 'btn-primary'
                         : 'btn-ghost border border-base-300'}"
-                    on:click={() => dispatch("switch")}
+                    onclick={() => onswitch?.()}
                 >
                     <span class="material-symbols-rounded text-sm">
                         {isActive ? "check_circle" : "swap_horiz"}
@@ -122,7 +134,7 @@
                 <!-- Export Button -->
                 <button
                     class="btn btn-sm btn-ghost border border-base-300 gap-2"
-                    on:click={() => dispatch("export")}
+                    onclick={() => onexport?.()}
                 >
                     <span class="material-symbols-rounded text-sm"
                         >ios_share</span
@@ -133,7 +145,7 @@
                 <!-- Preview Button -->
                 <button
                     class="btn btn-sm btn-ghost btn-square"
-                    on:click={() => dispatch("preview")}
+                    onclick={() => onpreview?.()}
                     title="Preview images"
                 >
                     <span class="material-symbols-rounded">visibility</span>
@@ -142,7 +154,7 @@
                 <!-- Remove Button -->
                 <button
                     class="btn btn-sm btn-ghost btn-square text-error/60 hover:text-error hover:bg-error/10"
-                    on:click={() => dispatch("remove")}
+                    onclick={() => onremove?.()}
                     title="Remove from list"
                 >
                     <span class="material-symbols-rounded">close</span>

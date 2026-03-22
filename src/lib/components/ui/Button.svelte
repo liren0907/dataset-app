@@ -1,37 +1,48 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
+    import type { Snippet } from "svelte";
 
     /**
      * Button Component - /gallery Style
      * Uses the Flat Gray aesthetic from /gallery ExportModal.
      */
 
-    export let variant: "default" | "ghost" = "default";
-    export let size: "sm" | "md" = "sm";
-    export let disabled: boolean = false;
-    export let type: "button" | "submit" | "reset" = "button";
-    export let minWidth: string | null = null;
-    let className: string = "";
-    export { className as class };
-
-    const dispatch = createEventDispatcher();
+    let {
+        variant = "default",
+        size = "sm",
+        disabled = false,
+        type = "button",
+        minWidth = null,
+        class: className = "",
+        onclick,
+        children,
+    }: {
+        variant?: "default" | "ghost";
+        size?: "sm" | "md";
+        disabled?: boolean;
+        type?: "button" | "submit" | "reset";
+        minWidth?: string | null;
+        class?: string;
+        onclick?: (event: MouseEvent) => void;
+        children?: Snippet;
+    } = $props();
 
     function handleClick(event: MouseEvent) {
         if (!disabled) {
-            dispatch("click", event);
+            onclick?.(event);
         }
     }
 
-    $: baseClass = "btn border-none font-normal transition-all";
+    let baseClass = $derived("btn border-none font-normal transition-all");
 
-    $: sizeClass = size === "sm" ? "btn-sm" : "";
+    let sizeClass = $derived(size === "sm" ? "btn-sm" : "");
 
-    $: variantClass =
+    let variantClass = $derived(
         variant === "ghost"
             ? "btn-ghost bg-base-200 hover:bg-base-300 text-base-content/70"
-            : "bg-base-200 hover:bg-base-300 text-base-content";
+            : "bg-base-200 hover:bg-base-300 text-base-content",
+    );
 
-    $: style = minWidth ? `min-width: ${minWidth};` : "";
+    let style = $derived(minWidth ? `min-width: ${minWidth};` : "");
 </script>
 
 <button
@@ -39,7 +50,7 @@
     class="{baseClass} {sizeClass} {variantClass} {className}"
     {style}
     {disabled}
-    on:click={handleClick}
+    onclick={handleClick}
 >
-    <slot />
+    {@render children?.()}
 </button>

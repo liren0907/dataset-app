@@ -1,15 +1,35 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
-
-    export let aspectRatio: string;
-    export let zoom: number;
-    export let rotation: number;
-
-    const dispatch = createEventDispatcher();
+    let {
+        aspectRatio,
+        zoom,
+        rotation,
+        onratiochange,
+        onzoomin,
+        onzoomout,
+        onzoomreset,
+        onrotatecw,
+        onrotateccw,
+        onpreview,
+        onreset,
+        onclear,
+    }: {
+        aspectRatio: string;
+        zoom: number;
+        rotation: number;
+        onratiochange?: (value: string) => void;
+        onzoomin?: () => void;
+        onzoomout?: () => void;
+        onzoomreset?: () => void;
+        onrotatecw?: () => void;
+        onrotateccw?: () => void;
+        onpreview?: () => void;
+        onreset?: () => void;
+        onclear?: () => void;
+    } = $props();
 
     function setAspectRatio(e: Event) {
         const target = e.target as HTMLSelectElement;
-        dispatch("ratioChange", target.value);
+        onratiochange?.(target.value);
     }
 </script>
 
@@ -27,7 +47,7 @@
             </div>
             <select
                 value={aspectRatio}
-                on:change={setAspectRatio}
+                onchange={setAspectRatio}
                 class="select select-bordered select-sm w-full"
             >
                 <option value="free">Free Form</option>
@@ -45,18 +65,18 @@
             <div class="label"><span class="label-text">Zoom</span></div>
             <div class="join">
                 <button
-                    on:click={() => dispatch("zoomOut")}
+                    onclick={() => onzoomout?.()}
                     class="btn btn-sm join-item">-</button
                 >
                 <span class="btn btn-sm join-item btn-disabled"
                     >{Math.round(zoom * 100)}%</span
                 >
                 <button
-                    on:click={() => dispatch("zoomIn")}
+                    onclick={() => onzoomin?.()}
                     class="btn btn-sm join-item">+</button
                 >
                 <button
-                    on:click={() => dispatch("zoomReset")}
+                    onclick={() => onzoomreset?.()}
                     class="btn btn-sm join-item">Reset</button
                 >
             </div>
@@ -67,7 +87,7 @@
             <div class="label"><span class="label-text">Rotation</span></div>
             <div class="join">
                 <button
-                    on:click={() => dispatch("rotateCCW")}
+                    onclick={() => onrotateccw?.()}
                     class="btn btn-sm join-item"
                 >
                     <span class="material-symbols-rounded icon-sm"
@@ -78,7 +98,7 @@
                     >{rotation}°</span
                 >
                 <button
-                    on:click={() => dispatch("rotateCW")}
+                    onclick={() => onrotatecw?.()}
                     class="btn btn-sm join-item"
                 >
                     <span class="material-symbols-rounded icon-sm"
@@ -91,7 +111,7 @@
         <!-- Action Buttons -->
         <div class="space-y-2 mt-4">
             <button
-                on:click={() => dispatch("preview")}
+                onclick={() => onpreview?.()}
                 class="btn btn-primary btn-block"
             >
                 <span class="material-symbols-rounded">visibility</span>
@@ -100,7 +120,7 @@
 
             <div class="grid grid-cols-2 gap-2">
                 <button
-                    on:click={() => dispatch("reset")}
+                    onclick={() => onreset?.()}
                     class="btn btn-ghost btn-sm"
                 >
                     <span class="material-symbols-rounded icon-sm"
@@ -109,7 +129,7 @@
                     Reset
                 </button>
                 <button
-                    on:click={() => dispatch("clear")}
+                    onclick={() => onclear?.()}
                     class="btn btn-error btn-sm"
                 >
                     <span class="material-symbols-rounded icon-sm">delete</span>

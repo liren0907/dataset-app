@@ -67,7 +67,7 @@
 	{#if $detailedStats.invalidAnnotations.length > 0}
 		<div class="mt-4 p-3 bg-orange-50 dark:bg-orange-900/30 rounded-lg border border-orange-200 dark:border-orange-800">
 			<button
-				on:click={() => showInvalidDetails.update(v => !v)}
+				onclick={() => showInvalidDetails.update(v => !v)}
 				class="w-full flex items-center justify-between text-left"
 			>
 				<div class="flex items-start gap-2">
@@ -134,7 +134,7 @@
 	{#if $detailedStats.backgroundImages > 0}
 		<div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-800">
 			<button
-				on:click={() => showBackgroundFiles.update(v => !v)}
+				onclick={() => showBackgroundFiles.update(v => !v)}
 				class="w-full flex items-center justify-between text-left"
 			>
 				<div class="flex items-start gap-2">
@@ -180,7 +180,7 @@
 	{#if $detailedStats.filteredEmptyImages > 0}
 		<div class="mt-4 p-3 bg-purple-50 dark:bg-purple-900/30 rounded-lg border border-purple-200 dark:border-purple-800">
 			<button
-				on:click={() => showFilteredEmptyFiles.update(v => !v)}
+				onclick={() => showFilteredEmptyFiles.update(v => !v)}
 				class="w-full flex items-center justify-between text-left"
 			>
 				<div class="flex items-start gap-2">

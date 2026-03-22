@@ -28,12 +28,28 @@ function createToastStore() {
             return id;
         },
 
-        success: (message: string, duration?: number) => {
-            return createToastStore().show(message, 'success', duration);
+        success: (message: string, duration: number = 5000) => {
+            const id = crypto.randomUUID();
+            const toast: Toast = { id, message, variant: 'success', duration };
+            update(toasts => [...toasts, toast]);
+            if (duration > 0) {
+                setTimeout(() => {
+                    update(toasts => toasts.filter(t => t.id !== id));
+                }, duration);
+            }
+            return id;
         },
 
-        error: (message: string, duration?: number) => {
-            return createToastStore().show(message, 'error', duration);
+        error: (message: string, duration: number = 5000) => {
+            const id = crypto.randomUUID();
+            const toast: Toast = { id, message, variant: 'error', duration };
+            update(toasts => [...toasts, toast]);
+            if (duration > 0) {
+                setTimeout(() => {
+                    update(toasts => toasts.filter(t => t.id !== id));
+                }, duration);
+            }
+            return id;
         },
 
         dismiss: (id: string) => {

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { createEventDispatcher } from "svelte";
 	import { dndzone } from "svelte-dnd-action";
 	import { flip } from "svelte/animate";
 	import {
@@ -18,9 +17,9 @@
 		type LabelInfo,
 	} from "../stores/exportStore";
 
-	const dispatch = createEventDispatcher<{
-		rescan: void;
-	}>();
+	let { onrescan }: {
+		onrescan?: () => void;
+	} = $props();
 
 	// 拖拉動畫時間
 	const flipDurationMs = 200;
@@ -36,7 +35,7 @@
 
 	// 重新掃描
 	function handleRescan() {
-		dispatch("rescan");
+		onrescan?.();
 	}
 </script>
 
@@ -81,7 +80,7 @@
 				>
 			{/if}
 			<button
-				on:click={handleRescan}
+				onclick={handleRescan}
 				disabled={$isScanning || !$sourceDir}
 				class="px-3 py-1.5 text-xs bg-indigo-100 dark:bg-indigo-900/50 hover:bg-indigo-200 dark:hover:bg-indigo-800/50 text-indigo-700 dark:text-indigo-300 rounded-md transition-colors disabled:opacity-50"
 				title="重新掃描標籤列表"
@@ -144,7 +143,7 @@
 				<input
 					type="checkbox"
 					checked={$useCustomLabels}
-					on:change={() => useCustomLabels.update((v) => !v)}
+					onchange={() => useCustomLabels.update((v) => !v)}
 					class="sr-only peer"
 				/>
 				<div
@@ -168,7 +167,7 @@
 					<input
 						type="checkbox"
 						checked={$includeEmptyLabelImages}
-						on:change={() =>
+						onchange={() =>
 							includeEmptyLabelImages.update((v) => !v)}
 						class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
 					/>
@@ -209,7 +208,7 @@
 								indeterminate={$labelList.some(
 									(l) => l.selected,
 								) && !$labelList.every((l) => l.selected)}
-								on:change={(e) => {
+								onchange={(e) => {
 									if (e.currentTarget.checked)
 										selectAllLabels();
 									else deselectAllLabels();
@@ -236,8 +235,8 @@
 							flipDurationMs,
 							dropTargetStyle: {},
 						}}
-						on:consider={handleDndConsider}
-						on:finalize={handleDndFinalize}
+						onconsider={handleDndConsider}
+						onfinalize={handleDndFinalize}
 					>
 						{#each $labelList as label, index (label.id)}
 							<div
@@ -304,13 +303,13 @@
 								<!-- 選取 checkbox -->
 								<div
 									class="flex justify-center"
-									on:mousedown|stopPropagation
-									on:touchstart|stopPropagation
+									onmousedown={(e) => { e.stopPropagation(); }}
+									ontouchstart={(e) => { e.stopPropagation(); }}
 								>
 									<input
 										type="checkbox"
 										checked={label.selected}
-										on:change={() => toggleLabel(label.id)}
+										onchange={() => toggleLabel(label.id)}
 										class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 cursor-pointer"
 									/>
 								</div>

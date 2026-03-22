@@ -11,17 +11,24 @@
         ImageEntry,
     } from "$lib/logic/FabricManager";
 
-    export let images: ImageEntry[] = [];
-    export let allBBoxes: BBox[] = [];
-    export let allPolygons: Polygon[] = [];
-    export let allPolylines: Polyline[] = [];
-    export let allKeypoints: Keypoint[] = [];
+    let {
+        images = [],
+        allBBoxes = [],
+        allPolygons = [],
+        allPolylines = [],
+        allKeypoints = [],
+    }: {
+        images?: ImageEntry[];
+        allBBoxes?: BBox[];
+        allPolygons?: Polygon[];
+        allPolylines?: Polyline[];
+        allKeypoints?: Keypoint[];
+    } = $props();
 
     // Aggregate counts by class
-    $: stats = (() => {
+    let stats = $derived.by(() => {
         const counts = new Map<string, number>();
 
-        // Count from current loaded state (this is simplified as we'd ideally want to scan all JSONs)
         const process = (items: any[]) => {
             items.forEach((item) => {
                 if (item.label) {
@@ -36,14 +43,15 @@
         process(allKeypoints);
 
         return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
-    })();
+    });
 
-    $: totalAnns =
+    let totalAnns = $derived(
         allBBoxes.length +
         allPolygons.length +
         allPolylines.length +
-        allKeypoints.length;
-    $: annotatedImages = images.filter((img) => img.hasJson).length;
+        allKeypoints.length,
+    );
+    let annotatedImages = $derived(images.filter((img) => img.hasJson).length);
 </script>
 
 <div class="card bg-base-100 shadow-xl border border-base-200">

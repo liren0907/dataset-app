@@ -1,22 +1,23 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
     import { safeConvertFileSrc } from "$lib/utils/tauriUtils";
 
-    // Props
-    export let selectedImage: any = null;
-
-    // Event dispatcher
-    const dispatch = createEventDispatcher();
+    let {
+        selectedImage = null,
+        onclose,
+    }: {
+        selectedImage?: any;
+        onclose?: () => void;
+    } = $props();
 
     // State
-    let scale = 1;
-    let translateX = 0;
-    let translateY = 0;
-    let isDragging = false;
-    let dragStartX = 0;
-    let dragStartY = 0;
-    let imageLoaded = false;
-    let imageError = false;
+    let scale = $state(1);
+    let translateX = $state(0);
+    let translateY = $state(0);
+    let isDragging = $state(false);
+    let dragStartX = $state(0);
+    let dragStartY = $state(0);
+    let imageLoaded = $state(false);
+    let imageError = $state(false);
 
     // Constants
     const MIN_SCALE = 0.1;
@@ -24,17 +25,20 @@
     const ZOOM_STEP = 0.25;
 
     // Computed
-    $: imageUrl =
+    let imageUrl = $derived(
         selectedImage?.previewUrl ||
-        safeConvertFileSrc(selectedImage?.path || "");
-    $: zoomPercentage = Math.round(scale * 100);
+        safeConvertFileSrc(selectedImage?.path || "")
+    );
+    let zoomPercentage = $derived(Math.round(scale * 100));
 
     // Reset state when image changes
-    $: if (selectedImage) {
-        resetView();
-        imageLoaded = false;
-        imageError = false;
-    }
+    $effect(() => {
+        if (selectedImage) {
+            resetView();
+            imageLoaded = false;
+            imageError = false;
+        }
+    });
 
     // Methods
     function zoomIn() {
@@ -52,7 +56,6 @@
     }
 
     function fitToScreen() {
-        // Reset to fit - simple approach
         scale = 1;
         translateX = 0;
         translateY = 0;
@@ -65,12 +68,12 @@
     }
 
     function handleClose() {
-        dispatch("close");
+        onclose?.();
     }
 
     // Drag handlers
     function handleMouseDown(event: MouseEvent) {
-        if (event.button !== 0) return; // Only left click
+        if (event.button !== 0) return;
         isDragging = true;
         dragStartX = event.clientX - translateX;
         dragStartY = event.clientY - translateY;
@@ -121,7 +124,7 @@
             {selectedImage?.name || "Preview"}
         </h3>
         <button
-            on:click={handleClose}
+            onclick={handleClose}
             class="btn btn-sm btn-ghost btn-square"
             aria-label="Close panel"
         >
@@ -135,7 +138,7 @@
     >
         <div class="join">
             <button
-                on:click={zoomOut}
+                onclick={zoomOut}
                 class="join-item btn btn-xs btn-ghost"
                 title="Zoom Out"
                 disabled={scale <= MIN_SCALE}
@@ -143,14 +146,14 @@
                 <span class="material-symbols-rounded text-sm">remove</span>
             </button>
             <button
-                on:click={resetZoom}
+                onclick={resetZoom}
                 class="join-item btn btn-xs btn-ghost min-w-[50px]"
                 title="Reset Zoom"
             >
                 <span class="text-xs font-medium">{zoomPercentage}%</span>
             </button>
             <button
-                on:click={zoomIn}
+                onclick={zoomIn}
                 class="join-item btn btn-xs btn-ghost"
                 title="Zoom In"
                 disabled={scale >= MAX_SCALE}
@@ -159,7 +162,7 @@
             </button>
         </div>
         <button
-            on:click={fitToScreen}
+            onclick={fitToScreen}
             class="btn btn-xs btn-ghost gap-1"
             title="Fit to Screen"
         >
@@ -168,16 +171,17 @@
     </div>
 
     <!-- Image Preview Area -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
         class="flex-1 relative overflow-hidden bg-base-200 cursor-grab"
         class:cursor-grabbing={isDragging}
         role="img"
         aria-label="Image preview area"
-        on:mousedown={handleMouseDown}
-        on:mousemove={handleMouseMove}
-        on:mouseup={handleMouseUp}
-        on:mouseleave={handleMouseLeave}
-        on:wheel={handleWheel}
+        onmousedown={handleMouseDown}
+        onmousemove={handleMouseMove}
+        onmouseup={handleMouseUp}
+        onmouseleave={handleMouseLeave}
+        onwheel={handleWheel}
     >
         {#if !imageLoaded && !imageError}
             <div class="absolute inset-0 flex items-center justify-center">
@@ -208,8 +212,8 @@
                     style="transform: scale({scale}) translate({translateX /
                         scale}px, {translateY / scale}px);"
                     draggable="false"
-                    on:load={handleImageLoad}
-                    on:error={handleImageError}
+                    onload={handleImageLoad}
+                    onerror={handleImageError}
                 />
             </div>
         {/if}
@@ -222,7 +226,7 @@
         <div class="flex items-center gap-3">
             {#if selectedImage?.dimensions}
                 <span
-                    >{selectedImage.dimensions.width} × {selectedImage
+                    >{selectedImage.dimensions.width} x {selectedImage
                         .dimensions.height}</span
                 >
             {/if}

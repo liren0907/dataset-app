@@ -1,18 +1,31 @@
 <script lang="ts">
-    import { createEventDispatcher, tick, onMount, afterUpdate } from 'svelte';
-    // import { convertFileSrc } from "@tauri-apps/api/core"; // Not strictly needed if previewUrl is always pre-converted by parent
+    import { tick, onMount } from 'svelte';
 
-    export let images: any[] = [];
-    export let totalImages: number = 0;
-    export let currentPage: number = 1;
-    export let totalPages: number = 0;
-    export let pageSize: number = 30; // Used for smart loading strategy
-    export let viewMode: 'grid' | 'column' = 'grid';
-    export let annotationType: string = 'bounding_box';
-    export let loading: boolean = false;
-    export let loadingMore: boolean = false;
-
-    const dispatch = createEventDispatcher();
+    let {
+        images = $bindable([]),
+        totalImages = 0,
+        currentPage = $bindable(1),
+        totalPages = 0,
+        pageSize = 30,
+        viewMode = 'grid',
+        annotationType = 'bounding_box',
+        loading = false,
+        loadingMore = false,
+        onselectimage,
+        onloadpage,
+    }: {
+        images: any[];
+        totalImages: number;
+        currentPage: number;
+        totalPages: number;
+        pageSize: number;
+        viewMode: 'grid' | 'column';
+        annotationType: string;
+        loading: boolean;
+        loadingMore: boolean;
+        onselectimage?: (detail: { image: any; index: number }) => void;
+        onloadpage?: (page: number) => void;
+    } = $props();
 
     // Image preloading for faster annotation editor loading
     let preloadCache = new Map<string, boolean>();
@@ -103,12 +116,12 @@
     }
 
     function handleImageClick(image: any, index: number) {
-        dispatch('selectImage', { image, index });
+        onselectimage?.({ image, index });
     }
 
     function handleLoadPage(page: number | string) {
         if (typeof page === 'number' && page >= 1 && page <= totalPages && page !== currentPage) {
-            dispatch('loadPage', page);
+            onloadpage?.(page);
         }
     }
 
@@ -161,7 +174,7 @@
         lastImagesLength = images.length;
     });
 
-    afterUpdate(() => {
+    $effect(() => {
         // Only re-run lazy loading if page changed or new images were added
         if (currentPage !== lastProcessedPage || images.length !== lastImagesLength) {
             setupLazyLoading();
@@ -180,9 +193,9 @@
                 {#each images as image, i (image.path)}
                     <button type="button"
                         class="bg-white/80 backdrop-blur rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer relative text-left p-0 border border-slate-200/60 block w-full hover:-translate-y-0.5"
-                        on:click={() => handleImageClick(image, i)}
-                        on:mouseenter={() => handleImageHover(image)}
-                        on:mouseleave={handleImageLeave}
+                        onclick={() => handleImageClick(image, i)}
+                        onmouseenter={() => handleImageHover(image)}
+                        onmouseleave={handleImageLeave}
                         aria-label={`View details for ${image.name}`}
                     >
                         <div class="relative pb-[75%]">
@@ -191,7 +204,7 @@
                                 data-src={image.previewUrl}
                                 alt={image.name}
                                 src={image.displayIndex < pageSize ? image.previewUrl : "data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 1 1%27%3E%3C/svg%3E"}
-                                on:load={(e) => {
+                                onload={(e) => {
                                     const target = e.target;
                                     if (target instanceof HTMLImageElement && target.src !== "data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 1 1%27%3E%3C/svg%3E") {
                                         // Enhanced state management for smooth transitions
@@ -200,7 +213,7 @@
                                         target.classList.add('observed'); // Ensure observed state is set
                                     }
                                 }}
-                                on:error={(e) => {
+                                onerror={(e) => {
                                     // Enhanced error handling - still mark as observed to prevent retries
                                     const target = e.target;
                                     if (target instanceof HTMLImageElement) {
@@ -238,9 +251,9 @@
                 {#each images as image, i (image.path)}
                     <button type="button"
                         class="bg-white/80 backdrop-blur rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer relative w-full text-left p-0 border border-slate-200/60 block hover:-translate-y-0.5"
-                        on:click={() => handleImageClick(image, i)}
-                        on:mouseenter={() => handleImageHover(image)}
-                        on:mouseleave={handleImageLeave}
+                        onclick={() => handleImageClick(image, i)}
+                        onmouseenter={() => handleImageHover(image)}
+                        onmouseleave={handleImageLeave}
                         aria-label={`View details for ${image.name}`}
                     >
                         <div class="flex flex-col sm:flex-row">
@@ -250,7 +263,7 @@
                                     data-src={image.previewUrl}
                                     alt={image.name}
                                     src={image.displayIndex < pageSize ? image.previewUrl : "data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 1 1%27%3E%3C/svg%3E"}
-                                     on:load={(e) => {
+                                     onload={(e) => {
                                         const target = e.target;
                                         if (target instanceof HTMLImageElement && target.src !== "data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 1 1%27%3E%3C/svg%3E") {
                                             // Enhanced state management for smooth transitions
@@ -259,7 +272,7 @@
                                             target.classList.add('observed'); // Ensure observed state is set
                                         }
                                     }}
-                                    on:error={(e) => {
+                                    onerror={(e) => {
                                         // Enhanced error handling - still mark as observed to prevent retries
                                         const target = e.target;
                                         if (target instanceof HTMLImageElement) {
@@ -313,7 +326,7 @@
                     <button
                         type="button"
                         class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                        on:click={() => handleLoadPage(currentPage - 1)}
+                        onclick={() => handleLoadPage(currentPage - 1)}
                         disabled={currentPage === 1 || loading || loadingMore}
                     >
                         <span class="sr-only">Previous</span>
@@ -324,7 +337,7 @@
                             <button
                                 type="button"
                                 class="relative inline-flex items-center px-4 py-2 border text-sm font-medium disabled:opacity-50 {currentPage === pageNum ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'}"
-                                on:click={() => handleLoadPage(pageNum)}
+                                onclick={() => handleLoadPage(pageNum)}
                                 disabled={loading || loadingMore || pageNum === currentPage}
                             >
                                 {pageNum}
@@ -336,7 +349,7 @@
                     <button
                         type="button"
                         class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                        on:click={() => handleLoadPage(currentPage + 1)}
+                        onclick={() => handleLoadPage(currentPage + 1)}
                         disabled={currentPage === totalPages || loading || loadingMore}
                     >
                         <span class="sr-only">Next</span>

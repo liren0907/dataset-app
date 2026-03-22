@@ -4,58 +4,66 @@
     import { open } from "@tauri-apps/plugin-dialog";
     import { appDataDir } from "@tauri-apps/api/path";
     import { onMount } from "svelte";
-    import { createEventDispatcher } from "svelte";
     import KonvaViewer from "./KonvaViewer.svelte";
     import type { KonvaImageData } from "$lib/services/gallery/konvaService";
 
     // Props from parent (dataset-gallery-advanced)
-    export let currentDirectory: string = ""; // Current gallery directory
-    export let cropToolOpen: boolean = false; // Accordion open state
-    export let preSelectedParentLabel: string = ""; // Pre-selected parent label from DatasetSummary click
-
-    // Event dispatcher for communication with parent
-    const dispatch = createEventDispatcher();
+    let {
+        currentDirectory = "",
+        cropToolOpen = false,
+        preSelectedParentLabel = "",
+        oncropcompleted,
+    }: {
+        currentDirectory?: string;
+        cropToolOpen?: boolean;
+        preSelectedParentLabel?: string;
+        oncropcompleted?: (data: { outputDir: string; childLabels: string[]; imageCount: number }) => void;
+    } = $props();
 
     // State variables
-    let sourceDir: string | null = null;
-    let outputDir: string | null = null;
+    let sourceDir: string | null = $state(null);
+    let outputDir: string | null = $state(null);
 
     // Dynamic label selection
-    let datasetSummary: any = null;
-    let availableLabels: string[] = [];
-    let selectedParentLabel: string = "person"; // Default
-    let selectedChildLabels: string[] = []; // Dynamic selection
-    let datasetLoaded: boolean = false;
-    let analyzing: boolean = false;
-    let paddingFactor: number = 1.2; // Default 20% padding
+    let datasetSummary: any = $state(null);
+    let availableLabels: string[] = $state([]);
+    let selectedParentLabel = $state("person");
+    let selectedChildLabels: string[] = $state([]);
+    let datasetLoaded = $state(false);
+    let analyzing = $state(false);
+    let paddingFactor = $state(1.2);
 
     // Auto-preview state
-    let previewImages: any[] = []; // 5 randomly selected images for preview
-    let previewLoading: boolean = false;
+    let previewImages: any[] = $state([]);
+    let previewLoading = $state(false);
 
-    let loading: boolean = false;
-    let successMessage: string | null = null;
-    let errorMessage: string | null = null;
+    let loading = $state(false);
+    let successMessage: string | null = $state(null);
+    let errorMessage: string | null = $state(null);
 
     // Preview modal state
-    let showPreviewModal: boolean = false;
-    let previewModalImage: KonvaImageData | null = null;
+    let showPreviewModal = $state(false);
+    let previewModalImage: KonvaImageData | null = $state(null);
 
     // Reactive: Auto-set source directory from gallery when available
-    $: if (currentDirectory && !sourceDir && cropToolOpen) {
-        sourceDir = currentDirectory;
-        if (sourceDir) {
-            analyzeDataset();
+    $effect(() => {
+        if (currentDirectory && !sourceDir && cropToolOpen) {
+            sourceDir = currentDirectory;
+            if (sourceDir) {
+                analyzeDataset();
+            }
         }
-    }
+    });
 
     // Reactive: Auto-select parent label when pre-selected from DatasetSummary
-    $: if (
-        preSelectedParentLabel &&
-        availableLabels.includes(preSelectedParentLabel)
-    ) {
-        selectedParentLabel = preSelectedParentLabel;
-    }
+    $effect(() => {
+        if (
+            preSelectedParentLabel &&
+            availableLabels.includes(preSelectedParentLabel)
+        ) {
+            selectedParentLabel = preSelectedParentLabel;
+        }
+    });
 
     // Handle keyboard events for modal
     function handleKeydown(event: KeyboardEvent) {
@@ -75,20 +83,16 @@
             if (selected && typeof selected === "string") {
                 if (type === "source") {
                     sourceDir = selected as string;
-                    // Reset dataset analysis when source changes
                     datasetSummary = null;
                     availableLabels = [];
                     datasetLoaded = false;
                     selectedChildLabels = [];
-                    // Reset preview state
                     previewImages = [];
                     previewLoading = false;
-                    // Automatically analyze dataset after selecting source directory
                     await analyzeDataset();
                 } else {
                     outputDir = selected;
                 }
-                // Clear messages when a directory is selected
                 successMessage = null;
                 errorMessage = null;
             }
@@ -99,7 +103,6 @@
     }
 
     function suggestParentLabel(labels: string[]): string {
-        // Priority order for common parent labels
         const commonParents = [
             "person",
             "people",
@@ -114,7 +117,6 @@
             }
         }
 
-        // Fallback to most common label (by count)
         if (datasetSummary?.label_counts) {
             const sortedLabels = Object.entries(datasetSummary.label_counts)
                 .sort(([, a], [, b]) => (b as number) - (a as number))
@@ -164,7 +166,6 @@
 
             console.log("Dataset summary:", datasetSummary);
 
-            // Extract available labels
             availableLabels = Object.keys(datasetSummary.label_counts || {});
 
             if (availableLabels.length === 0) {
@@ -173,7 +174,6 @@
                 return;
             }
 
-            // Set smart defaults
             selectedParentLabel = suggestParentLabel(availableLabels);
             selectedChildLabels = suggestChildLabels(availableLabels);
 
@@ -182,7 +182,6 @@
             console.log(
                 "Dataset analysis complete, triggering auto-preview...",
             );
-            // Auto-preview 5 random annotated images
             await autoPreviewAnnotatedImages();
         } catch (err) {
             console.error("Error analyzing dataset:", err);
@@ -195,7 +194,6 @@
         }
     }
 
-    // Function to automatically preview 5 random annotated images
     async function autoPreviewAnnotatedImages() {
         try {
             previewLoading = true;
@@ -208,11 +206,9 @@
 
             console.log("Starting auto-preview of annotated images");
 
-            // Create a temporary directory for previews in app data directory
             const appData = await appDataDir();
             const tempDir = `${appData}previews_${Date.now()}`;
 
-            // Generate annotated preview images using the backend
             const result = (await invoke("generate_annotated_previews", {
                 sourceDir: sourceDir as string,
                 numPreviews: 5,
@@ -226,15 +222,14 @@
                     `Loaded ${data.annotated_images.length} images with annotation data`,
                 );
 
-                // Convert file paths to proper Tauri URLs and prepare preview data
                 const selectedImages: KonvaImageData[] =
                     data.annotated_images.map(
                         (imageData: any, index: number) => ({
                             id: `preview_${index}`,
                             path: imageData.path,
-                            previewUrl: safeConvertFileSrc(imageData.path), // Load original clean image
+                            previewUrl: safeConvertFileSrc(imageData.path),
                             name: `Preview ${index + 1}`,
-                            annotations: imageData.annotations || [], // Draw annotations with KonvaJS
+                            annotations: imageData.annotations || [],
                         }),
                     );
 
@@ -253,31 +248,26 @@
         }
     }
 
-    // Function to open preview modal
     function openPreviewModal(image: KonvaImageData) {
         console.log("Opening preview modal for image:", image);
         previewModalImage = image;
         showPreviewModal = true;
     }
 
-    // Function to close preview modal
     function closePreviewModal() {
         showPreviewModal = false;
         previewModalImage = null;
     }
 
-    // Function to handle window resize for modal
     function handleResize() {
         // Handle modal responsiveness if needed
     }
 
-    // Function to get filtered child labels
     function getFilteredChildLabels(): string[] {
         if (!availableLabels.length) return [];
         return availableLabels;
     }
 
-    // Function to validate selection
     function validateSelection(): string | null {
         if (!selectedParentLabel) {
             return "Please select a parent label";
@@ -288,7 +278,6 @@
         return null;
     }
 
-    // Function to run the processing
     async function runProcessing() {
         if (!sourceDir || !outputDir || !selectedParentLabel) return;
 
@@ -307,20 +296,16 @@
 
             successMessage = String(message);
 
-            // Parse result to get image count if available
             let imageCount = 0;
             try {
-                // Try to extract count from message (e.g., "Processed 150 images")
                 const match = String(message).match(/(\d+)\s*image/i);
                 if (match) {
                     imageCount = parseInt(match[1], 10);
                 }
             } catch {}
 
-            // Dispatch completion event to parent (gallery) with output directory and details
-            dispatch("cropCompleted", {
+            oncropcompleted?.({
                 outputDir: outputDir,
-                parentLabel: selectedParentLabel,
                 childLabels: selectedChildLabels,
                 imageCount: imageCount,
             });
@@ -332,7 +317,6 @@
         }
     }
 
-    // Cleanup on component destruction
     function cleanup() {
         // Cleanup code if needed
     }
@@ -341,11 +325,10 @@
         return cleanup;
     });
 
-    // Handle close event from KonvaViewer
     function handleViewerClose() {
         closePreviewModal();
     }
-    // --- UI Helpers for New Template ---
+
     function selectSourceDirectory() {
         selectDirectory("source");
     }
@@ -369,7 +352,7 @@
     }
 </script>
 
-<svelte:window on:keydown={handleKeydown} on:resize={handleResize} />
+<svelte:window onkeydown={handleKeydown} onresize={handleResize} />
 
 <div class="advanced-crop-remap-tool p-1">
     <div class="space-y-4">
@@ -390,7 +373,7 @@
                     class="input input-bordered join-item flex-1 bg-base-200 text-base-content/70 text-sm"
                 />
                 <button
-                    on:click={() => selectDirectory("source")}
+                    onclick={() => selectDirectory("source")}
                     class="btn btn-neutral join-item border-base-300"
                     disabled={analyzing}
                 >
@@ -479,8 +462,8 @@
                         {#each previewImages as image, index (image.path)}
                             <div
                                 class="card card-compact bg-base-100 shadow-sm border border-base-200 overflow-hidden hover:shadow-md transition-all cursor-pointer group"
-                                on:click={() => openPreviewModal(image)}
-                                on:keydown={(e) =>
+                                onclick={() => openPreviewModal(image)}
+                                onkeydown={(e) =>
                                     e.key === "Enter" &&
                                     openPreviewModal(image)}
                                 role="button"
@@ -529,7 +512,6 @@
                 Input Source
             </span>
 
-            <!-- Seamless Input Group: Source Dir -->
             <div
                 class="flex items-center w-full px-1 py-1 rounded-xl border border-base-300 bg-base-100 hover:border-base-content/30 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all shadow-sm"
             >
@@ -544,14 +526,13 @@
                     class="input input-ghost w-full focus:outline-none border-none bg-transparent h-10 text-sm"
                 />
                 <button
-                    on:click={selectSourceDirectory}
+                    onclick={selectSourceDirectory}
                     class="btn btn-sm btn-ghost bg-base-200/80 hover:bg-base-300 text-base-content/70 mr-1 rounded-lg font-medium"
                 >
                     Browse
                 </button>
             </div>
 
-            <!-- Dataset Stats (Mini-dashboard) -->
             {#if datasetSummary}
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
                     <div
@@ -577,7 +558,6 @@
                                 .length}</span
                         >
                     </div>
-                    <!-- Add more stats if needed -->
                 </div>
             {/if}
         </div>
@@ -598,7 +578,7 @@
                         <div class="flex flex-wrap gap-2">
                             {#each availableLabels as label}
                                 <button
-                                    on:click={() => selectParent(label)}
+                                    onclick={() => selectParent(label)}
                                     class={`px-4 py-2 rounded-xl border transition-all duration-200 flex items-center gap-2
                                             ${
                                                 selectedParentLabel === label
@@ -644,7 +624,7 @@
                             <div class="flex flex-wrap gap-2">
                                 {#each availableLabels.filter((l) => l !== selectedParentLabel) as label}
                                     <button
-                                        on:click={() => toggleChild(label)}
+                                        onclick={() => toggleChild(label)}
                                         class={`px-3 py-1.5 rounded-lg text-sm border transition-all duration-200 flex items-center gap-2
                                                 ${
                                                     selectedChildLabels.includes(
@@ -654,7 +634,6 @@
                                                         : "bg-base-100 text-base-content/60 border-base-200 hover:border-base-300"
                                                 }`}
                                     >
-                                        <!-- Checkbox visual -->
                                         <div
                                             class={`w-4 h-4 rounded border flex items-center justify-center transition-colors
                                                 ${selectedChildLabels.includes(label) ? "bg-secondary border-secondary" : "border-base-content/30"}`}
@@ -703,7 +682,7 @@
                         class="input input-ghost w-full focus:outline-none border-none bg-transparent h-10 text-sm"
                     />
                     <button
-                        on:click={selectOutputDirectory}
+                        onclick={selectOutputDirectory}
                         class="btn btn-sm btn-ghost bg-base-200/80 hover:bg-base-300 text-base-content/70 mr-1 rounded-lg font-medium"
                     >
                         Browse
@@ -779,7 +758,7 @@
             {/if}
         </div>
         <button
-            on:click={runProcessing}
+            onclick={runProcessing}
             disabled={loading ||
                 !sourceDir ||
                 !outputDir ||
@@ -833,24 +812,24 @@
 
 <!-- Preview Modal -->
 {#if showPreviewModal && previewModalImage}
-    <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
         role="dialog"
         aria-modal="true"
         aria-labelledby="preview-modal-title"
-        on:click={closePreviewModal}
-        on:keydown={(e) => {
+        onclick={closePreviewModal}
+        onkeydown={(e) => {
             if (e.key === "Escape") closePreviewModal();
         }}
         tabindex="-1"
     >
-        <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <div
             class="bg-white rounded-lg shadow-xl max-w-6xl max-h-[95vh] overflow-hidden"
             role="document"
-            on:click|stopPropagation
-            on:keydown|stopPropagation
+            onclick={(e) => e.stopPropagation()}
+            onkeydown={(e) => e.stopPropagation()}
         >
             <div
                 class="p-4 border-b border-gray-200 flex justify-between items-center"
@@ -862,10 +841,10 @@
                     {previewModalImage.name}
                 </h3>
                 <button
-                    on:click={closePreviewModal}
+                    onclick={closePreviewModal}
                     class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
                 >
-                    ×
+                    x
                 </button>
             </div>
             <div class="p-4">
@@ -873,7 +852,7 @@
                 <KonvaViewer
                     imageData={previewModalImage}
                     showModal={true}
-                    on:close={closePreviewModal}
+                    onclose={closePreviewModal}
                 />
             </div>
         </div>

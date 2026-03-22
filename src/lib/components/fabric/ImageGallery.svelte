@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
     import SectionLabel from "$lib/components/ui/SectionLabel.svelte";
     import {
         imageStatusStore,
@@ -7,26 +6,32 @@
         type ImageStatus,
     } from "$lib/stores/imageStatusStore";
 
-    export let images: { name: string; path: string; hasJson: boolean }[] = [];
-    export let selectedIndex = -1;
-
-    const dispatch = createEventDispatcher<{ select: number }>();
+    let {
+        images = [],
+        selectedIndex = -1,
+        onselect,
+    }: {
+        images?: { name: string; path: string; hasJson: boolean }[];
+        selectedIndex?: number;
+        onselect?: (index: number) => void;
+    } = $props();
 
     // Filtering state
-    let statusFilter: ImageStatus | "all" = "all";
-    let labelFilter = "";
+    let statusFilter = $state<ImageStatus | "all">("all");
 
-    $: filteredImages = images
-        .map((img, originalIndex) => ({ ...img, originalIndex }))
-        .filter((img) => {
-            if (statusFilter !== "all") {
-                const status = $imageStatusStore.get(img.path) || "todo";
-                if (status !== statusFilter) return false;
-            }
-            return true;
-        });
+    let filteredImages = $derived(
+        images
+            .map((img, originalIndex) => ({ ...img, originalIndex }))
+            .filter((img) => {
+                if (statusFilter !== "all") {
+                    const status = $imageStatusStore.get(img.path) || "todo";
+                    if (status !== statusFilter) return false;
+                }
+                return true;
+            }),
+    );
 
-    function cycleStatus(path: string, event: MouseEvent) {
+    function cycleStatus(path: string, event: MouseEvent | KeyboardEvent) {
         event.stopPropagation();
         const current = $imageStatusStore.get(path) || "todo";
         const order: ImageStatus[] = [
@@ -64,7 +69,7 @@
                 class="badge badge-xs cursor-pointer {statusFilter === 'all'
                     ? 'badge-primary'
                     : 'badge-ghost'}"
-                on:click={() => (statusFilter = "all")}>All</button
+                onclick={() => (statusFilter = "all")}>All</button
             >
             {#each Object.entries(STATUS_CONFIG) as [key, cfg]}
                 <button
@@ -73,7 +78,7 @@
                     style={statusFilter === key
                         ? `background-color: ${cfg.color}; color: white; border-color: ${cfg.color};`
                         : ""}
-                    on:click={() => setStatusFilter(key)}
+                    onclick={() => setStatusFilter(key)}
                     title={cfg.label}
                 >
                     {cfg.label}
@@ -91,15 +96,18 @@
                     {image.originalIndex === selectedIndex
                     ? 'bg-primary/10 text-primary border-r-2 border-primary'
                     : 'hover:bg-base-200 text-base-content'}"
-                on:click={() => dispatch("select", image.originalIndex)}
+                onclick={() => onselect?.(image.originalIndex)}
             >
                 <!-- Status dot (click to cycle) -->
-                <button
-                    class="w-3 h-3 rounded-full shrink-0 border border-base-300 transition-colors hover:scale-125"
+                <span
+                    role="button"
+                    tabindex="0"
+                    class="w-3 h-3 rounded-full shrink-0 border border-base-300 transition-colors hover:scale-125 cursor-pointer"
                     style="background-color: {sc.color};"
                     title="Status: {sc.label} (click to change)"
-                    on:click={(e) => cycleStatus(image.path, e)}
-                ></button>
+                    onclick={(e) => cycleStatus(image.path, e)}
+                    onkeydown={(e) => e.key === 'Enter' && cycleStatus(image.path, e)}
+                ></span>
 
                 <span class="truncate flex-1">{image.name}</span>
 

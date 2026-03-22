@@ -1,10 +1,7 @@
 <script lang="ts">
-    export let cropArea: {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    };
+    let { cropArea }: {
+        cropArea: { x: number; y: number; width: number; height: number };
+    } = $props();
 </script>
 
 <div class="stats stats-vertical shadow w-full">

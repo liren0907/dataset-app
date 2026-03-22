@@ -1,14 +1,23 @@
 <script lang="ts">
-    export let datasetLoaded: boolean = false;
-    export let availableLabels: string[] = [];
-    export let selectedParentLabel: string = "person";
-    export let selectedChildLabels: string[] = [];
-    export let paddingFactor: number = 1.2;
-    export let datasetSummary: any = null;
+    let {
+        datasetLoaded = false,
+        availableLabels = [],
+        selectedParentLabel = $bindable("person"),
+        selectedChildLabels = $bindable([]),
+        paddingFactor = $bindable(1.2),
+        datasetSummary = null,
+    }: {
+        datasetLoaded: boolean;
+        availableLabels: string[];
+        selectedParentLabel: string;
+        selectedChildLabels: string[];
+        paddingFactor: number;
+        datasetSummary: any;
+    } = $props();
 
     // Derived state for filtered child labels (excluding parent)
-    $: filteredChildLabels = availableLabels.filter(
-        (label) => label !== selectedParentLabel,
+    let filteredChildLabels = $derived(
+        availableLabels.filter((label) => label !== selectedParentLabel)
     );
 
     function getLabelCount(label: string): number {

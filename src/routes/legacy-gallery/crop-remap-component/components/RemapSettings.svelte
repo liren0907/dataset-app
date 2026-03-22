@@ -1,11 +1,19 @@
 <script lang="ts">
     import type { DatasetSummary } from "../services/dataService";
 
-    export let summary: DatasetSummary;
-    export let availableLabels: string[] = [];
-    export let selectedParentLabel: string;
-    export let selectedChildLabels: string[] = [];
-    export let paddingFactor: number = 1.2;
+    let {
+        summary,
+        availableLabels = [],
+        selectedParentLabel = $bindable(),
+        selectedChildLabels = $bindable([]),
+        paddingFactor = $bindable(1.2),
+    }: {
+        summary: DatasetSummary;
+        availableLabels: string[];
+        selectedParentLabel: string;
+        selectedChildLabels: string[];
+        paddingFactor: number;
+    } = $props();
 
     function getFilteredChildLabels(): string[] {
         return availableLabels.filter((label) => label !== selectedParentLabel);

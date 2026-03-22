@@ -1,12 +1,17 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
     import type { ProcessedImage } from "$lib/services/gallery/datasetService";
 
-    export let loading: boolean;
-    export let directoryPath: string;
-    export let images: ProcessedImage[];
-
-    const dispatch = createEventDispatcher();
+    let {
+        loading,
+        directoryPath,
+        images,
+        onselectdirectory,
+    }: {
+        loading: boolean;
+        directoryPath: string;
+        images: ProcessedImage[];
+        onselectdirectory?: () => void;
+    } = $props();
 </script>
 
 {#if loading}
@@ -38,7 +43,7 @@
             inspect the dataset statistics.
         </p>
         <button
-            on:click={() => dispatch("selectDirectory")}
+            onclick={() => onselectdirectory?.()}
             class="btn btn-primary"
         >
             Select Directory

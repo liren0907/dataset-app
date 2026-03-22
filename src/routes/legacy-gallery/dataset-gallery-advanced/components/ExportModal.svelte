@@ -1,12 +1,20 @@
 <script lang="ts">
-    import { createEventDispatcher, onMount } from 'svelte';
+    import { onMount } from 'svelte';
     import { open } from "@tauri-apps/plugin-dialog";
 
-    export let showModal: boolean = false;
-    export let currentDirectoryPath: string = "";
-    export let currentDatasetSummary: any | null = null;
-
-    const dispatch = createEventDispatcher();
+    let {
+        showModal = $bindable(false),
+        currentDirectoryPath = "",
+        currentDatasetSummary = null,
+        onrunexport,
+        onclosemodal,
+    }: {
+        showModal: boolean;
+        currentDirectoryPath: string;
+        currentDatasetSummary: any | null;
+        onrunexport?: (detail: any) => void;
+        onclosemodal?: () => void;
+    } = $props();
 
     // Internal state for the modal
     let exportMode: 'yolo' | 'labelme' = 'yolo';
@@ -22,12 +30,11 @@
     let localError: string = "";
     // No localSuccess needed here as parent page shows global success/error for the actual export.
 
-    // Reactive statement to reset some fields when modal becomes visible
-    $: if (showModal) {
-        localError = ""; // Clear local errors on open
-        // Consider if outputDir or internalExcludedLabels should be reset here or managed by parent.
-        // For now, they persist if modal is closed and reopened, unless parent changes props.
-    }
+    $effect(() => {
+        if (showModal) {
+            localError = "";
+        }
+    });
 
     async function selectOutputDirectory() {
         localError = "";
@@ -87,7 +94,7 @@
         }
         localError = ""; // Clear local errors before dispatching
 
-        dispatch('runExport', {
+        onrunexport?.({
             sourceDir: currentDirectoryPath,
             outputDir: outputDir,
             mode: exportMode,
@@ -99,18 +106,18 @@
         });
     }
 
-    function closeModalEvent() { // Renamed to avoid conflict with potential prop named 'closeModal'
-        dispatch('closeModal');
+    function closeModalEvent() {
+        onclosemodal?.();
     }
 
-    let availableLabelsForSelection: string[] = [];
-    $: availableLabelsForSelection = currentDatasetSummary?.label_counts ? Object.keys(currentDatasetSummary.label_counts) : [];
+    let availableLabelsForSelection: string[] = $derived(
+        currentDatasetSummary?.label_counts ? Object.keys(currentDatasetSummary.label_counts) : []
+    );
 
-    let effectivelyIncludedLabelsCount: number = 0;
-    $: {
+    let effectivelyIncludedLabelsCount: number = $derived.by(() => {
         const allLabels = currentDatasetSummary?.label_counts ? Object.keys(currentDatasetSummary.label_counts) : [];
-        effectivelyIncludedLabelsCount = allLabels.filter(label => !internalExcludedLabels.has(label)).length;
-    }
+        return allLabels.filter(label => !internalExcludedLabels.has(label)).length;
+    });
 
 </script>
 
@@ -121,11 +128,11 @@
         aria-modal="true"
         aria-labelledby="export-modal-title"
     >
-        <button class="absolute inset-0 w-full h-full bg-transparent" aria-label="Close export modal" on:click={closeModalEvent} />
+        <button class="absolute inset-0 w-full h-full bg-transparent" aria-label="Close export modal" onclick={closeModalEvent} />
         <div class="max-w-2xl w-full bg-white/90 backdrop-blur rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200/60">
             <div class="px-6 py-4 border-b flex justify-between items-center">
                 <h3 id="export-modal-title" class="text-xl font-bold text-slate-800">Export Dataset</h3>
-                <button on:click={closeModalEvent} class="text-slate-400 hover:text-slate-600 p-1 -mr-1" aria-label="Close export modal">
+                <button onclick={closeModalEvent} class="text-slate-400 hover:text-slate-600 p-1 -mr-1" aria-label="Close export modal">
                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -176,7 +183,7 @@
                             class="flex-1 px-3 py-2 border border-slate-300 rounded-md bg-slate-100 text-slate-600 text-sm"
                         />
                         <button
-                            on:click={selectOutputDirectory}
+                            onclick={selectOutputDirectory}
                             class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-md border border-slate-300 text-sm shadow-sm"
                         >
                             Browse...
@@ -249,7 +256,7 @@
                                         ${!internalExcludedLabels.has(label)
                                             ? 'bg-sky-100 text-sky-800 border-sky-300 hover:bg-sky-200'
                                             : 'bg-slate-100 text-slate-500 border-slate-300 hover:bg-slate-200 line-through opacity-80'}`}
-                                    on:click={() => toggleLabelExclusion(label)}
+                                    onclick={() => toggleLabelExclusion(label)}
                                 >
                                     {label} ({count})
                                 </button>
@@ -267,7 +274,7 @@
                 <button
                     type="button"
                     class="px-4 py-2 border border-slate-300 rounded-md hover:bg-slate-100 text-slate-700 text-sm shadow-sm"
-                    on:click={closeModalEvent}
+                    onclick={closeModalEvent}
                     disabled={localLoading}
                 >
                     Cancel
@@ -275,7 +282,7 @@
                 <button
                     type="button"
                     class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center text-sm shadow-sm"
-                    on:click={handleRunExport}
+                    onclick={handleRunExport}
                     disabled={localLoading || !outputDir || (availableLabelsForSelection.length > 0 && effectivelyIncludedLabelsCount === 0) }
                 >
                     {#if localLoading}

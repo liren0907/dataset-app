@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { DatasetSummary } from "../services/dataService";
-    export let summary: DatasetSummary;
+    let { summary }: { summary: DatasetSummary } = $props();
 </script>
 
 {#if summary}

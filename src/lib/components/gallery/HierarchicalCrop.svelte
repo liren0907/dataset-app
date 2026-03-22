@@ -1,6 +1,5 @@
 <script lang="ts">
     import { invoke } from "@tauri-apps/api/core";
-    import { createEventDispatcher } from "svelte";
     import {
         IconButton,
         Button,
@@ -9,39 +8,53 @@
         RawButton,
     } from "$lib/components/ui";
 
-    // Props
-    export let currentDirectory: string = "";
-    export let cropToolOpen: boolean = false;
-    export let preSelectedParentLabel: string = "";
-
-    const dispatch = createEventDispatcher();
+    let {
+        currentDirectory = "",
+        cropToolOpen = false,
+        preSelectedParentLabel = "",
+        oncropstart,
+    }: {
+        currentDirectory?: string;
+        cropToolOpen?: boolean;
+        preSelectedParentLabel?: string;
+        oncropstart?: (data: {
+            sourceDir: string;
+            parentLabel: string;
+            childLabels: string[];
+            paddingFactor: number;
+        }) => void;
+    } = $props();
 
     // State
-    let datasetSummary: any = null;
-    let availableLabels: string[] = [];
-    let selectedParentLabel: string = "";
-    let selectedChildLabels: string[] = [];
-    let datasetLoaded: boolean = false;
-    let analyzing: boolean = false;
-    let paddingFactor: number = 1.2;
-    let loading: boolean = false;
-    let successMessage: string | null = null;
-    let errorMessage: string | null = null;
-    let processingMessage: string = "";
-    let startTime: number = 0;
+    let datasetSummary: any = $state(null);
+    let availableLabels: string[] = $state([]);
+    let selectedParentLabel = $state("");
+    let selectedChildLabels: string[] = $state([]);
+    let datasetLoaded = $state(false);
+    let analyzing = $state(false);
+    let paddingFactor = $state(1.2);
+    let loading = $state(false);
+    let successMessage: string | null = $state(null);
+    let errorMessage: string | null = $state(null);
+    let processingMessage = $state("");
+    let startTime = $state(0);
 
     // Auto-analyze when directory is available
-    $: if (currentDirectory && cropToolOpen && !datasetLoaded && !analyzing) {
-        analyzeDataset();
-    }
+    $effect(() => {
+        if (currentDirectory && cropToolOpen && !datasetLoaded && !analyzing) {
+            analyzeDataset();
+        }
+    });
 
     // Auto-select parent label when pre-selected
-    $: if (
-        preSelectedParentLabel &&
-        availableLabels.includes(preSelectedParentLabel)
-    ) {
-        selectedParentLabel = preSelectedParentLabel;
-    }
+    $effect(() => {
+        if (
+            preSelectedParentLabel &&
+            availableLabels.includes(preSelectedParentLabel)
+        ) {
+            selectedParentLabel = preSelectedParentLabel;
+        }
+    });
 
     async function analyzeDataset() {
         if (!currentDirectory) return;
@@ -61,7 +74,6 @@
                 return;
             }
 
-            // Smart defaults
             selectedParentLabel = suggestParentLabel(availableLabels);
             selectedChildLabels = suggestChildLabels(availableLabels);
             datasetLoaded = true;
@@ -97,7 +109,6 @@
 
     function toggleParent(label: string) {
         selectedParentLabel = label;
-        // Reset child selection when parent changes
         selectedChildLabels = selectedChildLabels.filter((l) => l !== label);
     }
 
@@ -124,8 +135,7 @@
     function runCrop() {
         if (!currentDirectory || !selectedParentLabel) return;
 
-        // Dispatch event with crop parameters - parent will handle background processing
-        dispatch("cropStart", {
+        oncropstart?.({
             sourceDir: currentDirectory,
             parentLabel: selectedParentLabel,
             childLabels: selectedChildLabels,
@@ -133,18 +143,18 @@
         });
     }
 
-    $: canRun =
-        datasetLoaded && selectedParentLabel && selectedChildLabels.length > 0;
+    let canRun = $derived(
+        datasetLoaded && selectedParentLabel && selectedChildLabels.length > 0,
+    );
 
-    // Calculate estimated time based on parent label count
-    $: estimatedTime = (() => {
+    let estimatedTime = $derived.by(() => {
         if (!datasetLoaded || !selectedParentLabel) return null;
         const count = datasetSummary?.label_counts?.[selectedParentLabel] || 0;
-        const seconds = Math.ceil(count * 0.5); // ~0.5 sec per image
+        const seconds = Math.ceil(count * 0.5);
         if (seconds < 60) return `~${seconds} seconds`;
         const minutes = Math.ceil(seconds / 60);
         return `~${minutes} minute${minutes > 1 ? "s" : ""}`;
-    })();
+    });
 </script>
 
 <!-- Hierarchical Crop Panel -->
@@ -206,7 +216,7 @@
                             state={selectedParentLabel === label
                                 ? "active"
                                 : "neutral"}
-                            on:click={() => toggleParent(label)}
+                            onclick={() => toggleParent(label)}
                         />
                     {/each}
                 </div>
@@ -234,7 +244,7 @@
                                 label="Select All"
                                 variant="ghost"
                                 size="sm"
-                                on:click={selectAllChildren}
+                                onclick={selectAllChildren}
                             />
                             <div class="w-px h-4 bg-base-300"></div>
                             <RawButton
@@ -242,7 +252,7 @@
                                 label="Clear"
                                 variant="ghost"
                                 size="sm"
-                                on:click={clearChildren}
+                                onclick={clearChildren}
                                 class="text-error/70 hover:text-error hover:bg-error/10"
                             />
                         </div>
@@ -258,7 +268,7 @@
                                     state={selectedChildLabels.includes(label)
                                         ? "active"
                                         : "neutral"}
-                                    on:click={() => toggleChild(label)}
+                                    onclick={() => toggleChild(label)}
                                 />
                             {/each}
                         </div>
@@ -286,7 +296,6 @@
                         >
                     </div>
 
-                    <!-- Padding Factor -->
                     <div class="form-control">
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-sm font-medium"
@@ -315,7 +324,6 @@
 
             <!-- Action Button -->
             <div class="pt-4 border-t border-base-200 space-y-3">
-                <!-- Processing Message -->
                 {#if loading && processingMessage}
                     <div
                         class="flex items-center gap-2 p-3 bg-primary/5 rounded-lg"
@@ -349,7 +357,7 @@
                                 </div>
                                 {#if estimatedTime && canRun}
                                     <div class="text-xs text-base-content/50">
-                                        ⏱️ Estimated time: {estimatedTime}
+                                        Estimated time: {estimatedTime}
                                     </div>
                                 {/if}
                             </div>
@@ -363,7 +371,7 @@
                         size="md"
                         disabled={!canRun}
                         {loading}
-                        on:click={runCrop}
+                        onclick={runCrop}
                     />
                 </div>
             </div>

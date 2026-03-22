@@ -1,5 +1,5 @@
 <script lang="ts">
-    export let summary: any;
+    let { summary }: { summary: any } = $props();
 </script>
 
 {#if summary}
@@ -67,7 +67,6 @@
                     >
                 </p>
                 <p class="text-sm mt-1">Label Counts:</p>
-                <!-- Make the list scrollable if it exceeds a certain height -->
                 <ul
                     class="text-xs mt-1 space-y-1 max-h-32 overflow-y-auto pr-2"
                 >

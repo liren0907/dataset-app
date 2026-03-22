@@ -30,7 +30,7 @@
                 <span>{toast.message}</span>
                 <button
                     class="btn btn-ghost btn-xs"
-                    on:click={() => toastStore.dismiss(toast.id)}
+                    onclick={() => toastStore.dismiss(toast.id)}
                 >
                     <span class="material-symbols-rounded text-sm">close</span>
                 </button>

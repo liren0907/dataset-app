@@ -12,27 +12,27 @@
 	import CropInfo from "./components/CropInfo.svelte";
 	import PreviewModal from "./components/PreviewModal.svelte";
 
-	let isDragHover: boolean = false;
-	let uploadedImage: string | null = null;
-	let originalImage: HTMLImageElement | null = null;
+	let isDragHover: boolean = $state(false);
+	let uploadedImage: string | null = $state(null);
+	let originalImage: HTMLImageElement | null = $state(null);
 
 	// Canvas reference to pass between CropCanvas and PreviewModal logic
-	let canvasComponent: CropCanvas;
-	let canvasElement: HTMLCanvasElement;
+	let canvasComponent: CropCanvas = $state(undefined as any);
+	let canvasElement: HTMLCanvasElement = $state(undefined as any);
 
 	// Crop area properties (Shared State)
-	let cropArea = {
+	let cropArea = $state({
 		x: 50,
 		y: 50,
 		width: 200,
 		height: 200,
-	};
+	});
 
 	// State
-	let aspectRatio: string = "free";
-	let zoom: number = 1;
-	let rotation: number = 0;
-	let showPreview = false;
+	let aspectRatio: string = $state("free");
+	let zoom: number = $state(1);
+	let rotation: number = $state(0);
+	let showPreview = $state(false);
 
 	onMount(() => {
 		let unlisteners: (() => void)[] = [];
@@ -92,8 +92,6 @@
 			case "Enter":
 				if (showPreview) {
 					// Logic inside modal or trigger click? Modal handles it via its own buttons or we can call logic
-					// For now, simpler to let user click or we can export a download method from modal if needed
-					// But standard refactor separates concerns. Let's toggle preview.
 				} else if (uploadedImage) {
 					showPreview = true;
 				}
@@ -187,7 +185,6 @@
 
 	function resetCrop() {
 		if (!canvasElement) return;
-		// Logic specific to canvas size, maybe ideally belongs in CropCanvas, but we can manage state here
 		cropArea.x = canvasElement.width / 2 - 100;
 		cropArea.y = canvasElement.height / 2 - 100;
 		cropArea.width = 200;
@@ -244,7 +241,7 @@
 				</h2>
 
 				{#if !uploadedImage}
-					<UploadArea {isDragHover} on:selectFile={selectFile} />
+					<UploadArea {isDragHover} onselectfile={selectFile} />
 				{:else}
 					<!-- Crop Interface -->
 					<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -278,18 +275,18 @@
 							</div>
 
 							<CropControls
-								bind:aspectRatio
+								{aspectRatio}
 								{zoom}
 								{rotation}
-								on:ratioChange={(e) => (aspectRatio = e.detail)}
-								on:zoomIn={zoomIn}
-								on:zoomOut={zoomOut}
-								on:zoomReset={resetZoom}
-								on:rotateCW={rotateCW}
-								on:rotateCCW={rotateCCW}
-								on:preview={() => (showPreview = true)}
-								on:reset={resetCrop}
-								on:clear={() => {
+								onratiochange={(value) => (aspectRatio = value)}
+								onzoomin={zoomIn}
+								onzoomout={zoomOut}
+								onzoomreset={resetZoom}
+								onrotatecw={rotateCW}
+								onrotateccw={rotateCCW}
+								onpreview={() => (showPreview = true)}
+								onreset={resetCrop}
+								onclear={() => {
 									uploadedImage = null;
 									originalImage = null;
 								}}
@@ -311,5 +308,5 @@
 	{rotation}
 	{zoom}
 	canvas={canvasElement}
-	on:close={() => (showPreview = false)}
+	onclose={() => (showPreview = false)}
 />

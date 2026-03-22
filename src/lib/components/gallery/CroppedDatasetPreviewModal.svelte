@@ -1,26 +1,33 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
     import SimpleModal from "$lib/components/ui/SimpleModal.svelte";
     import type { KonvaImageData } from "$lib/services/gallery/konvaService";
 
-    export let isOpen: boolean = false;
-    export let loading: boolean = false;
-    export let error: string = "";
-    export let outputPath: string = "";
-    export let images: KonvaImageData[] = [];
-    export let sampleCount: number = 0;
-
-    const dispatch = createEventDispatcher<{
-        close: void;
-        selectImage: { image: KonvaImageData };
-    }>();
+    let {
+        isOpen = false,
+        loading = false,
+        error = "",
+        outputPath = "",
+        images = [],
+        sampleCount = 0,
+        onclose,
+        onselectimage,
+    }: {
+        isOpen?: boolean;
+        loading?: boolean;
+        error?: string;
+        outputPath?: string;
+        images?: KonvaImageData[];
+        sampleCount?: number;
+        onclose?: () => void;
+        onselectimage?: (data: { image: KonvaImageData }) => void;
+    } = $props();
 
     function handleClose() {
-        dispatch("close");
+        onclose?.();
     }
 
     function handleSelect(image: KonvaImageData) {
-        dispatch("selectImage", { image });
+        onselectimage?.({ image });
     }
 
     function formatPath(path: string): string {
@@ -30,13 +37,15 @@
         return `.../${segments.slice(-2).join("/")}`;
     }
 
-    $: displayPath = formatPath(outputPath);
-    $: title = outputPath
-        ? `Preview: ${displayPath} (${images.length}/${sampleCount})`
-        : `Preview (${images.length}/${sampleCount})`;
+    let displayPath = $derived(formatPath(outputPath));
+    let title = $derived(
+        outputPath
+            ? `Preview: ${displayPath} (${images.length}/${sampleCount})`
+            : `Preview (${images.length}/${sampleCount})`,
+    );
 </script>
 
-<SimpleModal isOpen={isOpen} title={title} maxWidth="max-w-5xl" on:close={handleClose}>
+<SimpleModal isOpen={isOpen} title={title} maxWidth="max-w-5xl" onclose={handleClose}>
     {#if loading}
         <div class="flex items-center justify-center py-10 text-base-content/60">
             <span class="loading loading-spinner loading-md"></span>
@@ -58,7 +67,7 @@
                 <button
                     type="button"
                     class="card bg-base-100 border border-base-200 hover:border-primary/40 hover:shadow-md transition-all text-left"
-                    on:click={() => handleSelect(image)}
+                    onclick={() => handleSelect(image)}
                 >
                     <figure class="relative w-full pb-[75%] bg-base-200">
                         <img

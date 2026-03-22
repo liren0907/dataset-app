@@ -1,13 +1,14 @@
 <script lang="ts">
-    import { onMount, afterUpdate, createEventDispatcher } from "svelte";
+    import { onMount } from "svelte";
 
-    export let selectedImage: any | null = null;
-    export let annotationType: string = "bounding_box";
-
-    const dispatch = createEventDispatcher();
+    let { selectedImage = null, annotationType = "bounding_box", onclose }: {
+        selectedImage: any | null;
+        annotationType: string;
+        onclose?: () => void;
+    } = $props();
 
     function close() {
-        dispatch("close");
+        onclose?.();
     }
 
     function formatFileSize(bytes) {
@@ -117,7 +118,7 @@
         });
     }
 
-    afterUpdate(() => {
+    $effect(() => {
         if (
             selectedImage &&
             selectedImage.annotations &&
@@ -152,7 +153,7 @@
     }
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 <dialog class="modal" class:modal-open={selectedImage !== null}>
     <div class="modal-box max-w-6xl max-h-[calc(100vh-2rem)]">
@@ -162,7 +163,7 @@
                 <span class="material-symbols-rounded text-primary">image</span>
                 {selectedImage?.name || "Image Details"}
             </h3>
-            <button on:click={close} class="btn btn-sm btn-circle btn-ghost">
+            <button onclick={close} class="btn btn-sm btn-circle btn-ghost">
                 <span class="material-symbols-rounded">close</span>
             </button>
         </div>
@@ -178,7 +179,7 @@
                         src={selectedImage.previewUrl}
                         alt={selectedImage.name}
                         class="max-w-full max-h-[60vh] object-contain rounded-lg"
-                        on:load={drawAnnotationsOnModal}
+                        onload={drawAnnotationsOnModal}
                     />
                     {#if selectedImage.annotations && selectedImage.annotations.length > 0}
                         <canvas
@@ -268,10 +269,10 @@
 
         <!-- Footer -->
         <div class="modal-action">
-            <button class="btn btn-ghost" on:click={close}>Close</button>
+            <button class="btn btn-ghost" onclick={close}>Close</button>
         </div>
     </div>
     <form method="dialog" class="modal-backdrop">
-        <button on:click={close}>close</button>
+        <button onclick={close}>close</button>
     </form>
 </dialog>

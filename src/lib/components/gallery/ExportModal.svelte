@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
     import { open } from "@tauri-apps/plugin-dialog";
     import {
         Button,
@@ -11,27 +10,46 @@
         LabelBadge,
     } from "$lib/components/ui";
 
-    export let showModal: boolean = false;
-    export let currentDirectoryPath: string = "";
-    export let currentDatasetSummary: any | null = null;
-
-    const dispatch = createEventDispatcher();
+    let {
+        showModal = $bindable(false),
+        currentDirectoryPath = "",
+        currentDatasetSummary = null,
+        onclosemodal,
+        onrunexport,
+    }: {
+        showModal?: boolean;
+        currentDirectoryPath?: string;
+        currentDatasetSummary?: any | null;
+        onclosemodal?: () => void;
+        onrunexport?: (data: {
+            sourceDir: string;
+            outputDir: string;
+            mode: "yolo" | "labelme";
+            trainRatio: number;
+            valRatio: number;
+            testRatio: number;
+            shapeType: "polygon" | "bounding_box";
+            includedLabels: string[];
+        }) => void;
+    } = $props();
 
     // Internal state
-    let exportMode: "yolo" | "labelme" = "yolo";
-    let outputDir: string = "";
-    let trainRatio: number = 0.7;
-    let valRatio: number = 0.2;
-    let testRatio: number = 0.1;
-    let shapeType: "polygon" | "bounding_box" = "polygon";
-    let internalExcludedLabels = new Set<string>();
-    let localLoading: boolean = false;
-    let localError: string = "";
+    let exportMode: "yolo" | "labelme" = $state("yolo");
+    let outputDir = $state("");
+    let trainRatio = $state(0.7);
+    let valRatio = $state(0.2);
+    let testRatio = $state(0.1);
+    let shapeType: "polygon" | "bounding_box" = $state("polygon");
+    let internalExcludedLabels = $state(new Set<string>());
+    let localLoading = $state(false);
+    let localError = $state("");
 
     // Reset error on open
-    $: if (showModal) {
-        localError = "";
-    }
+    $effect(() => {
+        if (showModal) {
+            localError = "";
+        }
+    });
 
     async function selectOutputDirectory() {
         localError = "";
@@ -72,7 +90,7 @@
             ? Object.keys(currentDatasetSummary.label_counts)
             : [];
         const includedLabelsArray = allLabels.filter(
-            (label) => !internalExcludedLabels.has(label),
+            (label: string) => !internalExcludedLabels.has(label),
         );
 
         if (includedLabelsArray.length === 0 && allLabels.length > 0) {
@@ -89,8 +107,7 @@
         }
         localError = "";
 
-        // localLoading = true; // Typically we would start loading here, but the parent handles the action via dispatch
-        dispatch("runExport", {
+        onrunexport?.({
             sourceDir: currentDirectoryPath,
             outputDir: outputDir,
             mode: exportMode,
@@ -102,10 +119,11 @@
         });
     }
 
-    let availableLabels: string[] = [];
-    $: availableLabels = currentDatasetSummary?.label_counts
-        ? Object.keys(currentDatasetSummary.label_counts)
-        : [];
+    let availableLabels = $derived(
+        currentDatasetSummary?.label_counts
+            ? Object.keys(currentDatasetSummary.label_counts)
+            : [],
+    );
 </script>
 
 <SplitPaneModal
@@ -113,10 +131,11 @@
     title="Export Dataset"
     subtitle="Configure format & destination"
     icon="ios_share"
-    on:close={() => dispatch("closeModal")}
+    onclose={() => onclosemodal?.()}
 >
+    {#snippet sidebar()}
     <!-- Left Sidebar -->
-    <div slot="sidebar" class="flex flex-col gap-6 h-full">
+    <div class="flex flex-col gap-6 h-full">
         <!-- Export Format Selection -->
         <div class="flex flex-col gap-3 flex-1">
             <SectionLabel>Format</SectionLabel>
@@ -124,23 +143,23 @@
             <SelectionCard
                 selected={exportMode === "yolo"}
                 color="primary"
-                on:select={() => (exportMode = "yolo")}
+                onselect={() => (exportMode = "yolo")}
             >
-                <span slot="icon" class="font-bold text-xs">YOLO</span>
-                <span slot="title">YOLO Format</span>
-                <span slot="description">For detection models</span>
+                {#snippet icon()}<span class="font-bold text-xs">YOLO</span>{/snippet}
+                {#snippet title()}<span>YOLO Format</span>{/snippet}
+                {#snippet description()}<span>For detection models</span>{/snippet}
             </SelectionCard>
 
             <SelectionCard
                 selected={exportMode === "labelme"}
                 color="secondary"
-                on:select={() => (exportMode = "labelme")}
+                onselect={() => (exportMode = "labelme")}
             >
-                <span slot="icon" class="material-symbols-rounded text-sm"
+                {#snippet icon()}<span class="material-symbols-rounded text-sm"
                     >data_object</span
-                >
-                <span slot="title">LabelMe JSON</span>
-                <span slot="description">Raw annotations</span>
+                >{/snippet}
+                {#snippet title()}<span>LabelMe JSON</span>{/snippet}
+                {#snippet description()}<span>Raw annotations</span>{/snippet}
             </SelectionCard>
         </div>
 
@@ -171,18 +190,20 @@
                 value={outputDir}
                 placeholder="Select output..."
                 icon="output"
-                on:browse={selectOutputDirectory}
+                onbrowse={selectOutputDirectory}
             />
         </div>
     </div>
+    {/snippet}
 
+    {#snippet content()}
     <!-- Main Content -->
-    <div slot="content" class="space-y-8">
+    <div class="space-y-8">
         {#if localError}
             <Alert
                 variant="error"
                 dismissible
-                on:close={() => (localError = "")}
+                onclose={() => (localError = "")}
             >
                 {localError}
             </Alert>
@@ -205,13 +226,13 @@
                         <div class="join w-full grid grid-cols-2 h-9">
                             <button
                                 class={`join-item btn btn-sm border-base-300 font-normal ${shapeType === "polygon" ? "btn-active btn-primary text-white" : "bg-base-100"}`}
-                                on:click={() => (shapeType = "polygon")}
+                                onclick={() => (shapeType = "polygon")}
                             >
                                 Polygon
                             </button>
                             <button
                                 class={`join-item btn btn-sm border-base-300 font-normal ${shapeType === "bounding_box" ? "btn-active btn-primary text-white" : "bg-base-100"}`}
-                                on:click={() => (shapeType = "bounding_box")}
+                                onclick={() => (shapeType = "bounding_box")}
                             >
                                 Bounding Box
                             </button>
@@ -313,7 +334,7 @@
                             state={!internalExcludedLabels.has(label)
                                 ? "active"
                                 : "excluded"}
-                            on:click={() => toggleLabelExclusion(label)}
+                            onclick={() => toggleLabelExclusion(label)}
                         />
                     {/each}
                 </div>
@@ -326,14 +347,16 @@
             {/if}
         </div>
     </div>
+    {/snippet}
 
+    {#snippet footer()}
     <!-- Footer -->
-    <div slot="footer" class="flex gap-3">
-        <Button variant="ghost" on:click={() => dispatch("closeModal")}
+    <div class="flex gap-3">
+        <Button variant="ghost" onclick={() => onclosemodal?.()}
             >Cancel</Button
         >
         <Button
-            on:click={handleRunExport}
+            onclick={handleRunExport}
             disabled={localLoading || !outputDir}
             minWidth="140px"
         >
@@ -344,4 +367,5 @@
             {/if}
         </Button>
     </div>
+    {/snippet}
 </SplitPaneModal>

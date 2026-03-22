@@ -1,13 +1,14 @@
 <script lang="ts">
-    import { onMount, afterUpdate, createEventDispatcher } from 'svelte';
+    import { onMount } from 'svelte';
 
-    export let selectedImage: any | null = null; // The image object to display
-    export let annotationType: string = 'bounding_box'; // To display correct annotation info
-
-    const dispatch = createEventDispatcher();
+    let { selectedImage = null, annotationType = 'bounding_box', onclose }: {
+        selectedImage: any | null;
+        annotationType: string;
+        onclose?: () => void;
+    } = $props();
 
     function close() {
-        dispatch('close');
+        onclose?.();
     }
 
     // Helper function to format file size
@@ -109,11 +110,8 @@
         });
     }
 
-    afterUpdate(() => {
+    $effect(() => {
         if (selectedImage && selectedImage.annotations && selectedImage.annotations.length > 0) {
-            // Defer to allow DOM to fully update and image to potentially load.
-            // The on:load on the image is the primary trigger for drawing.
-            // This afterUpdate serves as a fallback if props change after initial load.
             setTimeout(() => {
                  if (document.getElementById("selected-image-modal")?.complete) {
                     drawAnnotationsOnModal();
@@ -141,7 +139,7 @@
 
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 {#if selectedImage}
     <div
@@ -150,7 +148,7 @@
         <button
             class="absolute inset-0 w-full h-full bg-transparent"
             aria-label="Close image viewer"
-            on:click={close}
+            onclick={close}
         />
         <div
             class="relative z-10 max-w-6xl w-full bg-white/90 backdrop-blur rounded-2xl shadow-xl overflow-hidden flex flex-col border border-slate-200/60 max-h-[calc(100vh-2rem)]"
@@ -163,7 +161,7 @@
                     {selectedImage.name || 'Image Details'}
                 </h3>
                 <button
-                    on:click={close}
+                    onclick={close}
                     class="text-slate-400 hover:text-slate-600 p-2 -mr-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     aria-label="Close image viewer"
                 >
@@ -181,7 +179,7 @@
                         src={selectedImage.previewUrl}
                         alt={selectedImage.name}
                         class="max-w-full max-h-full object-contain block"
-                        on:load={drawAnnotationsOnModal}
+                        onload={drawAnnotationsOnModal}
                     />
                     {#if selectedImage.annotations && selectedImage.annotations.length > 0}
                         <canvas

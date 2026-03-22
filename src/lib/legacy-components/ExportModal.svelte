@@ -1,29 +1,38 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
     import { open } from "@tauri-apps/plugin-dialog";
     import { Button, BrowseInput } from "$lib/components/ui";
 
-    export let showModal: boolean = false;
-    export let currentDirectoryPath: string = "";
-    export let currentDatasetSummary: any | null = null;
+    let {
+        showModal = $bindable(false),
+        currentDirectoryPath = "",
+        currentDatasetSummary = null,
+        onclosemodal,
+        onrunexport,
+    }: {
+        showModal: boolean;
+        currentDirectoryPath: string;
+        currentDatasetSummary: any | null;
+        onclosemodal?: () => void;
+        onrunexport?: (detail: any) => void;
+    } = $props();
 
-    const dispatch = createEventDispatcher();
+    let exportMode: "yolo" | "labelme" = $state("yolo");
+    let outputDir: string = $state("");
+    let trainRatio: number = $state(0.7);
+    let valRatio: number = $state(0.2);
+    let testRatio: number = $state(0.1);
+    let shapeType: "polygon" | "bounding_box" = $state("polygon");
 
-    let exportMode: "yolo" | "labelme" = "yolo";
-    let outputDir: string = "";
-    let trainRatio: number = 0.7;
-    let valRatio: number = 0.2;
-    let testRatio: number = 0.1;
-    let shapeType: "polygon" | "bounding_box" = "polygon";
+    let internalExcludedLabels = $state(new Set<string>());
 
-    let internalExcludedLabels = new Set<string>();
+    let localLoading: boolean = $state(false);
+    let localError: string = $state("");
 
-    let localLoading: boolean = false;
-    let localError: string = "";
-
-    $: if (showModal) {
-        localError = "";
-    }
+    $effect(() => {
+        if (showModal) {
+            localError = "";
+        }
+    });
 
     async function selectOutputDirectory() {
         localError = "";
@@ -50,7 +59,7 @@
         } else {
             internalExcludedLabels.add(label);
         }
-        internalExcludedLabels = internalExcludedLabels;
+        internalExcludedLabels = new Set(internalExcludedLabels);
     }
 
     function handleRunExport() {
@@ -98,7 +107,7 @@
         }
         localError = "";
 
-        dispatch("runExport", {
+        onrunexport?.({
             sourceDir: currentDirectoryPath,
             outputDir: outputDir,
             mode: exportMode,
@@ -111,23 +120,23 @@
     }
 
     function closeModalEvent() {
-        dispatch("closeModal");
+        onclosemodal?.();
     }
 
-    let availableLabelsForSelection: string[] = [];
-    $: availableLabelsForSelection = currentDatasetSummary?.label_counts
-        ? Object.keys(currentDatasetSummary.label_counts)
-        : [];
+    let availableLabelsForSelection: string[] = $derived(
+        currentDatasetSummary?.label_counts
+            ? Object.keys(currentDatasetSummary.label_counts)
+            : []
+    );
 
-    let effectivelyIncludedLabelsCount: number = 0;
-    $: {
+    let effectivelyIncludedLabelsCount: number = $derived.by(() => {
         const allLabels = currentDatasetSummary?.label_counts
             ? Object.keys(currentDatasetSummary.label_counts)
             : [];
-        effectivelyIncludedLabelsCount = allLabels.filter(
+        return allLabels.filter(
             (label) => !internalExcludedLabels.has(label),
         ).length;
-    }
+    });
 </script>
 
 <dialog class="modal" class:modal-open={showModal}>
@@ -140,7 +149,7 @@
                 Export Dataset
             </h3>
             <button
-                on:click={closeModalEvent}
+                onclick={closeModalEvent}
                 class="btn btn-sm btn-circle btn-ghost"
             >
                 <span class="material-symbols-rounded">close</span>
@@ -208,7 +217,7 @@
                 <BrowseInput
                     value={outputDir}
                     placeholder="Select output directory..."
-                    on:browse={selectOutputDirectory}
+                    onbrowse={selectOutputDirectory}
                 />
             </div>
 
@@ -294,7 +303,7 @@
                                         ? "badge-primary"
                                         : "badge-ghost opacity-50 line-through"
                                 }`}
-                                on:click={() => toggleLabelExclusion(label)}
+                                onclick={() => toggleLabelExclusion(label)}
                             >
                                 {label} ({count})
                             </button>
@@ -316,14 +325,14 @@
         <div class="modal-action">
             <Button
                 variant="ghost"
-                on:click={closeModalEvent}
+                onclick={closeModalEvent}
                 disabled={localLoading}
             >
                 Cancel
             </Button>
             <Button
                 variant="primary"
-                on:click={handleRunExport}
+                onclick={handleRunExport}
                 disabled={localLoading ||
                     !outputDir ||
                     (availableLabelsForSelection.length > 0 &&
@@ -340,6 +349,6 @@
         </div>
     </div>
     <form method="dialog" class="modal-backdrop">
-        <button on:click={closeModalEvent}>close</button>
+        <button onclick={closeModalEvent}>close</button>
     </form>
 </dialog>

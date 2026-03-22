@@ -3,11 +3,11 @@
 
     // Theme state
     type ThemeMode = "light" | "dark" | "auto";
-    let themeMode: ThemeMode = "auto";
-    let currentAppliedTheme: "light" | "dark" = "light";
+    let themeMode: ThemeMode = $state("auto");
+    let currentAppliedTheme: "light" | "dark" = $state("light");
 
     // Language state (placeholder only)
-    let selectedLanguage = "zh-TW";
+    let selectedLanguage = $state("zh-TW");
     const languages = [
         { code: "zh-TW", label: "繁體中文", flag: "🇹🇼" },
         { code: "en", label: "English", flag: "🇺🇸" },
@@ -89,7 +89,7 @@
                 <!-- Light Mode -->
                 <button
                     class={`btn btn-sm join-item flex-1 gap-2 border-0 px-4 ${themeMode === "light" ? "bg-base-100 text-base-content shadow-inner" : "btn-ghost text-base-content/70"}`}
-                    on:click={() => setThemeMode("light")}
+                    onclick={() => setThemeMode("light")}
                     title="明亮清晰"
                 >
                     <span class="material-symbols-rounded text-lg"
@@ -101,7 +101,7 @@
                 <!-- Dark Mode -->
                 <button
                     class={`btn btn-sm join-item flex-1 gap-2 border-0 px-4 ${themeMode === "dark" ? "bg-base-100 text-base-content shadow-inner" : "btn-ghost text-base-content/70"}`}
-                    on:click={() => setThemeMode("dark")}
+                    onclick={() => setThemeMode("dark")}
                     title="保護眼睛"
                 >
                     <span class="material-symbols-rounded text-lg"
@@ -113,7 +113,7 @@
                 <!-- Auto Mode -->
                 <button
                     class={`btn btn-sm join-item flex-1 gap-2 border-0 px-4 ${themeMode === "auto" ? "bg-base-100 text-base-content shadow-inner" : "btn-ghost text-base-content/70"}`}
-                    on:click={() => setThemeMode("auto")}
+                    onclick={() => setThemeMode("auto")}
                     title="跟隨系統"
                 >
                     <span class="material-symbols-rounded text-lg"

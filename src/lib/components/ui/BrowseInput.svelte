@@ -1,21 +1,26 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
-
     /**
      * BrowseInput Component - /gallery Style
      * Refined input with icon and focus ring from /gallery ExportModal.
      */
 
-    export let value: string = "";
-    export let placeholder: string = "Select...";
-    export let disabled: boolean = false;
-    export let icon: string = "folder_open";
-
-    const dispatch = createEventDispatcher();
+    let {
+        value = "",
+        placeholder = "Select...",
+        disabled = false,
+        icon = "folder_open",
+        onbrowse,
+    }: {
+        value?: string;
+        placeholder?: string;
+        disabled?: boolean;
+        icon?: string;
+        onbrowse?: () => void;
+    } = $props();
 
     function handleBrowseClick() {
         if (!disabled) {
-            dispatch("browse");
+            onbrowse?.();
         }
     }
 </script>
@@ -38,7 +43,7 @@
         />
         <button
             type="button"
-            on:click={handleBrowseClick}
+            onclick={handleBrowseClick}
             class="btn btn-sm btn-ghost bg-base-200 hover:bg-base-300 text-base-content/70 ml-2 px-4 rounded-md border-none font-normal"
             {disabled}
         >

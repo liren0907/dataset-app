@@ -1,12 +1,11 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
-
-    export let isDragHover: boolean = false;
-
-    const dispatch = createEventDispatcher();
+    let { isDragHover = false, onselectfile }: {
+        isDragHover?: boolean;
+        onselectfile?: () => void;
+    } = $props();
 
     function handleSelectFile() {
-        dispatch("selectFile");
+        onselectfile?.();
     }
 </script>
 
@@ -29,7 +28,7 @@
             <p class="text-lg">Drag and drop an image here</p>
             <p class="text-sm opacity-60">or</p>
         {/if}
-        <button on:click={handleSelectFile} class="btn btn-primary">
+        <button onclick={handleSelectFile} class="btn btn-primary">
             <span class="material-symbols-rounded">cloud_upload</span>
             Choose Image
         </button>

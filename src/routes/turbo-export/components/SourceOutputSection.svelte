@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import { open } from '@tauri-apps/plugin-dialog';
 	import {
 		sourceDir,
@@ -10,15 +9,12 @@
 		defaultDatasetName
 	} from '../stores/exportStore';
 
-	// Event dispatcher 用於通知父組件
-	const dispatch = createEventDispatcher<{
-		sourceSelected: string;
-		outputSelected: string;
-	}>();
-
-	// Drop zone 元素參照
-	export let sourceDropZone: HTMLElement | null = null;
-	export let outputDropZone: HTMLElement | null = null;
+	let { sourceDropZone = $bindable<HTMLElement | null>(null), outputDropZone = $bindable<HTMLElement | null>(null), onsourceSelected, onoutputSelected }: {
+		sourceDropZone?: HTMLElement | null;
+		outputDropZone?: HTMLElement | null;
+		onsourceSelected?: (path: string) => void;
+		onoutputSelected?: (path: string) => void;
+	} = $props();
 
 	// ===== 選擇資料夾 =====
 	async function selectSourceDir() {
@@ -29,7 +25,7 @@
 		});
 		if (selected && typeof selected === 'string') {
 			sourceDir.set(selected);
-			dispatch('sourceSelected', selected);
+			onsourceSelected?.(selected);
 		}
 	}
 
@@ -41,7 +37,7 @@
 		});
 		if (selected && typeof selected === 'string') {
 			outputDir.set(selected);
-			dispatch('outputSelected', selected);
+			onoutputSelected?.(selected);
 		}
 	}
 </script>
@@ -70,7 +66,7 @@
 					readonly
 				/>
 				<button
-					on:click={selectSourceDir}
+					onclick={selectSourceDir}
 					class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
 				>
 					瀏覽
@@ -114,7 +110,7 @@
 					readonly
 				/>
 				<button
-					on:click={selectOutputDir}
+					onclick={selectOutputDir}
 					class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors text-sm font-medium"
 				>
 					瀏覽
@@ -149,7 +145,7 @@
 		<input
 			type="text"
 			value={$customDatasetName}
-			on:input={(e) => customDatasetName.set(e.currentTarget.value)}
+			oninput={(e) => customDatasetName.set(e.currentTarget.value)}
 			placeholder="留空則自動產生"
 			class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-slate-50 dark:bg-slate-700 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
 		/>

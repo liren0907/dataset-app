@@ -24,31 +24,31 @@
 
     let parentElement: HTMLDivElement;
     let canvasElement: HTMLCanvasElement;
-    let fabricManager: FabricManager | null = null;
+    let fabricManager: FabricManager | null = $state(null);
 
-    let mode: Mode = "select";
-    let bBoxes: BBox[] = [];
-    let polygons: Polygon[] = [];
-    let polylines: Polyline[] = [];
-    let keypoints: Keypoint[] = [];
-    let isPolygonDrawing = false;
-    let isPolylineDrawing = false;
-    let imageLoaded = false;
+    let mode: Mode = $state("select");
+    let bBoxes: BBox[] = $state([]);
+    let polygons: Polygon[] = $state([]);
+    let polylines: Polyline[] = $state([]);
+    let keypoints: Keypoint[] = $state([]);
+    let isPolygonDrawing = $state(false);
+    let isPolylineDrawing = $state(false);
+    let imageLoaded = $state(false);
 
     // Directory mode state
-    let directoryPath = "";
-    let imageList: ImageEntry[] = [];
-    let currentImageIndex = -1;
-    $: directoryMode = imageList.length > 0;
+    let directoryPath = $state("");
+    let imageList: ImageEntry[] = $state([]);
+    let currentImageIndex = $state(-1);
+    let directoryMode = $derived(imageList.length > 0);
 
     // Layout state
-    let showGallery = true;
-    let showSidebar = true;
-    let showStats = false;
-    let selectedObject: any = null;
-    let selectedObjects: any[] = [];
-    let currentStrokeWidth = 2;
-    let currentShowVertexPoints = true;
+    let showGallery = $state(true);
+    let showSidebar = $state(true);
+    let showStats = $state(false);
+    let selectedObject: any = $state(null);
+    let selectedObjects: any[] = $state([]);
+    let currentStrokeWidth = $state(2);
+    let currentShowVertexPoints = $state(true);
 
     // Autosave
     let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -172,16 +172,12 @@
         };
     });
 
-    function setModeFromEvent(event: CustomEvent<Mode>) {
-        fabricManager?.setMode(event.detail);
-    }
-
     function setMode(newMode: Mode) {
         fabricManager?.setMode(newMode);
     }
 
-    function handleStrokeWidthChange(event: CustomEvent<number>) {
-        fabricSettings.setBaseStrokeWidth(event.detail);
+    function handleStrokeWidthChange(width: number) {
+        fabricSettings.setBaseStrokeWidth(width);
     }
 
     function handleToggleVertexPoints() {
@@ -327,8 +323,7 @@
         await loadDirectory(mockPath);
     }
 
-    async function selectImage(event: CustomEvent<number>) {
-        const index = event.detail;
+    async function selectImage(index: number) {
         if (index >= 0 && index < imageList.length) {
             currentImageIndex = index;
             await loadImageWithAnnotations(imageList[index].path);
@@ -474,7 +469,7 @@
     }
 </script>
 
-<svelte:window on:keydown={handleKeyDown} />
+<svelte:window onkeydown={handleKeyDown} />
 
 <div
     class="flex flex-col h-full w-full overflow-hidden bg-base-100 text-base-content"
@@ -486,30 +481,30 @@
         {isPolylineDrawing}
         strokeWidth={currentStrokeWidth}
         showVertexPoints={currentShowVertexPoints}
-        on:setMode={setModeFromEvent}
-        on:triggerFileInput={triggerFileInput}
-        on:triggerDirectoryInput={triggerDirectoryInput}
-        on:triggerMockLoad={triggerMockLoad}
-        on:finishPolygon={finishPolygon}
-        on:resetPolygon={resetPolygon}
-        on:finishPolyline={finishPolyline}
-        on:resetPolyline={resetPolyline}
-        on:strokeWidthChange={handleStrokeWidthChange}
-        on:toggleVertexPoints={handleToggleVertexPoints}
+        onsetmode={setMode}
+        ontriggerfileinput={triggerFileInput}
+        ontriggerdirectoryinput={triggerDirectoryInput}
+        ontriggermockload={triggerMockLoad}
+        onfinishpolygon={finishPolygon}
+        onresetpolygon={resetPolygon}
+        onfinishpolyline={finishPolyline}
+        onresetpolyline={resetPolyline}
+        onstrokewidthchange={handleStrokeWidthChange}
+        ontogglevertexpoints={handleToggleVertexPoints}
     />
 
     <!-- Stats Dashboard Overlay -->
     {#if showStats}
-        <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
             class="absolute inset-0 z-50 bg-base-300/60 backdrop-blur-sm flex items-center justify-center p-8"
-            on:click|self={() => (showStats = false)}
+            onclick={(e) => { if (e.target === e.currentTarget) showStats = false; }}
         >
             <div class="max-w-md w-full relative">
                 <button
                     class="absolute -top-2 -right-2 btn btn-circle btn-xs btn-error z-10"
-                    on:click={() => (showStats = false)}>✕</button
+                    onclick={() => (showStats = false)}>✕</button
                 >
                 <DatasetStats
                     images={imageList}
@@ -525,7 +520,7 @@
     <button
         class="fixed bottom-4 right-80 z-40 btn btn-circle btn-primary shadow-lg"
         class:right-4={!showSidebar}
-        on:click={() => (showStats = !showStats)}
+        onclick={() => (showStats = !showStats)}
         title="View Dataset Stats"
     >
         <span class="material-symbols-rounded">bar_chart</span>
@@ -539,7 +534,7 @@
                 <ImageGallery
                     images={imageList}
                     selectedIndex={currentImageIndex}
-                    on:select={selectImage}
+                    onselect={selectImage}
                 />
             </div>
         {/if}
@@ -549,7 +544,7 @@
             <button
                 class="absolute left-0 top-1/2 -translate-y-1/2 z-20 btn btn-circle btn-xs btn-ghost hover:bg-base-300"
                 style="left: {showGallery ? '224px' : '0'}"
-                on:click={() => (showGallery = !showGallery)}
+                onclick={() => (showGallery = !showGallery)}
             >
                 <span class="material-symbols-rounded text-sm">
                     {showGallery ? "chevron_left" : "chevron_right"}
@@ -581,7 +576,7 @@
         <button
             class="absolute right-0 top-1/2 -translate-y-1/2 z-20 btn btn-circle btn-xs btn-ghost hover:bg-base-300"
             style="right: {showSidebar ? '288px' : '0'}"
-            on:click={() => (showSidebar = !showSidebar)}
+            onclick={() => (showSidebar = !showSidebar)}
         >
             <span class="material-symbols-rounded text-sm">
                 {showSidebar ? "chevron_right" : "chevron_left"}

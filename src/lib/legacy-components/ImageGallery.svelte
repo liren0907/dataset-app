@@ -1,17 +1,31 @@
 <script lang="ts">
-    import { createEventDispatcher, onMount, afterUpdate } from "svelte";
+    import { onMount } from "svelte";
 
-    export let images: any[] = [];
-    export let totalImages: number = 0;
-    export let currentPage: number = 1;
-    export let totalPages: number = 0;
-    export let pageSize: number = 30;
-    export let viewMode: "grid" | "column" = "grid";
-    export let annotationType: string = "bounding_box";
-    export let loading: boolean = false;
-    export let loadingMore: boolean = false;
-
-    const dispatch = createEventDispatcher();
+    let {
+        images = $bindable([]),
+        totalImages = 0,
+        currentPage = $bindable(1),
+        totalPages = 0,
+        pageSize = 30,
+        viewMode = "grid",
+        annotationType = "bounding_box",
+        loading = false,
+        loadingMore = false,
+        onselectimage,
+        onloadpage,
+    }: {
+        images: any[];
+        totalImages: number;
+        currentPage: number;
+        totalPages: number;
+        pageSize: number;
+        viewMode: "grid" | "column";
+        annotationType: string;
+        loading: boolean;
+        loadingMore: boolean;
+        onselectimage?: (detail: { image: any; index: number }) => void;
+        onloadpage?: (page: number) => void;
+    } = $props();
 
     function formatFileSize(bytes) {
         if (bytes === null || bytes === undefined) return "";
@@ -48,7 +62,7 @@
     }
 
     function handleImageClick(image: any, index: number) {
-        dispatch("selectImage", { image, index });
+        onselectimage?.({ image, index });
     }
 
     function handleLoadPage(page: number | string) {
@@ -58,7 +72,7 @@
             page <= totalPages &&
             page !== currentPage
         ) {
-            dispatch("loadPage", page);
+            onloadpage?.(page);
         }
     }
 
@@ -110,7 +124,7 @@
         lastImagesLength = images.length;
     });
 
-    afterUpdate(() => {
+    $effect(() => {
         if (
             currentPage !== lastProcessedPage ||
             images.length !== lastImagesLength
@@ -131,7 +145,7 @@
                     <button
                         type="button"
                         class="card bg-base-100 border border-base-content/10 hover:border-primary transition-all duration-200 cursor-pointer overflow-hidden hover:-translate-y-0.5"
-                        on:click={() => handleImageClick(image, i)}
+                        onclick={() => handleImageClick(image, i)}
                         aria-label={`View details for ${image.name}`}
                     >
                         <figure class="relative pb-[75%]">
@@ -142,7 +156,7 @@
                                 src={image.displayIndex < pageSize
                                     ? image.previewUrl
                                     : "data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 1 1%27%3E%3C/svg%3E"}
-                                on:load={(e) => {
+                                onload={(e) => {
                                     const target = e.target;
                                     if (
                                         target instanceof HTMLImageElement &&
@@ -156,7 +170,7 @@
                                         );
                                     }
                                 }}
-                                on:error={(e) => {
+                                onerror={(e) => {
                                     const target = e.target;
                                     if (target instanceof HTMLImageElement) {
                                         target.classList.add(
@@ -214,7 +228,7 @@
                     <button
                         type="button"
                         class="card card-side bg-base-100 border border-base-content/10 hover:border-primary transition-all duration-200 cursor-pointer overflow-hidden hover:-translate-y-0.5 w-full"
-                        on:click={() => handleImageClick(image, i)}
+                        onclick={() => handleImageClick(image, i)}
                         aria-label={`View details for ${image.name}`}
                     >
                         <figure class="w-48 h-48 relative flex-shrink-0">
@@ -225,7 +239,7 @@
                                 src={image.displayIndex < pageSize
                                     ? image.previewUrl
                                     : "data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 1 1%27%3E%3C/svg%3E"}
-                                on:load={(e) => {
+                                onload={(e) => {
                                     const target = e.target;
                                     if (
                                         target instanceof HTMLImageElement &&
@@ -239,7 +253,7 @@
                                         );
                                     }
                                 }}
-                                on:error={(e) => {
+                                onerror={(e) => {
                                     const target = e.target;
                                     if (target instanceof HTMLImageElement) {
                                         target.classList.add(
@@ -325,7 +339,7 @@
                 <div class="join">
                     <button
                         class="join-item btn btn-sm"
-                        on:click={() => handleLoadPage(currentPage - 1)}
+                        onclick={() => handleLoadPage(currentPage - 1)}
                         disabled={currentPage === 1 || loading || loadingMore}
                     >
                         <span class="material-symbols-rounded icon-sm"
@@ -339,7 +353,7 @@
                                 pageNum
                                     ? 'btn-active'
                                     : ''}"
-                                on:click={() => handleLoadPage(pageNum)}
+                                onclick={() => handleLoadPage(pageNum)}
                                 disabled={loading ||
                                     loadingMore ||
                                     pageNum === currentPage}
@@ -354,7 +368,7 @@
                     {/each}
                     <button
                         class="join-item btn btn-sm"
-                        on:click={() => handleLoadPage(currentPage + 1)}
+                        onclick={() => handleLoadPage(currentPage + 1)}
                         disabled={currentPage === totalPages ||
                             loading ||
                             loadingMore}

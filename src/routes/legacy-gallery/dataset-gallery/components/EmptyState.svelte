@@ -1,6 +1,5 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
-    const dispatch = createEventDispatcher();
+    let { onselectdirectory }: { onselectdirectory?: () => void } = $props();
 </script>
 
 <div class="card bg-base-200 border border-base-content/10">
@@ -16,7 +15,7 @@
         <div class="card-actions mt-6">
             <button
                 class="btn btn-ghost border border-base-content/20"
-                on:click={() => dispatch("selectDirectory")}
+                onclick={() => onselectdirectory?.()}
             >
                 <span class="material-symbols-rounded">folder_open</span>
                 Select Directory

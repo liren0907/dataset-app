@@ -1,8 +1,8 @@
 <script lang="ts">
     import { onMount, tick } from "svelte";
     import { open } from "@tauri-apps/plugin-dialog";
-    import DatasetSummaryCard from "$lib/DatasetSummaryCard.svelte";
-    import CropRemapTool from "$lib/CropRemapTool.svelte";
+    import DatasetSummaryCard from "$lib/legacy-components/DatasetSummaryCard.svelte";
+    import CropRemapTool from "$lib/legacy-components/CropRemapTool.svelte";
     import ImageGallery from "$lib/legacy-components/ImageGallery.svelte";
     import ImageViewerModal from "$lib/legacy-components/ImageViewerModal.svelte";
     import ExportModal from "$lib/legacy-components/ExportModal.svelte";
@@ -29,35 +29,35 @@
     } from "$lib/services/datasetService";
 
     // State variables
-    let directoryPath = "";
-    let images: ProcessedImage[] = [];
-    let loading = false;
-    let loadingMore = false;
-    let error = "";
-    let viewMode = "grid";
-    let selectedImage: ProcessedImage | null = null;
-    let annotating = false;
-    let annotationType = "bounding_box";
-    let datasetSummary: DatasetSummary | null = null;
+    let directoryPath = $state("");
+    let images: ProcessedImage[] = $state([]);
+    let loading = $state(false);
+    let loadingMore = $state(false);
+    let error = $state("");
+    let viewMode = $state("grid");
+    let selectedImage: ProcessedImage | null = $state(null);
+    let annotating = $state(false);
+    let annotationType = $state("bounding_box");
+    let datasetSummary: DatasetSummary | null = $state(null);
 
     // Export Modal State
-    let showActualExportModal = false;
-    let pageExportLoading = false;
-    let pageExportError = "";
-    let pageExportSuccess = "";
+    let showActualExportModal = $state(false);
+    let pageExportLoading = $state(false);
+    let pageExportError = $state("");
+    let pageExportSuccess = $state("");
 
     // Pagination
-    let currentPage = 1;
+    let currentPage = $state(1);
     let pageSize = 30;
-    let totalPages = 0;
-    let totalImages = 0;
+    let totalPages = $state(0);
+    let totalImages = $state(0);
 
     // Crop Tool State
-    let cropToolOpen = false;
+    let cropToolOpen = $state(false);
 
     onMount(() => {});
 
-    function handleKeydown(event) {
+    function handleKeydown(event: KeyboardEvent) {
         if (event.key === "Escape" && selectedImage) {
             closeImageView();
         }
@@ -296,10 +296,8 @@
         }
     }
 
-    async function handleCropCompleted(
-        event: CustomEvent<{ outputDir: string }>,
-    ) {
-        const { outputDir } = event.detail;
+    async function handleCropCompleted(detail: { outputDir: string }) {
+        const { outputDir } = detail;
 
         error = "";
         pageExportError = "";
@@ -345,7 +343,7 @@
     />
 </svelte:head>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 <div class="container mx-auto px-4 py-8">
     <div class="max-w-6xl mx-auto">
@@ -367,25 +365,25 @@
                     bind:annotationType
                     {cropToolOpen}
                     {viewMode}
-                    on:selectDirectory={selectDirectory}
-                    on:annotate={annotateImages}
-                    on:export={() => {
+                    onselectdirectory={selectDirectory}
+                    onannotate={annotateImages}
+                    onexport={() => {
                         showActualExportModal = true;
                         pageExportError = "";
                         pageExportSuccess = "";
                     }}
-                    on:toggleCrop={toggleCropTool}
-                    on:changeViewMode={(e) => changeViewMode(e.detail)}
+                    ontogglecrop={toggleCropTool}
+                    onchangeviewmode={(mode) => changeViewMode(mode)}
                 />
             {/if}
 
             <!-- Crop and Remap Tool -->
             <CropRemapTool
                 bind:cropToolOpen
-                on:cropCompleted={handleCropCompleted}
+                oncropcompleted={(detail) => handleCropCompleted(detail)}
             />
 
-            <ErrorDisplay {error} on:close={() => (error = "")} />
+            <ErrorDisplay {error} onclose={() => (error = "")} />
 
             <!-- Dataset Summary Card -->
             <DatasetSummaryCard {datasetSummary} />
@@ -424,7 +422,7 @@
                 </p>
             </div>
         {:else if !loading && !directoryPath && !error}
-            <EmptyState on:selectDirectory={selectDirectory} />
+            <EmptyState onselectdirectory={selectDirectory} />
         {:else if images.length > 0}
             <ImageGallery
                 bind:images
@@ -436,23 +434,23 @@
                 {annotationType}
                 {loading}
                 {loadingMore}
-                on:selectImage={(event) => selectImage(event.detail)}
-                on:loadPage={(event) => loadImagesPage(event.detail)}
+                onselectimage={(detail) => selectImage(detail)}
+                onloadpage={(page) => loadImagesPage(page)}
             />
         {/if}
     </div>
 </div>
 
 <!-- Image Viewer Modal -->
-<ImageViewerModal {selectedImage} {annotationType} on:close={closeImageView} />
+<ImageViewerModal {selectedImage} {annotationType} onclose={closeImageView} />
 
 <!-- Export Modal -->
 <ExportModal
     bind:showModal={showActualExportModal}
     currentDirectoryPath={directoryPath}
     currentDatasetSummary={datasetSummary}
-    on:closeModal={() => {
+    onclosemodal={() => {
         showActualExportModal = false;
     }}
-    on:runExport={(event) => runUnifiedExport(event.detail)}
+    onrunexport={(detail) => runUnifiedExport(detail)}
 />

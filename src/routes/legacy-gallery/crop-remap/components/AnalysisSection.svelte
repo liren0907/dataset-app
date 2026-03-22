@@ -1,11 +1,10 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
-
-    export let analyzing: boolean = false;
-    export let datasetLoaded: boolean = false;
-    export let disabled: boolean = false;
-
-    const dispatch = createEventDispatcher();
+    let { analyzing = false, datasetLoaded = false, disabled = false, onanalyze }: {
+        analyzing: boolean;
+        datasetLoaded: boolean;
+        disabled: boolean;
+        onanalyze?: () => void;
+    } = $props();
 </script>
 
 <div class="form-control">
@@ -14,7 +13,7 @@
     </div>
     <div class="flex items-center gap-3">
         <button
-            on:click={() => dispatch("analyze")}
+            onclick={() => onanalyze?.()}
             {disabled}
             class="btn btn-primary btn-sm"
         >

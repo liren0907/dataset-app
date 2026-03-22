@@ -17,29 +17,29 @@
     import KonvaPreviewModal from "./components/KonvaPreviewModal.svelte";
     import ActionButtons from "./components/ActionButtons.svelte";
 
-    let sourceDir: string | null = null;
-    let outputDir: string | null = null;
+    let sourceDir: string | null = $state(null);
+    let outputDir: string | null = $state(null);
 
-    let datasetSummary: DatasetSummary | null = null;
-    let availableLabels: string[] = [];
+    let datasetSummary: DatasetSummary | null = $state(null);
+    let availableLabels: string[] = $state([]);
 
     // Remap Settings
-    let selectedParentLabel: string = "person";
-    let selectedChildLabels: string[] = [];
-    let paddingFactor: number = 1.2;
+    let selectedParentLabel: string = $state("person");
+    let selectedChildLabels: string[] = $state([]);
+    let paddingFactor: number = $state(1.2);
 
     // State
-    let loading: boolean = false;
-    let analyzing: boolean = false;
-    let previewLoading: boolean = false;
+    let loading: boolean = $state(false);
+    let analyzing: boolean = $state(false);
+    let previewLoading: boolean = $state(false);
 
-    let successMessage: string | null = null;
-    let errorMessage: string | null = null;
-    let validationError: string | null = null;
+    let successMessage: string | null = $state(null);
+    let errorMessage: string | null = $state(null);
+    let validationError: string | null = $state(null);
 
-    let previewImages: PreviewImage[] = [];
-    let showPreviewModal: boolean = false;
-    let previewModalImage: PreviewImage | null = null;
+    let previewImages: PreviewImage[] = $state([]);
+    let showPreviewModal: boolean = $state(false);
+    let previewModalImage: PreviewImage | null = $state(null);
 
     async function handleSelectSource() {
         try {
@@ -105,8 +105,8 @@
         }
     }
 
-    function openPreview(e: CustomEvent<PreviewImage>) {
-        previewModalImage = e.detail;
+    function openPreview(image: PreviewImage) {
+        previewModalImage = image;
         showPreviewModal = true;
     }
 
@@ -174,7 +174,7 @@
             <DirectorySelect
                 label="Source Directory"
                 value={sourceDir}
-                on:browse={handleSelectSource}
+                onbrowse={handleSelectSource}
             />
 
             {#if analyzing}
@@ -189,14 +189,14 @@
                 <PreviewGrid
                     images={previewImages}
                     loading={previewLoading}
-                    on:select={openPreview}
+                    onselect={openPreview}
                 />
             {/if}
 
             <DirectorySelect
                 label="Output Directory"
                 value={outputDir}
-                on:browse={handleSelectOutput}
+                onbrowse={handleSelectOutput}
             />
 
             {#if datasetSummary}
@@ -216,11 +216,11 @@
             {successMessage}
             {errorMessage}
             {validationError}
-            on:click={handleRun}
+            onclick={handleRun}
         />
     </div>
 </div>
 
 {#if showPreviewModal && previewModalImage}
-    <KonvaPreviewModal image={previewModalImage} on:close={closePreview} />
+    <KonvaPreviewModal image={previewModalImage} onclose={closePreview} />
 {/if}

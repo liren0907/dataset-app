@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
     import { open } from "@tauri-apps/plugin-dialog";
     import {
         performCropAndRemap,
@@ -15,38 +14,48 @@
         LabelBadge,
     } from "$lib/components/ui";
 
-    export let isOpen: boolean = false;
-
-    const dispatch = createEventDispatcher();
+    let {
+        isOpen = false,
+        oncropcompleted,
+        onclose,
+    }: {
+        isOpen?: boolean;
+        oncropcompleted?: (data: { outputDir: string }) => void;
+        onclose?: () => void;
+    } = $props();
 
     // Internal state
-    let sourceDir: string = "";
-    let outputDir: string = "";
+    let sourceDir = $state("");
+    let outputDir = $state("");
 
     // Config State
-    let parentLabel: string = "person";
-    let paddingFactor: number = 1.25;
-    let selectedChildLabels: string[] = [];
+    let parentLabel = $state("person");
+    let paddingFactor = $state(1.25);
+    let selectedChildLabels: string[] = $state([]);
 
     // Analysis State
-    let analyzing: boolean = false;
-    let datasetSummary: DatasetSummary | null = null;
-    let availableLabels: string[] = [];
+    let analyzing = $state(false);
+    let datasetSummary: DatasetSummary | null = $state(null);
+    let availableLabels: string[] = $state([]);
 
     // Process State
-    let localLoading: boolean = false;
-    let localError: string = "";
-    let localSuccess: string = "";
+    let localLoading = $state(false);
+    let localError = $state("");
+    let localSuccess = $state("");
 
-    $: if (isOpen) {
-        localError = "";
-        localSuccess = "";
-    }
+    $effect(() => {
+        if (isOpen) {
+            localError = "";
+            localSuccess = "";
+        }
+    });
 
     // Auto-analyze when source changes
-    $: if (sourceDir && isOpen) {
-        analyzeDataset();
-    }
+    $effect(() => {
+        if (sourceDir && isOpen) {
+            analyzeDataset();
+        }
+    });
 
     async function selectDirectory(type: "source" | "output") {
         localError = "";
@@ -59,7 +68,6 @@
             if (selected && typeof selected === "string") {
                 if (type === "source") {
                     sourceDir = selected;
-                    // Analysis triggers reactively
                 } else {
                     outputDir = selected;
                 }
@@ -80,12 +88,10 @@
             datasetSummary = summary;
             availableLabels = Object.keys(summary.label_counts || {});
 
-            // Smart Suggestions
             suggestParentLabel(availableLabels);
             suggestChildLabels(availableLabels);
         } catch (err) {
             console.warn("Analysis failed:", err);
-            // Don't block UI, just missing suggestions
         } finally {
             analyzing = false;
         }
@@ -97,7 +103,6 @@
         if (found) {
             parentLabel = found;
         } else if (labels.length > 0) {
-            // Pick most frequent
             if (datasetSummary?.label_counts) {
                 const sorted = Object.entries(datasetSummary.label_counts)
                     .sort(([, a], [, b]) => b - a)
@@ -159,7 +164,7 @@
             );
             localSuccess = message;
             setTimeout(() => {
-                dispatch("cropCompleted", { outputDir });
+                oncropcompleted?.({ outputDir });
             }, 1500);
         } catch (err) {
             localError = `Processing failed: ${err instanceof Error ? err.message : String(err)}`;
@@ -169,7 +174,7 @@
     }
 
     function handleClose() {
-        if (!localLoading) dispatch("close");
+        if (!localLoading) onclose?.();
     }
 </script>
 
@@ -178,10 +183,11 @@
     title="Crop & Remap"
     subtitle="Isolate objects to new dataset"
     icon="crop"
-    on:close={handleClose}
+    onclose={handleClose}
 >
+    {#snippet sidebar()}
     <!-- Sidebar -->
-    <div slot="sidebar" class="flex flex-col h-full justify-between">
+    <div class="flex flex-col h-full justify-between">
         <div class="space-y-6">
             <!-- Paths Configuration -->
             <div class="space-y-4">
@@ -197,7 +203,7 @@
                         value={sourceDir}
                         placeholder="Select source..."
                         icon="folder_open"
-                        on:browse={() => selectDirectory("source")}
+                        onbrowse={() => selectDirectory("source")}
                     />
                 </div>
 
@@ -211,7 +217,7 @@
                         value={outputDir}
                         placeholder="Select output..."
                         icon="output"
-                        on:browse={() => selectDirectory("output")}
+                        onbrowse={() => selectDirectory("output")}
                     />
                 </div>
             </div>
@@ -229,10 +235,11 @@
             internal annotations are remapped to the new image coordinates.
         </div>
     </div>
+    {/snippet}
 
+    {#snippet content()}
     <!-- Main Content -->
     <div
-        slot="content"
         class="flex flex-col items-center justify-center space-y-6 flex-1 w-full max-w-lg mx-auto"
     >
         {#if localError}
@@ -240,7 +247,7 @@
                 <Alert
                     variant="error"
                     dismissible
-                    on:close={() => (localError = "")}>{localError}</Alert
+                    onclose={() => (localError = "")}>{localError}</Alert
                 >
             </div>
         {/if}
@@ -346,7 +353,7 @@
                                         )
                                             ? "active"
                                             : "neutral"}
-                                        on:click={() => toggleChildLabel(label)}
+                                        onclick={() => toggleChildLabel(label)}
                                     />
                                 {/if}
                             {/each}
@@ -379,14 +386,16 @@
             </div>
         </div>
     </div>
+    {/snippet}
 
+    {#snippet footer()}
     <!-- Footer -->
-    <div slot="footer" class="flex gap-3">
-        <Button variant="ghost" on:click={handleClose} disabled={localLoading}
+    <div class="flex gap-3">
+        <Button variant="ghost" onclick={handleClose} disabled={localLoading}
             >Cancel</Button
         >
         <Button
-            on:click={handleRunCrop}
+            onclick={handleRunCrop}
             disabled={localLoading ||
                 !sourceDir ||
                 !outputDir ||
@@ -400,4 +409,5 @@
             {/if}
         </Button>
     </div>
+    {/snippet}
 </SplitPaneModal>

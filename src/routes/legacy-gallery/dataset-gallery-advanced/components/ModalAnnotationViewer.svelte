@@ -1,16 +1,16 @@
 <script lang="ts">
-    import { onMount, onDestroy, createEventDispatcher, tick } from 'svelte';
+    import { onMount, onDestroy, tick } from 'svelte';
     import { convertFileSrc } from "@tauri-apps/api/core";
     import { invoke } from "@tauri-apps/api/core";
-    import { createKonvaManager, type KonvaManager, type KonvaImageData, type KonvaAnnotation } from './konvaService';
+    import { createKonvaManager, type KonvaManager, type KonvaImageData } from './konvaService';
 
-    // Props
-    export let showModal: boolean = false;
-    export let selectedImage: any = null; // ProcessedImage from parent
-    export let autoAnnotationEnabled: boolean = true;
-
-    // Event dispatcher for communication with parent
-    const dispatch = createEventDispatcher();
+    let { showModal = false, selectedImage = null, autoAnnotationEnabled = true, onsave, onclose }: {
+        showModal: boolean;
+        selectedImage: any;
+        autoAnnotationEnabled: boolean;
+        onsave?: (detail: { image: any; annotations: any[] }) => void;
+        onclose?: () => void;
+    } = $props();
 
     // State variables
     let konvaManager: KonvaManager;
@@ -21,33 +21,32 @@
     let annotatedImageData: KonvaImageData | null = null;
     let tempPreviewPath: string | null = null;
 
-    // Debug: Track konvaContainer binding
-    $: if (konvaContainer && showModal) {
-        console.log('🔗 Konva container bound:', konvaContainer);
-        console.log('📏 Container dimensions:', konvaContainer.offsetWidth, 'x', konvaContainer.offsetHeight);
-        console.log('📍 Container in DOM:', document.contains(konvaContainer));
-    }
+    $effect(() => {
+        if (konvaContainer && showModal) {
+            console.log('🔗 Konva container bound:', konvaContainer);
+            console.log('📏 Container dimensions:', konvaContainer.offsetWidth, 'x', konvaContainer.offsetHeight);
+            console.log('📍 Container in DOM:', document.contains(konvaContainer));
+        }
+    });
 
-    // Force container discovery when modal opens
-    $: if (showModal && !konvaContainer) {
-        console.log('🔍 Modal opened but konvaContainer not bound, attempting manual discovery...');
-        // Small delay to ensure DOM is ready
-        setTimeout(() => {
-            const foundContainer = document.querySelector('[aria-label*="Interactive annotation editor"]') as HTMLDivElement;
-            if (foundContainer) {
-                console.log('🎯 Manual discovery successful, setting konvaContainer');
-                konvaContainer = foundContainer;
-            } else {
-                console.log('❌ Manual discovery failed');
-            }
-        }, 100);
-    }
+    $effect(() => {
+        if (showModal && !konvaContainer) {
+            console.log('🔍 Modal opened but konvaContainer not bound, attempting manual discovery...');
+            setTimeout(() => {
+                const foundContainer = document.querySelector('[aria-label*="Interactive annotation editor"]') as HTMLDivElement;
+                if (foundContainer) {
+                    console.log('🎯 Manual discovery successful, setting konvaContainer');
+                    konvaContainer = foundContainer;
+                } else {
+                    console.log('❌ Manual discovery failed');
+                }
+            }, 100);
+        }
+    });
 
-    // Manual trigger approach to avoid reactive statement issues
     let hasTriggeredInit = false;
 
-    // Watch for modal opening - allow re-initialization if previous failed
-    $: {
+    $effect(() => {
         if (showModal && selectedImage && !isInitializing) {
             console.log('🔄 Modal opened with image, checking initialization state');
             console.log('State: isInitialized:', isInitialized, 'hasTriggeredInit:', hasTriggeredInit, 'isInitializing:', isInitializing);
@@ -72,13 +71,14 @@
                 console.log('⚠️ Skipping re-initialization - already successfully initialized');
             }
         }
-    }
+    });
 
-    // Watch for modal closing - reset all state
-    $: if (!showModal) {
-        console.log('🔄 Modal closed, cleaning up');
-        cleanupModal();
-    }
+    $effect(() => {
+        if (!showModal) {
+            console.log('🔄 Modal closed, cleaning up');
+            cleanupModal();
+        }
+    });
 
     onMount(() => {
         konvaManager = createKonvaManager();
@@ -415,13 +415,13 @@
 
     // Event handlers
     function handleClose(): void {
-        dispatch('close');
+        onclose?.();
     }
 
     function handleSave(): void {
         // Emit save event with current annotations
         if (annotatedImageData) {
-            dispatch('save', {
+            onsave?.({
                 image: selectedImage,
                 annotations: annotatedImageData.annotations
             });
@@ -483,7 +483,7 @@
     function handleDeleteSelected(): void { konvaManager?.deleteSelectedAnnotation(); }
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 {#if showModal}
     <!-- Modal Overlay -->
@@ -493,26 +493,26 @@
         role="dialog"
         aria-modal="true"
         aria-labelledby="annotation-modal-title"
-        on:click={handleClose}
-        on:keydown={(e) => { if (e.key === 'Escape') handleClose(); }}
+        onclick={handleClose}
+        onkeydown={(e) => { if (e.key === 'Escape') handleClose(); }}
         tabindex="-1"
         aria-describedby="annotation-modal-description"
     >
-        <button class="absolute inset-0 w-full h-full bg-transparent" aria-label="Close annotation viewer" on:click={handleClose} />
+        <button class="absolute inset-0 w-full h-full bg-transparent" aria-label="Close annotation viewer" onclick={handleClose} />
 
         <!-- Modal Content -->
         <div
             class="relative z-10 max-w-6xl w-full bg-white/95 backdrop-blur rounded-2xl shadow-xl overflow-hidden flex flex-col border border-slate-200/60 max-h-[95vh]"
             role="document"
             aria-label="Annotation editor content"
-            on:click|stopPropagation
-            on:keydown|stopPropagation
+            onclick={(e) => e.stopPropagation()}
+            onkeydown={(e) => e.stopPropagation()}
         >
             <!-- Header -->
             <div class="flex justify-between items-center p-4 border-b bg-slate-50">
                 <div class="flex items-center gap-3">
                     <button
-                        on:click={handleClose}
+                        onclick={handleClose}
                         class="text-slate-600 hover:text-slate-800 p-2 -ml-2 rounded-md hover:bg-slate-200 transition-colors"
                         aria-label="Close annotation viewer"
                     >
@@ -531,13 +531,13 @@
                 <!-- Action Buttons -->
                 <div class="flex items-center gap-2">
                     <button
-                        on:click={handleClose}
+                        onclick={handleClose}
                         class="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 transition-colors"
                     >
                         Cancel
                     </button>
                     <button
-                        on:click={handleSave}
+                        onclick={handleSave}
                         class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors flex items-center gap-2"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
@@ -557,7 +557,7 @@
 
                         <!-- Zoom Controls -->
                         <button
-                            on:click={handleZoomOut}
+                            onclick={handleZoomOut}
                             class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
                             title="Zoom Out (-)"
                             aria-label="Zoom out"
@@ -565,7 +565,7 @@
                             🔍-
                         </button>
                         <button
-                            on:click={handleResetZoom}
+                            onclick={handleResetZoom}
                             class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
                             title="Reset Zoom (0)"
                             aria-label="Reset zoom"
@@ -573,7 +573,7 @@
                             100%
                         </button>
                         <button
-                            on:click={handleZoomIn}
+                            onclick={handleZoomIn}
                             class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
                             title="Zoom In (=)"
                             aria-label="Zoom in"
@@ -583,7 +583,7 @@
 
                         <!-- Fit to Screen -->
                         <button
-                            on:click={handleFitToScreen}
+                            onclick={handleFitToScreen}
                             class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded transition-colors ml-4"
                             title="Fit to Screen (R)"
                             aria-label="Fit to screen"
@@ -595,7 +595,7 @@
                         <div class="ml-4 flex items-center gap-2">
                             <span class="text-sm text-slate-600">Annotations:</span>
                             <button
-                                on:click={handleSelectAll}
+                                onclick={handleSelectAll}
                                 class="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white text-sm rounded transition-colors"
                                 title="Select All (Ctrl+A)"
                                 aria-label="Select all annotations"
@@ -603,7 +603,7 @@
                                 Select All
                             </button>
                             <button
-                                on:click={handleDeselect}
+                                onclick={handleDeselect}
                                 class="px-3 py-1 bg-slate-500 hover:bg-slate-600 text-white text-sm rounded transition-colors"
                                 title="Deselect (Esc)"
                                 aria-label="Deselect annotations"
@@ -611,7 +611,7 @@
                                 Deselect
                             </button>
                             <button
-                                on:click={handleDeleteSelected}
+                                onclick={handleDeleteSelected}
                                 class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded transition-colors"
                                 title="Delete Selected (Del)"
                                 aria-label="Delete selected annotations"
@@ -659,7 +659,7 @@
                             <h3 class="text-lg font-semibold text-slate-800 mb-2">Failed to Load</h3>
                             <p class="text-slate-600 mb-4">Unable to initialize the annotation editor.</p>
                             <button
-                                on:click={handleClose}
+                                onclick={handleClose}
                                 class="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-md"
                             >
                                 Close

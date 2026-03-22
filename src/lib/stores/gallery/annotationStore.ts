@@ -18,7 +18,8 @@ const initialState: AnnotationState = {
 };
 
 function createAnnotationStore() {
-    const { subscribe, set, update } = writable<AnnotationState>(initialState);
+    const _store = writable<AnnotationState>(initialState);
+    const { subscribe, set, update } = _store;
 
     return {
         subscribe,
@@ -27,7 +28,7 @@ function createAnnotationStore() {
 
         annotateImages: async () => {
             const imgState = get(imageStore);
-            const state = get({ subscribe });
+            const state = get(_store);
 
             if (imgState.isMockMode) {
                 console.log("🧪 Mock Mode: Using local mock annotations.");

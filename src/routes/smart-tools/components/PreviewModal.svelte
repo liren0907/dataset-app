@@ -1,25 +1,30 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
+    let {
+        isOpen,
+        originalImage,
+        cropArea,
+        rotation,
+        zoom,
+        canvas,
+        onclose,
+    }: {
+        isOpen: boolean;
+        originalImage: HTMLImageElement | null;
+        cropArea: { x: number; y: number; width: number; height: number };
+        rotation: number;
+        zoom: number;
+        canvas: HTMLCanvasElement | undefined;
+        onclose?: () => void;
+    } = $props();
 
-    export let isOpen: boolean;
-    export let originalImage: HTMLImageElement | null;
-    export let cropArea: {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    };
-    export let rotation: number;
-    export let zoom: number;
-    export let canvas: HTMLCanvasElement | undefined; // Passed to get context/size relative to it
-
-    const dispatch = createEventDispatcher();
     let previewCanvas: HTMLCanvasElement;
     let previewCtx: CanvasRenderingContext2D | null = null;
 
-    $: if (isOpen && previewCanvas && originalImage && canvas) {
-        renderCropPreview();
-    }
+    $effect(() => {
+        if (isOpen && previewCanvas && originalImage && canvas) {
+            renderCropPreview();
+        }
+    });
 
     function renderCropPreview() {
         if (!originalImage || !canvas || !previewCanvas) return;
@@ -124,11 +129,6 @@
             }
 
             // Draw the cropped portion of the original image
-            // Note: This simple slice works perfectly for 0 rotation.
-            // For rotated images, we might need more complex logic (drawing full rotated image then cropping),
-            // but for now we stick to the existing logic which seems to rotate the crop VIEW, not the source relative to crop frame.
-            // Actually, the original code applies rotation to the preview context, then draws the unrotated source slice.
-            // This simulates rotating the resulting crop.
             previewCtx.drawImage(
                 originalImage,
                 finalCropX,
@@ -156,7 +156,7 @@
     }
 
     function close() {
-        dispatch("close");
+        onclose?.();
     }
 </script>
 
@@ -170,7 +170,7 @@
                 >
                 Crop Preview
             </h3>
-            <button on:click={close} class="btn btn-sm btn-circle btn-ghost">
+            <button onclick={close} class="btn btn-sm btn-circle btn-ghost">
                 <span class="material-symbols-rounded">close</span>
             </button>
         </div>
@@ -195,14 +195,14 @@
                 <span class="material-symbols-rounded icon-sm">info</span>
                 High quality preview
             </div>
-            <button on:click={close} class="btn btn-ghost">Cancel</button>
-            <button on:click={downloadCroppedImage} class="btn btn-success">
+            <button onclick={close} class="btn btn-ghost">Cancel</button>
+            <button onclick={downloadCroppedImage} class="btn btn-success">
                 <span class="material-symbols-rounded">download</span>
                 Download
             </button>
         </div>
     </div>
     <form method="dialog" class="modal-backdrop">
-        <button on:click={close}>close</button>
+        <button onclick={close}>close</button>
     </form>
 </dialog>

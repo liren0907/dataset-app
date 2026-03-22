@@ -1,27 +1,28 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
     import {
         labelTaxonomy,
         classColorMap,
     } from "$lib/stores/labelTaxonomyStore";
 
-    export let selectedObject: any = null; // Single selection
-    export let selectedObjects: any[] = []; // Multiple selection
-    export let onUpdateProperty: (
-        id: number,
-        type: string,
-        prop: string,
-        value: any,
-    ) => void = () => {};
-    export let onBatchUpdateLabel: (label: string) => void = () => {};
+    let {
+        selectedObject = null,
+        selectedObjects = [],
+        onUpdateProperty = () => {},
+        onBatchUpdateLabel = () => {},
+    }: {
+        selectedObject?: any;
+        selectedObjects?: any[];
+        onUpdateProperty?: (id: number, type: string, prop: string, value: any) => void;
+        onBatchUpdateLabel?: (label: string) => void;
+    } = $props();
 
     function handleChange(prop: string, value: any) {
         if (!selectedObject) return;
         onUpdateProperty(selectedObject.id, selectedObject.type, prop, value);
     }
 
-    $: type = selectedObject?.type || "";
-    $: isMultiSelect = selectedObjects.length > 1;
+    let type = $derived(selectedObject?.type || "");
+    let isMultiSelect = $derived(selectedObjects.length > 1);
 </script>
 
 <div class="bg-base-200 p-3 border-t border-base-300">
@@ -54,7 +55,7 @@
                     <select
                         id="batch-label"
                         class="select select-bordered select-xs flex-1 text-[10px]"
-                        on:change={(e) =>
+                        onchange={(e) =>
                             onBatchUpdateLabel(e.currentTarget.value)}
                     >
                         <option value="">Choose Label...</option>
@@ -91,7 +92,7 @@
                         type="number"
                         class="input input-bordered input-xs w-full"
                         value={Math.round(selectedObject.x1)}
-                        on:change={(e) =>
+                        onchange={(e) =>
                             handleChange(
                                 "x1",
                                 parseFloat(e.currentTarget.value),
@@ -108,7 +109,7 @@
                         type="number"
                         class="input input-bordered input-xs w-full"
                         value={Math.round(selectedObject.y1)}
-                        on:change={(e) =>
+                        onchange={(e) =>
                             handleChange(
                                 "y1",
                                 parseFloat(e.currentTarget.value),
@@ -125,7 +126,7 @@
                         type="number"
                         class="input input-bordered input-xs w-full"
                         value={Math.round(selectedObject.x2)}
-                        on:change={(e) =>
+                        onchange={(e) =>
                             handleChange(
                                 "x2",
                                 parseFloat(e.currentTarget.value),
@@ -142,7 +143,7 @@
                         type="number"
                         class="input input-bordered input-xs w-full"
                         value={Math.round(selectedObject.y2)}
-                        on:change={(e) =>
+                        onchange={(e) =>
                             handleChange(
                                 "y2",
                                 parseFloat(e.currentTarget.value),
@@ -159,7 +160,7 @@
                         type="number"
                         class="input input-bordered input-xs w-full"
                         value={Math.round(selectedObject.x)}
-                        on:change={(e) =>
+                        onchange={(e) =>
                             handleChange(
                                 "x",
                                 parseFloat(e.currentTarget.value),
@@ -175,7 +176,7 @@
                         type="number"
                         class="input input-bordered input-xs w-full"
                         value={Math.round(selectedObject.y)}
-                        on:change={(e) =>
+                        onchange={(e) =>
                             handleChange(
                                 "y",
                                 parseFloat(e.currentTarget.value),

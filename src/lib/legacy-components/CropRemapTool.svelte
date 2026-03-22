@@ -1,19 +1,19 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
     import { open } from "@tauri-apps/plugin-dialog";
     import { performCropAndRemap } from "$lib/services/datasetService";
     import { Button, BrowseInput } from "$lib/components/ui";
 
-    let internalCropSourceDir: string | null = null;
-    let internalCropOutputDir: string | null = null;
-    let internalParentLabel: string = "person";
-    let internalCropLoading: boolean = false;
-    let internalCropStatusMessage: string | null = null;
-    let internalCropIsError: boolean = false;
+    let internalCropSourceDir: string | null = $state(null);
+    let internalCropOutputDir: string | null = $state(null);
+    let internalParentLabel: string = $state("person");
+    let internalCropLoading: boolean = $state(false);
+    let internalCropStatusMessage: string | null = $state(null);
+    let internalCropIsError: boolean = $state(false);
 
-    export let cropToolOpen: boolean = false;
-
-    const dispatch = createEventDispatcher();
+    let { cropToolOpen = $bindable(false), oncropcompleted }: {
+        cropToolOpen: boolean;
+        oncropcompleted?: (detail: { outputDir: string }) => void;
+    } = $props();
 
     async function selectDirectoryLocal(type: "source" | "output") {
         try {
@@ -63,7 +63,7 @@
             );
             internalCropStatusMessage = message;
             internalCropIsError = false;
-            dispatch("cropCompleted", { outputDir: internalCropOutputDir });
+            oncropcompleted?.({ outputDir: internalCropOutputDir });
         } catch (err) {
             internalCropStatusMessage = `Processing failed: ${err instanceof Error ? err.message : String(err)}`;
             internalCropIsError = true;
@@ -94,7 +94,7 @@
                 <BrowseInput
                     value={internalCropSourceDir || ""}
                     placeholder="Select source directory for cropping..."
-                    on:browse={() => selectDirectoryLocal("source")}
+                    onbrowse={() => selectDirectoryLocal("source")}
                 />
             </div>
 
@@ -108,7 +108,7 @@
                 <BrowseInput
                     value={internalCropOutputDir || ""}
                     placeholder="Select output directory for cropped results..."
-                    on:browse={() => selectDirectoryLocal("output")}
+                    onbrowse={() => selectDirectoryLocal("output")}
                 />
                 <label class="label">
                     <span class="label-text-alt opacity-60"
@@ -140,7 +140,7 @@
             <Button
                 variant="primary"
                 fullWidth
-                on:click={handleRunCropAndRemapLocal}
+                onclick={handleRunCropAndRemapLocal}
                 disabled={internalCropLoading ||
                     !internalCropSourceDir ||
                     !internalCropOutputDir ||

@@ -1,5 +1,5 @@
 <script lang="ts">
-    export let datasetSummary: any;
+    let { datasetSummary }: { datasetSummary: any } = $props();
 
     function formatPercentage(value, total) {
         if (!total || total === 0) return "0.0%";

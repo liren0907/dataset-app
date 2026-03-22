@@ -63,8 +63,8 @@
 	// let outputDir: string = '';
 
 	// ===== Tauri 拖放狀態 =====
-	let sourceDropZone: HTMLElement | null = null;
-	let outputDropZone: HTMLElement | null = null;
+	let sourceDropZone: HTMLElement | null = $state(null);
+	let outputDropZone: HTMLElement | null = $state(null);
 	let unlistenFns: Array<() => void> = [];
 
 	// ===== 設置拖放監聽器（使用 composable）=====
@@ -460,7 +460,7 @@
 			<SourceOutputSection
 				bind:sourceDropZone
 				bind:outputDropZone
-				on:sourceSelected={handleSourceSelected}
+				onsourceSelected={handleSourceSelected}
 			/>
 
 			<!-- 輸出格式 -->
@@ -472,13 +472,13 @@
 			{/if}
 
 			<!-- 標籤選擇 -->
-			<LabelManager on:rescan={scanLabels} />
+			<LabelManager onrescan={scanLabels} />
 
 			<!-- 進階選項 -->
 			<AdvancedOptions />
 
 			<!-- 執行區塊 -->
-			<ExportProgress on:startExport={startExport}>
+			<ExportProgress onstartExport={startExport}>
 				{#if $progress === 100 && $stats.processed > 0}
 					<ExportResult />
 				{/if}

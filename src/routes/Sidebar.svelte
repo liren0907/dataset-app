@@ -2,11 +2,17 @@
 	// @ts-ignore - SvelteKit 內建模組，運行時正常
 	import { page } from "$app/stores";
 
-	// Props from parent layout
-	export let theme = "light";
-	export let toggleTheme = () => {};
-	export let isSidebarExpanded = true;
-	export let toggleSidebar = () => {};
+	let {
+		theme = "light",
+		toggleTheme = () => {},
+		isSidebarExpanded = true,
+		toggleSidebar = () => {},
+	}: {
+		theme?: string;
+		toggleTheme?: () => void;
+		isSidebarExpanded?: boolean;
+		toggleSidebar?: () => void;
+	} = $props();
 
 	// 工具列表 - using Material Symbols icon names
 	const tools = [
@@ -59,7 +65,7 @@
 		</div>
 		<!-- Collapse Button inside Sidebar -->
 		<button
-			on:click={toggleSidebar}
+			onclick={toggleSidebar}
 			class="btn btn-ghost btn-xs btn-square text-base-content/40 hover:text-base-content"
 		>
 			<span class="material-symbols-rounded">first_page</span>
@@ -114,7 +120,7 @@
 	<!-- Theme Toggle -->
 	<li>
 		<button
-			on:click={toggleTheme}
+			onclick={toggleTheme}
 			class="flex items-center gap-3 px-3 py-2 rounded-lg text-base-content/70 hover:bg-base-200 hover:text-base-content transition-colors"
 		>
 			<span class="material-symbols-rounded text-[20px]">

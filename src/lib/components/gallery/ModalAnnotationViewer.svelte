@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount, onDestroy, createEventDispatcher, tick } from "svelte";
+    import { onMount, onDestroy } from "svelte";
     import { safeConvertFileSrc } from "$lib/utils/tauriUtils";
     import { invoke } from "@tauri-apps/api/core";
     import {
@@ -10,24 +10,31 @@
     } from "$lib/services/gallery/konvaService";
     import { mockGeneratePreview } from "$lib/../mocks/mockFileSystem";
 
-    // Props
-    export let showModal: boolean = false;
-    export let selectedImage: any = null; // ProcessedImage from parent
-    export let autoAnnotationEnabled: boolean = true;
-    export let isMockMode: boolean = false;
-
-    // Event dispatcher for communication with parent
-    const dispatch = createEventDispatcher();
+    let {
+        showModal = false,
+        selectedImage = null,
+        autoAnnotationEnabled = true,
+        isMockMode = false,
+        onclose,
+        onsave,
+    }: {
+        showModal?: boolean;
+        selectedImage?: any;
+        autoAnnotationEnabled?: boolean;
+        isMockMode?: boolean;
+        onclose?: () => void;
+        onsave?: (data: { image: any; annotations: any[] }) => void;
+    } = $props();
 
     // State variables
     let konvaManager: KonvaManager;
     let konvaContainer: HTMLDivElement;
-    let isInitialized = false;
-    let isLoading = false;
-    let isInitializing = false; // Prevent duplicate initialization
-    let annotatedImageData: KonvaImageData | null = null;
-    let tempPreviewPath: string | null = null;
-    let annotationCount = 0; // Reactive count
+    let isInitialized = $state(false);
+    let isLoading = $state(false);
+    let isInitializing = $state(false);
+    let annotatedImageData: KonvaImageData | null = $state(null);
+    let tempPreviewPath: string | null = $state(null);
+    let annotationCount = $state(0);
 
     // Helpers
     function updateMetadata(): void {
@@ -38,64 +45,68 @@
         }
     }
 
-    // Debug: Track konvaContainer binding
-    $: if (konvaContainer && showModal) {
-        console.log("🔗 Konva container bound:", konvaContainer);
-        console.log(
-            "📏 Container dimensions:",
-            konvaContainer.offsetWidth,
-            "x",
-            konvaContainer.offsetHeight,
-        );
-        console.log("📍 Container in DOM:", document.contains(konvaContainer));
-    }
-
-    // Force container discovery when modal opens
-    $: if (showModal && !konvaContainer) {
-        console.log(
-            "🔍 Modal opened but konvaContainer not bound, attempting manual discovery...",
-        );
-        // Small delay to ensure DOM is ready
-        setTimeout(() => {
-            const foundContainer = document.querySelector(
-                '[aria-label*="Interactive annotation editor"]',
-            ) as HTMLDivElement;
-            if (foundContainer) {
-                console.log(
-                    "🎯 Manual discovery successful, setting konvaContainer",
-                );
-                konvaContainer = foundContainer;
-            } else {
-                console.log("❌ Manual discovery failed");
-            }
-        }, 100);
-    }
-
     // ResizeObserver for robust container detection
     let resizeObserver: ResizeObserver | null = null;
 
+    // Debug: Track konvaContainer binding
+    $effect(() => {
+        if (konvaContainer && showModal) {
+            console.log("Konva container bound:", konvaContainer);
+            console.log(
+                "Container dimensions:",
+                konvaContainer.offsetWidth,
+                "x",
+                konvaContainer.offsetHeight,
+            );
+            console.log("Container in DOM:", document.contains(konvaContainer));
+        }
+    });
+
+    // Force container discovery when modal opens
+    $effect(() => {
+        if (showModal && !konvaContainer) {
+            console.log(
+                "Modal opened but konvaContainer not bound, attempting manual discovery...",
+            );
+            setTimeout(() => {
+                const foundContainer = document.querySelector(
+                    '[aria-label*="Interactive annotation editor"]',
+                ) as HTMLDivElement;
+                if (foundContainer) {
+                    console.log(
+                        "Manual discovery successful, setting konvaContainer",
+                    );
+                    konvaContainer = foundContainer;
+                } else {
+                    console.log("Manual discovery failed");
+                }
+            }, 100);
+        }
+    });
+
     // Reactive: Trigger initialization when all conditions are met
-    // strict dependency on konvaContainer ensures we don't run before DOM is mounted
-    $: if (
-        showModal &&
-        selectedImage &&
-        konvaContainer &&
-        !isInitialized &&
-        !isInitializing
-    ) {
-        // Use a small debounce to allow any final layout shifts to settle
-        console.log("🚀 Triggering modal initialization (Reactive)");
-        initializeModal();
-    }
+    $effect(() => {
+        if (
+            showModal &&
+            selectedImage &&
+            konvaContainer &&
+            !isInitialized &&
+            !isInitializing
+        ) {
+            console.log("Triggering modal initialization (Reactive)");
+            initializeModal();
+        }
+    });
 
     // Watch for modal closing - reset all state
-    // Watch for modal closing - reset all state
-    $: if (!showModal) {
-        if (isInitialized || isInitializing) {
-            console.log("🔄 Modal closed, cleaning up");
-            cleanupModal();
+    $effect(() => {
+        if (!showModal) {
+            if (isInitialized || isInitializing) {
+                console.log("Modal closed, cleaning up");
+                cleanupModal();
+            }
         }
-    }
+    });
 
     onMount(() => {
         konvaManager = createKonvaManager();
@@ -119,7 +130,6 @@
     }
 
     // Robust DOM readiness checking using ResizeObserver
-    // This waits until the container actually has dimensions (is painted)
     function waitForContainerDimensions(): Promise<void> {
         return new Promise((resolve, reject) => {
             if (!konvaContainer) {
@@ -127,23 +137,21 @@
                 return;
             }
 
-            // Check if already ready
             if (
                 konvaContainer.clientWidth > 0 &&
                 konvaContainer.clientHeight > 0
             ) {
                 console.log(
-                    `✅ Container ready immediately (${konvaContainer.clientWidth}x${konvaContainer.clientHeight})`,
+                    `Container ready immediately (${konvaContainer.clientWidth}x${konvaContainer.clientHeight})`,
                 );
                 resolve();
                 return;
             }
 
             console.log(
-                "⏳ Waiting for container dimensions via ResizeObserver...",
+                "Waiting for container dimensions via ResizeObserver...",
             );
 
-            // Cleanup previous observer if exists
             if (resizeObserver) resizeObserver.disconnect();
 
             resizeObserver = new ResizeObserver((entries) => {
@@ -151,7 +159,7 @@
                     const { width, height } = entry.contentRect;
                     if (width > 0 && height > 0) {
                         console.log(
-                            `✅ Container resized to ${width}x${height}`,
+                            `Container resized to ${width}x${height}`,
                         );
                         resizeObserver?.disconnect();
                         resizeObserver = null;
@@ -162,7 +170,6 @@
 
             resizeObserver.observe(konvaContainer);
 
-            // Safety timeout (5 seconds)
             setTimeout(() => {
                 if (resizeObserver) {
                     resizeObserver.disconnect();
@@ -189,27 +196,24 @@
 
         isInitializing = true;
         console.log(
-            "🚀 STARTING modal initialization for:",
+            "STARTING modal initialization for:",
             selectedImage.name,
         );
 
-        // Ensure konvaManager is ready
         if (!konvaManager) {
             isInitializing = false;
-            // Should retry or error logic here
             return;
         }
 
         try {
             isLoading = true;
 
-            // Wait for dimensions
             await waitForContainerDimensions();
 
-            console.log("⏱️ Step 1: Loading annotation metadata...");
+            console.log("Step 1: Loading annotation metadata...");
             await loadAnnotationMetadata();
 
-            console.log("⏱️ Step 2: Initializing Konva Viewer...");
+            console.log("Step 2: Initializing Konva Viewer...");
             if (annotatedImageData && konvaContainer) {
                 await initializeKonvaViewer();
             } else {
@@ -218,9 +222,7 @@
                 );
             }
         } catch (error) {
-            console.error("❌ Failed to initialize modal:", error);
-            // Fallback commented out for now as simple init usually works with observer
-            // await fallbackInitialization();
+            console.error("Failed to initialize modal:", error);
         } finally {
             isLoading = false;
             isInitializing = false;
@@ -232,46 +234,37 @@
         if (!selectedImage?.path) return;
 
         try {
-            console.log("🔧 Loading annotation metadata from backend...");
-            console.log("📂 Image path:", selectedImage.path);
+            console.log("Loading annotation metadata from backend...");
+            console.log("Image path:", selectedImage.path);
 
-            // BACKEND METADATA LOADING: The Rust backend provides:
-            // 1. Loading the JSON annotation file for the image
-            // 2. Returning complete annotation metadata in LabelMe format
-            // 3. Frontend parses and converts to Konva annotation format
-            // 4. Original image is used with parsed annotations for drawing
-
-            // NOTE: Respect isMockMode prop even if in Tauri
             const isTauri =
                 typeof window !== "undefined" && "__TAURI__" in window;
             let result: string;
 
             if (isTauri && !isMockMode) {
                 console.log(
-                    "🚀 Invoking Tauri command: generate_single_annotated_preview",
+                    "Invoking Tauri command: generate_single_annotated_preview",
                 );
                 result = (await invoke("generate_single_annotated_preview", {
                     imagePath: selectedImage.path,
                 })) as string;
             } else {
-                console.log("🧪 Mode: Using Mock Preview Data");
+                console.log("Mode: Using Mock Preview Data");
                 const startTime = Date.now();
                 result = await mockGeneratePreview(selectedImage.path);
                 console.log(
-                    `✅ mockGeneratePreview returned in ${Date.now() - startTime}ms`,
+                    `mockGeneratePreview returned in ${Date.now() - startTime}ms`,
                 );
             }
 
-            console.log("📦 Parsing result...");
+            console.log("Parsing result...");
             const data = JSON.parse(result);
 
             if (data.annotation_metadata) {
-                // Parse annotations from LabelMe format
                 const parsedAnnotations = parseAnnotationsFromLabelMe(
                     data.annotation_metadata,
                 );
 
-                // Use original image with parsed annotations
                 annotatedImageData = {
                     id: `modal_${selectedImage.path}`,
                     path: selectedImage.path,
@@ -283,7 +276,7 @@
                 };
 
                 console.log(
-                    "✅ Backend metadata loaded:",
+                    "Backend metadata loaded:",
                     parsedAnnotations.length,
                     "annotations from LabelMe format",
                 );
@@ -292,10 +285,10 @@
             }
         } catch (error) {
             console.warn(
-                "⚠️ Backend preview generation failed, using fallback:",
+                "Backend preview generation failed, using fallback:",
                 error,
             );
-            throw error; // Will trigger fallback
+            throw error;
         }
     }
 
@@ -303,17 +296,14 @@
     async function initializeKonvaViewer(): Promise<void> {
         if (!konvaContainer || !annotatedImageData) return;
 
-        console.log("🎨 Initializing KonvaJS viewer...");
+        console.log("Initializing KonvaJS viewer...");
 
-        // Calculate optimal stage dimensions from container
         const stageWidth = konvaContainer.clientWidth || 1000;
         const stageHeight = konvaContainer.clientHeight || 700;
 
-        // Initialize the stage
         konvaManager.initializeStage(konvaContainer, stageWidth, stageHeight);
 
-        // DEBUG: Log before KonvaJS operations
-        console.log("🎨 DEBUG: About to initialize KonvaJS");
+        console.log("DEBUG: About to initialize KonvaJS");
         console.log("Annotated image data:", !!annotatedImageData);
         console.log(
             "Konva container dimensions:",
@@ -323,28 +313,27 @@
         );
 
         try {
-            // Load original image with parsed annotations from backend metadata
             await konvaManager.loadImageWithAnnotations(
                 annotatedImageData,
                 (scale, offsetX, offsetY) => {
-                    console.log("📋 Drawing annotations from backend metadata");
+                    console.log("Drawing annotations from backend metadata");
                     konvaManager.drawAnnotations(
                         annotatedImageData!.annotations,
                         scale,
                         offsetX,
                         offsetY,
                     );
-                    updateMetadata(); // New: update after draw
+                    updateMetadata();
                 },
             );
 
             isInitialized = true;
-            updateMetadata(); // New: update after init
+            updateMetadata();
             console.log(
-                "✅ Modal annotation viewer initialized successfully - isInitialized set to true",
+                "Modal annotation viewer initialized successfully - isInitialized set to true",
             );
         } catch (konvaError) {
-            console.error("❌ KonvaJS initialization failed:", konvaError);
+            console.error("KonvaJS initialization failed:", konvaError);
             const errorMessage =
                 konvaError instanceof Error
                     ? konvaError.message
@@ -357,13 +346,13 @@
     async function fallbackInitialization(): Promise<void> {
         if (!selectedImage) return;
 
-        console.log("🔄 Using fallback initialization...");
+        console.log("Using fallback initialization...");
 
         try {
             await waitForContainerDimensions();
-            console.log("✅ Fallback: Konva container is ready");
+            console.log("Fallback: Konva container is ready");
         } catch (error) {
-            console.error("❌ Fallback failed:", error);
+            console.error("Fallback failed:", error);
             return;
         }
 
@@ -371,8 +360,7 @@
             const stageWidth = konvaContainer.clientWidth || 1000;
             const stageHeight = konvaContainer.clientHeight || 700;
 
-            // DEBUG: Log fallback state
-            console.log("🔄 Fallback: Initializing KonvaJS stage");
+            console.log("Fallback: Initializing KonvaJS stage");
             console.log(
                 "Container dimensions:",
                 konvaContainer?.clientWidth,
@@ -386,7 +374,6 @@
                 stageHeight,
             );
 
-            // Convert selectedImage to KonvaImageData format
             const fallbackImageData: KonvaImageData = {
                 id: `fallback_${selectedImage.path}`,
                 path: selectedImage.path,
@@ -398,34 +385,32 @@
             };
 
             console.log(
-                "🔄 Fallback: Loading image with annotations:",
+                "Fallback: Loading image with annotations:",
                 fallbackImageData.annotations.length,
             );
 
-            // Load image with progressive annotation rendering
             await konvaManager.loadImageWithAnnotations(
                 fallbackImageData,
                 (scale, offsetX, offsetY) => {
-                    console.log("📋 Drawing annotations progressively");
+                    console.log("Drawing annotations progressively");
                     konvaManager.drawAnnotations(
                         fallbackImageData.annotations,
                         scale,
                         offsetX,
                         offsetY,
                     );
-                    updateMetadata(); // New: update after draw
+                    updateMetadata();
                 },
             );
 
             isInitialized = true;
-            updateMetadata(); // New: update after init
-            console.log("✅ Fallback initialization completed successfully");
+            updateMetadata();
+            console.log("Fallback initialization completed successfully");
         } catch (fallbackError) {
             console.error(
-                "❌ Fallback initialization also failed:",
+                "Fallback initialization also failed:",
                 fallbackError,
             );
-            // Reset state
             isInitializing = false;
         }
     }
@@ -436,7 +421,6 @@
             konvaManager.cleanup();
         }
 
-        // Disconnect observer
         if (resizeObserver) {
             resizeObserver.disconnect();
             resizeObserver = null;
@@ -451,26 +435,24 @@
         annotatedImageData = null;
         isLoading = false;
         annotationCount = 0;
-        console.log("🧹 Modal cleanup completed");
+        console.log("Modal cleanup completed");
     }
 
     // Event handlers
     function handleClose(event?: Event): void {
         if (event) {
-            // Stop propagation to prevent underlying elements from triggering
             event.stopPropagation();
             event.preventDefault();
         }
 
-        console.log("❌ Closing modal via handleClose");
-        dispatch("close");
+        console.log("Closing modal via handleClose");
+        onclose?.();
     }
 
     function handleSave(): void {
-        // Emit save event with current annotations
         updateMetadata();
         if (annotatedImageData) {
-            dispatch("save", {
+            onsave?.({
                 image: selectedImage,
                 annotations: annotatedImageData.annotations,
             });
@@ -480,7 +462,6 @@
     function handleKeydown(event: KeyboardEvent): void {
         if (!konvaManager) return;
 
-        // Handle keyboard shortcuts
         const handledKeys = [
             "Delete",
             "Backspace",
@@ -573,12 +554,12 @@
     }
 </script>
 
-<svelte:window on:keydown={handleKeydown} on:resize={handleResize} />
+<svelte:window onkeydown={handleKeydown} onresize={handleResize} />
 
 {#if showModal}
     <!-- Modal Overlay -->
     {console.log(
-        "🎨 Modal HTML is rendering, showModal:",
+        "Modal HTML is rendering, showModal:",
         showModal,
         "selectedImage:",
         !!selectedImage,
@@ -601,7 +582,7 @@
             >
                 <div class="flex items-center gap-3">
                     <button
-                        on:click={(e) => handleClose(e)}
+                        onclick={(e) => handleClose(e)}
                         class="btn btn-ghost btn-sm btn-circle"
                         aria-label="Close modal"
                     >
@@ -623,21 +604,6 @@
                     </div>
                 </div>
 
-                <!-- Action Buttons (Removed for current dev stage) -->
-                <!-- 
-                <div class="flex items-center gap-2">
-                    <button on:click={handleClose} class="btn btn-ghost btn-sm">
-                        Cancel
-                    </button>
-                    <button
-                        on:click={handleSave}
-                        class="btn btn-neutral btn-sm gap-2 shadow-sm"
-                    >
-                        <span class="material-symbols-rounded text-lg">check</span>
-                        Save Changes
-                    </button>
-                </div>
-                -->
                 <div class="flex items-center gap-2">
                     {#if autoAnnotationEnabled}
                         <div class="badge badge-success gap-1 shadow-sm">
@@ -660,8 +626,6 @@
             <!-- Content Area -->
             <div class="flex-1 flex flex-col p-4 min-h-0">
                 {#if isInitialized}
-                    <!-- Control Panel -->
-                    <!-- Control Panel (Modern Toolbar) -->
                     <!-- Control Panel (Modern Toolbar matched to Gallery Navbar) -->
                     <div
                         class="navbar bg-base-100 min-h-0 h-14 border border-base-200 shadow-sm rounded-lg px-3 gap-2 mb-4"
@@ -670,7 +634,7 @@
                         <div class="flex items-center gap-2">
                             <div class="join">
                                 <button
-                                    on:click={handleZoomOut}
+                                    onclick={handleZoomOut}
                                     class="join-item btn btn-sm btn-ghost text-base-content/70 hover:text-base-content"
                                     title="Zoom Out (-)"
                                 >
@@ -680,7 +644,7 @@
                                     >
                                 </button>
                                 <button
-                                    on:click={handleResetZoom}
+                                    onclick={handleResetZoom}
                                     class="join-item btn btn-sm btn-ghost text-base-content/70 hover:text-base-content font-normal min-w-[60px]"
                                     title="Reset Zoom (0)"
                                 >
@@ -691,7 +655,7 @@
                                         : "100%"}
                                 </button>
                                 <button
-                                    on:click={handleZoomIn}
+                                    onclick={handleZoomIn}
                                     class="join-item btn btn-sm btn-ghost text-base-content/70 hover:text-base-content"
                                     title="Zoom In (=)"
                                 >
@@ -707,7 +671,7 @@
                             ></div>
 
                             <button
-                                on:click={handleFitToScreen}
+                                onclick={handleFitToScreen}
                                 class="btn btn-sm btn-ghost gap-2 text-base-content/70 hover:text-base-content"
                                 title="Fit to Screen (R)"
                             >
@@ -722,40 +686,8 @@
 
                         <!-- Right: Annotation Tools (Hidden for current dev stage) -->
                         <div class="flex-1 flex justify-end">
-                            <!--
-                            <div class="join">
-                                <button
-                                    on:click={handleSelectAll}
-                                    class="join-item btn btn-sm btn-ghost gap-2 text-base-content/70 hover:text-base-content"
-                                    title="Select All (Ctrl+A)"
-                                >
-                                    <span class="material-symbols-rounded text-lg">select_all</span>
-                                    <span class="hidden sm:inline font-normal">Select All</span>
-                                </button>
-                                <button
-                                    on:click={handleDeselect}
-                                    class="join-item btn btn-sm btn-ghost gap-2 text-base-content/70 hover:text-base-content"
-                                    title="Deselect (Esc)"
-                                >
-                                    <span class="material-symbols-rounded text-lg">deselect</span>
-                                    <span class="hidden sm:inline font-normal">Deselect</span>
-                                </button>
-                                <button
-                                    on:click={handleDeleteSelected}
-                                    class="join-item btn btn-sm btn-ghost text-error/70 hover:text-error hover:bg-error/10 gap-2"
-                                    title="Delete Selected (Del)"
-                                >
-                                    <span class="material-symbols-rounded text-lg">delete</span>
-                                    <span class="hidden sm:inline font-normal">Delete</span>
-                                </button>
-                            </div>
-                            -->
                         </div>
                     </div>
-
-                    <!-- Keyboard Shortcuts Info -->
-
-                    <!-- Konva container is now always present below, outside the conditional blocks -->
                 {/if}
 
                 <!-- Single Konva Container - Always Present -->
@@ -777,7 +709,7 @@
                         <div
                             class="absolute inset-0 bg-slate-50/90 backdrop-blur-sm flex flex-col justify-center items-center z-20"
                         >
-                            <div class="text-red-500 text-4xl mb-4">⚠️</div>
+                            <div class="text-red-500 text-4xl mb-4">Warning</div>
                             <h3
                                 class="text-lg font-semibold text-slate-800 mb-2"
                             >
@@ -787,7 +719,7 @@
                                 Unable to initialize the annotation editor.
                             </p>
                             <button
-                                on:click={handleClose}
+                                onclick={handleClose}
                                 class="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-md"
                             >
                                 Close
@@ -816,8 +748,6 @@
                         </div>
                     {/if}
 
-                    <!-- Modern Status Badges moved to Header -->
-
                     {#if isInitialized}
                         <div class="absolute bottom-4 right-4 z-10">
                             <div
@@ -840,19 +770,19 @@
                         class="mt-4 flex flex-col items-center justify-center text-sm text-base-content/50 gap-1"
                     >
                         <p>
-                            Click and drag to select • Delete to remove • Save
+                            Click and drag to select - Delete to remove - Save
                             when done
                         </p>
                         <p class="text-xs opacity-70">
-                            Shortcuts: Zoom (+/-) • Reset (0) • Fit (R) • Select
-                            All (⌘A) • Save (⌘S)
+                            Shortcuts: Zoom (+/-) - Reset (0) - Fit (R) - Select
+                            All (Cmd+A) - Save (Cmd+S)
                         </p>
                     </div>
                 {/if}
             </div>
         </div>
         <form method="dialog" class="modal-backdrop">
-            <button on:click={(e) => handleClose(e)}>close</button>
+            <button onclick={(e) => handleClose(e)}>close</button>
         </form>
     </dialog>
 {/if}

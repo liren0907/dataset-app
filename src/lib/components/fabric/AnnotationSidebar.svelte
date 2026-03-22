@@ -12,39 +12,39 @@
         classColorMap,
     } from "$lib/stores/labelTaxonomyStore";
 
-    export let bBoxes: BBox[] = [];
-    export let polygons: Polygon[] = [];
-    export let polylines: Polyline[] = [];
-    export let keypoints: Keypoint[] = [];
-    export let selectedObjects: any[] = [];
-
-    export let onUpdateBBoxLabel: (
-        id: number,
-        label: string,
-    ) => void = () => {};
-    export let onUpdatePolygonLabel: (
-        id: number,
-        label: string,
-    ) => void = () => {};
-    export let onUpdatePolylineLabel: (
-        id: number,
-        label: string,
-    ) => void = () => {};
-    export let onUpdateKeypointLabel: (
-        id: number,
-        label: string,
-    ) => void = () => {};
-
-    export let onDeleteBBox: (id: number) => void = () => {};
-    export let onDeletePolygon: (id: number) => void = () => {};
-    export let onDeletePolyline: (id: number) => void = () => {};
-    export let onDeleteKeypoint: (id: number) => void = () => {};
-
-    export let onToggleLock: (id: number, type: string) => void = () => {};
-    export let onToggleVisibility: (
-        id: number,
-        type: string,
-    ) => void = () => {};
+    let {
+        bBoxes = [],
+        polygons = [],
+        polylines = [],
+        keypoints = [],
+        selectedObjects = [],
+        onUpdateBBoxLabel = () => {},
+        onUpdatePolygonLabel = () => {},
+        onUpdatePolylineLabel = () => {},
+        onUpdateKeypointLabel = () => {},
+        onDeleteBBox = () => {},
+        onDeletePolygon = () => {},
+        onDeletePolyline = () => {},
+        onDeleteKeypoint = () => {},
+        onToggleLock = () => {},
+        onToggleVisibility = () => {},
+    }: {
+        bBoxes?: BBox[];
+        polygons?: Polygon[];
+        polylines?: Polyline[];
+        keypoints?: Keypoint[];
+        selectedObjects?: any[];
+        onUpdateBBoxLabel?: (id: number, label: string) => void;
+        onUpdatePolygonLabel?: (id: number, label: string) => void;
+        onUpdatePolylineLabel?: (id: number, label: string) => void;
+        onUpdateKeypointLabel?: (id: number, label: string) => void;
+        onDeleteBBox?: (id: number) => void;
+        onDeletePolygon?: (id: number) => void;
+        onDeletePolyline?: (id: number) => void;
+        onDeleteKeypoint?: (id: number) => void;
+        onToggleLock?: (id: number, type: string) => void;
+        onToggleVisibility?: (id: number, type: string) => void;
+    } = $props();
 
     function getColor(label: string): string {
         return $classColorMap.get(label) || "#6b7280";
@@ -56,8 +56,9 @@
         );
     }
 
-    $: totalAnnotations =
-        bBoxes.length + polygons.length + polylines.length + keypoints.length;
+    let totalAnnotations = $derived(
+        bBoxes.length + polygons.length + polylines.length + keypoints.length,
+    );
 </script>
 
 <ClassManager />
@@ -90,7 +91,7 @@
                                 class="btn btn-ghost btn-xs p-0 min-h-0 h-4 w-4 opacity-40 hover:opacity-100"
                                 class:text-primary={item.locked}
                                 class:opacity-100={item.locked}
-                                on:click={() => onToggleLock(item.id, "bbox")}
+                                onclick={() => onToggleLock(item.id, "bbox")}
                                 title={item.locked ? "Unlock" : "Lock"}
                             >
                                 <span
@@ -102,7 +103,7 @@
                             <button
                                 class="btn btn-ghost btn-xs p-0 min-h-0 h-4 w-4 opacity-40 hover:opacity-100"
                                 class:opacity-100={item.hidden}
-                                on:click={() =>
+                                onclick={() =>
                                     onToggleVisibility(item.id, "bbox")}
                                 title={item.hidden ? "Show" : "Hide"}
                             >
@@ -120,7 +121,7 @@
                             <select
                                 class="select select-xs bg-base-300 text-[10px] w-20 h-5 min-h-0 px-1"
                                 value={item.label}
-                                on:change={(e) =>
+                                onchange={(e) =>
                                     onUpdateBBoxLabel(
                                         item.id,
                                         e.currentTarget.value,
@@ -138,7 +139,7 @@
                             <button
                                 class="btn btn-ghost btn-xs opacity-0 group-hover:opacity-100 text-error p-0 min-h-0 h-5 w-5 transition-opacity"
                                 title="Delete"
-                                on:click={() => onDeleteBBox(item.id)}
+                                onclick={() => onDeleteBBox(item.id)}
                             >
                                 <span class="material-symbols-outlined text-sm"
                                     >delete</span
@@ -185,7 +186,7 @@
                                 class="btn btn-ghost btn-xs p-0 min-h-0 h-4 w-4 opacity-40 hover:opacity-100"
                                 class:text-primary={item.locked}
                                 class:opacity-100={item.locked}
-                                on:click={() =>
+                                onclick={() =>
                                     onToggleLock(item.id, "polygon")}
                                 title={item.locked ? "Unlock" : "Lock"}
                             >
@@ -198,7 +199,7 @@
                             <button
                                 class="btn btn-ghost btn-xs p-0 min-h-0 h-4 w-4 opacity-40 hover:opacity-100"
                                 class:opacity-100={item.hidden}
-                                on:click={() =>
+                                onclick={() =>
                                     onToggleVisibility(item.id, "polygon")}
                                 title={item.hidden ? "Show" : "Hide"}
                             >
@@ -216,7 +217,7 @@
                             <select
                                 class="select select-xs bg-base-300 text-[10px] w-20 h-5 min-h-0 px-1"
                                 value={item.label}
-                                on:change={(e) =>
+                                onchange={(e) =>
                                     onUpdatePolygonLabel(
                                         item.id,
                                         e.currentTarget.value,
@@ -234,7 +235,7 @@
                             <button
                                 class="btn btn-ghost btn-xs opacity-0 group-hover:opacity-100 text-error p-0 min-h-0 h-5 w-5 transition-opacity"
                                 title="Delete"
-                                on:click={() => onDeletePolygon(item.id)}
+                                onclick={() => onDeletePolygon(item.id)}
                             >
                                 <span class="material-symbols-outlined text-sm"
                                     >delete</span
@@ -271,7 +272,7 @@
                                 class="btn btn-ghost btn-xs p-0 min-h-0 h-4 w-4 opacity-40 hover:opacity-100"
                                 class:text-primary={item.locked}
                                 class:opacity-100={item.locked}
-                                on:click={() =>
+                                onclick={() =>
                                     onToggleLock(item.id, "polyline")}
                                 title={item.locked ? "Unlock" : "Lock"}
                             >
@@ -284,7 +285,7 @@
                             <button
                                 class="btn btn-ghost btn-xs p-0 min-h-0 h-4 w-4 opacity-40 hover:opacity-100"
                                 class:opacity-100={item.hidden}
-                                on:click={() =>
+                                onclick={() =>
                                     onToggleVisibility(item.id, "polyline")}
                                 title={item.hidden ? "Show" : "Hide"}
                             >
@@ -302,7 +303,7 @@
                             <select
                                 class="select select-xs bg-base-300 text-[10px] w-20 h-5 min-h-0 px-1"
                                 value={item.label}
-                                on:change={(e) =>
+                                onchange={(e) =>
                                     onUpdatePolylineLabel(
                                         item.id,
                                         e.currentTarget.value,
@@ -320,7 +321,7 @@
                             <button
                                 class="btn btn-ghost btn-xs opacity-0 group-hover:opacity-100 text-error p-0 min-h-0 h-5 w-5 transition-opacity"
                                 title="Delete"
-                                on:click={() => onDeletePolyline(item.id)}
+                                onclick={() => onDeletePolyline(item.id)}
                             >
                                 <span class="material-symbols-outlined text-sm"
                                     >delete</span
@@ -357,7 +358,7 @@
                                 class="btn btn-ghost btn-xs p-0 min-h-0 h-4 w-4 opacity-40 hover:opacity-100"
                                 class:text-primary={item.locked}
                                 class:opacity-100={item.locked}
-                                on:click={() =>
+                                onclick={() =>
                                     onToggleLock(item.id, "keypoint")}
                                 title={item.locked ? "Unlock" : "Lock"}
                             >
@@ -370,7 +371,7 @@
                             <button
                                 class="btn btn-ghost btn-xs p-0 min-h-0 h-4 w-4 opacity-40 hover:opacity-100"
                                 class:opacity-100={item.hidden}
-                                on:click={() =>
+                                onclick={() =>
                                     onToggleVisibility(item.id, "keypoint")}
                                 title={item.hidden ? "Show" : "Hide"}
                             >
@@ -388,7 +389,7 @@
                             <select
                                 class="select select-xs bg-base-300 text-[10px] w-20 h-5 min-h-0 px-1"
                                 value={item.label}
-                                on:change={(e) =>
+                                onchange={(e) =>
                                     onUpdateKeypointLabel(
                                         item.id,
                                         e.currentTarget.value,
@@ -406,7 +407,7 @@
                             <button
                                 class="btn btn-ghost btn-xs opacity-0 group-hover:opacity-100 text-error p-0 min-h-0 h-5 w-5 transition-opacity"
                                 title="Delete"
-                                on:click={() => onDeleteKeypoint(item.id)}
+                                onclick={() => onDeleteKeypoint(item.id)}
                             >
                                 <span class="material-symbols-outlined text-sm"
                                     >delete</span

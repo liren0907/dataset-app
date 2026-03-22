@@ -1,12 +1,11 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
-
-    export let label: string;
-    export let value: string | null = null;
-    export let placeholder: string = "Select directory...";
-    export let description: string | null = null;
-
-    const dispatch = createEventDispatcher();
+    let { label, value = null, placeholder = "Select directory...", description = null, onbrowse }: {
+        label: string;
+        value: string | null;
+        placeholder?: string;
+        description?: string | null;
+        onbrowse?: () => void;
+    } = $props();
 </script>
 
 <div class="form-control">
@@ -22,7 +21,7 @@
             class="input input-bordered join-item flex-1"
         />
         <button
-            on:click={() => dispatch("browse")}
+            onclick={() => onbrowse?.()}
             class="btn btn-ghost join-item"
         >
             <span class="material-symbols-rounded">folder_open</span>

@@ -5,7 +5,7 @@
     } from "$lib/stores/labelTaxonomyStore";
     import SectionLabel from "$lib/components/ui/SectionLabel.svelte";
 
-    let newClassName = "";
+    let newClassName = $state("");
 
     function handleAddClass() {
         const trimmed = newClassName.trim();
@@ -35,7 +35,7 @@
                 <span class="text-xs font-medium">{cls.name}</span>
                 <button
                     class="opacity-0 group-hover:opacity-100 ml-0.5 hover:text-error transition-opacity"
-                    on:click={() => labelTaxonomy.removeClass(cls.name)}
+                    onclick={() => labelTaxonomy.removeClass(cls.name)}
                     title="Remove class">×</button
                 >
             </div>
@@ -48,11 +48,11 @@
             class="input input-xs input-bordered flex-1 bg-base-200 text-xs"
             placeholder="Add class..."
             bind:value={newClassName}
-            on:keydown={handleKeyDown}
+            onkeydown={handleKeyDown}
         />
         <button
             class="btn btn-xs btn-primary"
-            on:click={handleAddClass}
+            onclick={handleAddClass}
             disabled={!newClassName.trim()}>+</button
         >
     </div>

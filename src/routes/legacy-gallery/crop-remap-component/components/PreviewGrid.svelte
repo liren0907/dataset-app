@@ -1,11 +1,11 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
     import type { PreviewImage } from "../services/dataService";
 
-    export let images: PreviewImage[] = [];
-    export let loading: boolean = false;
-
-    const dispatch = createEventDispatcher();
+    let { images = [], loading = false, onselect }: {
+        images: PreviewImage[];
+        loading: boolean;
+        onselect?: (image: PreviewImage) => void;
+    } = $props();
 </script>
 
 <div class="bg-purple-50 p-4 rounded-md border border-purple-200">
@@ -37,7 +37,7 @@
                         <button
                             type="button"
                             class="absolute inset-0 w-full h-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-                            on:click={() => dispatch("select", image)}
+                            onclick={() => onselect?.(image)}
                             aria-label={`View full size image: ${image.name}`}
                         >
                             <img

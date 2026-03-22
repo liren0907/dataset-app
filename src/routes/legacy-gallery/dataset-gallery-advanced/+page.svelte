@@ -248,8 +248,8 @@
     }
 
     // Modal Annotation Viewer Handlers
-    function handleModalSave(event: CustomEvent) {
-        const { image, annotations } = event.detail;
+    function handleModalSave(detail: { image: any; annotations: any[] }) {
+        const { image, annotations } = detail;
         console.log('Page: Saving annotations from modal for', image.name, annotations);
 
         // Update the image in the images array with new annotations
@@ -576,7 +576,7 @@
     />
 </svelte:head>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 <div class="container mx-auto px-4 py-8">
     <div class="max-w-6xl mx-auto">
@@ -588,7 +588,7 @@
                 {#if directoryPath}
                     <!-- Button to select/change directory (now appears only *after* initial selection) -->
                     <button
-                        on:click={selectDirectory}
+                        onclick={selectDirectory}
                         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                         disabled={loading}
                     >
@@ -629,7 +629,7 @@
                             </div>
 
                             <button
-                                on:click={annotateImages}
+                                onclick={annotateImages}
                                 class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                                 disabled={annotating || autoAnnotating}
                             >
@@ -640,7 +640,7 @@
 
                             <!-- Unified Export Button -->
                             <button
-                                on:click={() => {
+                                onclick={() => {
                                     showActualExportModal = true;
                                     pageExportError = "";
                                     pageExportSuccess = "";
@@ -658,13 +658,13 @@
                             <span class="text-sm text-slate-600">View:</span>
                             <button
                                 class={`px-3 py-1 rounded text-sm transition-colors ${viewMode === "grid" ? "bg-indigo-100 text-indigo-700" : "text-slate-700 hover:bg-slate-100"}`}
-                                on:click={() => changeViewMode("grid")}
+                                onclick={() => changeViewMode("grid")}
                             >
                                 Grid
                             </button>
                             <button
                                 class={`px-3 py-1 rounded text-sm transition-colors ${viewMode === "column" ? "bg-indigo-100 text-indigo-700" : "text-slate-700 hover:bg-slate-100"}`}
-                                on:click={() => changeViewMode("column")}
+                                onclick={() => changeViewMode("column")}
                             >
                                 Column
                             </button>
@@ -737,8 +737,8 @@
                         {annotationType}
                         {loading}
                         {loadingMore}
-                        on:selectImage={(event) => selectImage(event.detail)}
-                        on:loadPage={(event) => loadImagesPage(event.detail)}
+                        onselectimage={(detail) => selectImage(detail)}
+                        onloadpage={(page) => loadImagesPage(page)}
                     />
                 {/if}
             {:else if !loading && !error}
@@ -768,7 +768,7 @@
                     <div class="mt-6">
                         <button
                             type="button"
-                            on:click={selectDirectory}
+                            onclick={selectDirectory}
                             class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                         >
                             <svg
@@ -795,17 +795,17 @@
 </div>
 
 <!-- Image Viewer Modal with Annotation Support -->
-<ImageViewerModal {selectedImage} {annotationType} on:close={closeImageView} />
+<ImageViewerModal {selectedImage} {annotationType} onclose={closeImageView} />
 
 <!-- Unified Export Modal -->
 <ExportModal
     bind:showModal={showActualExportModal}
     currentDirectoryPath={directoryPath}
     currentDatasetSummary={datasetSummary}
-    on:closeModal={() => {
+    onclosemodal={() => {
         showActualExportModal = false;
     }}
-    on:runExport={(event) => runUnifiedExport(event.detail)}
+    onrunexport={(detail) => runUnifiedExport(detail)}
 />
 
 <!-- Modal Annotation Viewer -->
@@ -813,8 +813,8 @@
     showModal={showAnnotationModal}
     selectedImage={modalSelectedImage}
     {autoAnnotationEnabled}
-    on:save={handleModalSave}
-    on:close={handleModalClose}
+    onsave={handleModalSave}
+    onclose={handleModalClose}
 />
 
 <style>

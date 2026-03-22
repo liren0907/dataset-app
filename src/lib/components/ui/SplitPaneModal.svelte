@@ -1,20 +1,35 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
+    import type { Snippet } from "svelte";
 
     /**
      * SplitPaneModal Component - /gallery Style
      * 35%/65% left-right split layout from /gallery ExportModal.
      */
 
-    export let show: boolean = false;
-    export let title: string = "Modal Title";
-    export let subtitle: string = "";
-    export let icon: string = "settings";
-
-    const dispatch = createEventDispatcher();
+    let {
+        show = false,
+        title = "Modal Title",
+        subtitle = "",
+        icon = "settings",
+        onclose,
+        sidebar,
+        "sidebar-footer": sidebarFooter,
+        content,
+        footer,
+    }: {
+        show?: boolean;
+        title?: string;
+        subtitle?: string;
+        icon?: string;
+        onclose?: () => void;
+        sidebar?: Snippet;
+        "sidebar-footer"?: Snippet;
+        content?: Snippet;
+        footer?: Snippet;
+    } = $props();
 
     function handleClose() {
-        dispatch("close");
+        onclose?.();
     }
 
     function handleBackdropClick() {
@@ -51,37 +66,39 @@
 
                 <!-- Sidebar Content -->
                 <div class="flex flex-col gap-3 flex-1">
-                    <slot name="sidebar" />
+                    {@render sidebar?.()}
                 </div>
 
                 <!-- Sidebar Footer (optional) -->
-                <slot name="sidebar-footer" />
+                {@render sidebarFooter?.()}
             </div>
 
             <!-- Right Content Panel (65%) -->
             <div class="w-[65%] flex flex-col h-full bg-base-100 relative">
                 <!-- Close Button -->
                 <button
-                    on:click={handleClose}
+                    onclick={handleClose}
                     class="absolute top-4 right-4 z-10 btn btn-sm btn-circle btn-ghost text-base-content/40 hover:text-base-content"
                     >✕</button
                 >
 
                 <!-- Scrollable Content -->
                 <div class="flex-1 overflow-y-auto p-8 space-y-8">
-                    <slot name="content" />
+                    {@render content?.()}
                 </div>
 
                 <!-- Footer Action -->
                 <div
                     class="p-6 border-t border-base-100 bg-base-50/50 flex justify-end gap-3"
                 >
-                    <slot name="footer">
+                    {#if footer}
+                        {@render footer()}
+                    {:else}
                         <button
                             class="btn btn-sm btn-ghost bg-base-200 hover:bg-base-300 text-base-content/70 border-none font-normal"
-                            on:click={handleClose}>Close</button
+                            onclick={handleClose}>Close</button
                         >
-                    </slot>
+                    {/if}
                 </div>
             </div>
         </div>
@@ -89,7 +106,7 @@
             method="dialog"
             class="modal-backdrop bg-base-300/50 backdrop-blur-sm"
         >
-            <button on:click={handleBackdropClick}>close</button>
+            <button onclick={handleBackdropClick}>close</button>
         </form>
     </dialog>
 {/if}

@@ -1,22 +1,39 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
     import type { ProcessedImage } from "$lib/services/datasetService";
 
-    export let directoryPath: string;
-    export let images: ProcessedImage[];
-    export let loading: boolean;
-    export let annotating: boolean;
-    export let annotationType: string;
-    export let cropToolOpen: boolean;
-    export let viewMode: string;
-
-    const dispatch = createEventDispatcher();
+    let {
+        directoryPath,
+        images,
+        loading,
+        annotating,
+        annotationType = $bindable(),
+        cropToolOpen,
+        viewMode,
+        onselectdirectory,
+        onannotate,
+        onexport,
+        ontogglecrop,
+        onchangeviewmode,
+    }: {
+        directoryPath: string;
+        images: ProcessedImage[];
+        loading: boolean;
+        annotating: boolean;
+        annotationType: string;
+        cropToolOpen: boolean;
+        viewMode: string;
+        onselectdirectory?: () => void;
+        onannotate?: () => void;
+        onexport?: () => void;
+        ontogglecrop?: () => void;
+        onchangeviewmode?: (mode: string) => void;
+    } = $props();
 </script>
 
 <div class="flex flex-wrap items-center gap-3 mb-6">
     <!-- Change Directory Button -->
     <button
-        on:click={() => dispatch("selectDirectory")}
+        onclick={() => onselectdirectory?.()}
         class="btn btn-ghost btn-sm border border-base-content/20"
         disabled={loading}
     >
@@ -42,7 +59,7 @@
             </select>
 
             <button
-                on:click={() => dispatch("annotate")}
+                onclick={() => onannotate?.()}
                 class="btn btn-success btn-sm join-item"
                 disabled={annotating}
             >
@@ -55,7 +72,7 @@
 
         <!-- Export Button -->
         <button
-            on:click={() => dispatch("export")}
+            onclick={() => onexport?.()}
             class="btn btn-info btn-sm"
             disabled={!directoryPath || images.length === 0}
         >
@@ -65,7 +82,7 @@
 
         <!-- Crop & Remap Toggle -->
         <button
-            on:click={() => dispatch("toggleCrop")}
+            onclick={() => ontogglecrop?.()}
             class="btn btn-secondary btn-sm"
         >
             <span class="material-symbols-rounded icon-sm">crop</span>
@@ -78,7 +95,7 @@
                 class="btn btn-sm join-item {viewMode === 'grid'
                     ? 'btn-active'
                     : ''}"
-                on:click={() => dispatch("changeViewMode", "grid")}
+                onclick={() => onchangeviewmode?.("grid")}
             >
                 <span class="material-symbols-rounded icon-sm">grid_view</span>
             </button>
@@ -86,7 +103,7 @@
                 class="btn btn-sm join-item {viewMode === 'column'
                     ? 'btn-active'
                     : ''}"
-                on:click={() => dispatch("changeViewMode", "column")}
+                onclick={() => onchangeviewmode?.("column")}
             >
                 <span class="material-symbols-rounded icon-sm">view_list</span>
             </button>

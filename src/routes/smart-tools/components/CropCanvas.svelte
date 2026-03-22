@@ -1,46 +1,50 @@
 <script lang="ts">
-    import { onMount, createEventDispatcher } from "svelte";
+    import { onMount } from "svelte";
 
-    export let originalImage: HTMLImageElement | null;
-    export let zoom: number;
-    export let rotation: number;
-    export let aspectRatio: string;
-    export let cropArea: {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    };
-
-    // We export the canvas element binding so the parent (and PreviewModal) can access it if needed for calculations
-    export let canvasElement: HTMLCanvasElement;
-
-    const dispatch = createEventDispatcher();
+    let {
+        originalImage,
+        zoom,
+        rotation,
+        aspectRatio,
+        cropArea = $bindable(),
+        canvasElement = $bindable(),
+    }: {
+        originalImage: HTMLImageElement | null;
+        zoom: number;
+        rotation: number;
+        aspectRatio: string;
+        cropArea: { x: number; y: number; width: number; height: number };
+        canvasElement: HTMLCanvasElement;
+    } = $props();
 
     let ctx: CanvasRenderingContext2D | null = null;
     let container: HTMLElement;
 
     // Interaction state
-    let isDragging = false;
-    let isResizing = false;
+    let isDragging = $state(false);
+    let isResizing = $state(false);
     let dragStart = { x: 0, y: 0 };
     let resizeHandle = "";
 
     // Hover states
-    let isHoveringCrop = false;
-    let isHoveringHandle = false;
-    let currentHandle = "";
-    let isPanning = false;
+    let isHoveringCrop = $state(false);
+    let isHoveringHandle = $state(false);
+    let currentHandle = $state("");
+    let isPanning = $state(false);
     let lastMousePos = { x: 0, y: 0 };
 
     // Watch for prop changes to redraw
-    $: if (originalImage && canvasElement) {
-        // Debounce slightly or just draw
+    $effect(() => {
+        if (originalImage && canvasElement) {
+            requestAnimationFrame(drawImage);
+        }
+    });
+    $effect(() => {
+        // Access zoom and rotation to track them
+        void zoom;
+        void rotation;
         requestAnimationFrame(drawImage);
-    }
-    $: if (zoom || rotation) {
-        requestAnimationFrame(drawImage);
-    }
+    });
 
     onMount(() => {
         if (originalImage) {
@@ -60,7 +64,6 @@
         ctx = canvasElement.getContext("2d");
 
         // Initialize crop area to center of image if not set (or we can trust parent to set initial crop)
-        // For refactoring, let's assume parent sets initial logic or we check if 0
         if (cropArea.width === 0) {
             const centerX = canvasElement.width / 2;
             const centerY = canvasElement.height / 2;
@@ -425,10 +428,6 @@
         }
     }
 
-    // Handlers exposed/called from parent via props change or methods?
-    // Since we put interaction on canvas, we just need to handle keyboard events passed down or handle them globally in parent?
-    // Parent handles global keys (shortcuts).
-
     // Make drawing/panning accessible for key events which modify state
     export function setPanning(panning: boolean) {
         isPanning = panning;
@@ -467,11 +466,11 @@
     <!-- Main Canvas -->
     <canvas
         bind:this={canvasElement}
-        on:mousedown={handleMouseDown}
-        on:mousemove={handleMouseMove}
-        on:mouseup={handleMouseUp}
-        on:mouseleave={handleMouseLeave}
-        on:mouseenter={handleMouseEnter}
+        onmousedown={handleMouseDown}
+        onmousemove={handleMouseMove}
+        onmouseup={handleMouseUp}
+        onmouseleave={handleMouseLeave}
+        onmouseenter={handleMouseEnter}
         class="relative z-10 w-full h-full transition-all duration-200"
         style="cursor: {getCanvasCursor()};"
     ></canvas>

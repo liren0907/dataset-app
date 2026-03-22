@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
     import type {
         DatasetSummary,
         ProcessedImage,
@@ -8,20 +7,51 @@
     import ToggleButtonGroup from "$lib/components/ui/ToggleButtonGroup.svelte";
     import IconSegmentedControl from "$lib/components/ui/IconSegmentedControl.svelte";
 
-    export let isMockMode: boolean;
-    export let loading: boolean;
-    export let directoryPath: string;
-    export let images: ProcessedImage[];
-    export let annotationType: "bounding_box" | "polygon" = "bounding_box";
-    export let autoAnnotationEnabled: boolean;
-    export let annotating: boolean;
-
-    export let showCropTool: boolean;
-    export let showAdvancedCropTool: boolean;
-    export let viewMode: "grid" | "column" = "grid";
-    export let editMode: "modal" | "sidebar" = "sidebar";
-
-    const dispatch = createEventDispatcher();
+    let {
+        isMockMode,
+        loading,
+        directoryPath,
+        images,
+        annotationType = "bounding_box",
+        autoAnnotationEnabled,
+        annotating,
+        showCropTool,
+        showAdvancedCropTool,
+        viewMode = "grid",
+        editMode = "sidebar",
+        ontogglemockmode,
+        onselectdirectory,
+        onsetannotationtype,
+        ontoggleautoannotation,
+        onannotateimages,
+        onopenexportmodal,
+        ontogglecroptool,
+        ontoggleadvancedcroptool,
+        onsetviewmode,
+        onseteditmode,
+    }: {
+        isMockMode: boolean;
+        loading: boolean;
+        directoryPath: string;
+        images: ProcessedImage[];
+        annotationType?: "bounding_box" | "polygon";
+        autoAnnotationEnabled: boolean;
+        annotating: boolean;
+        showCropTool: boolean;
+        showAdvancedCropTool: boolean;
+        viewMode?: "grid" | "column";
+        editMode?: "modal" | "sidebar";
+        ontogglemockmode?: () => void;
+        onselectdirectory?: () => void;
+        onsetannotationtype?: (val: string) => void;
+        ontoggleautoannotation?: () => void;
+        onannotateimages?: () => void;
+        onopenexportmodal?: () => void;
+        ontogglecroptool?: () => void;
+        ontoggleadvancedcroptool?: () => void;
+        onsetviewmode?: (val: string) => void;
+        onseteditmode?: (val: string) => void;
+    } = $props();
 
     function splitPath(path: string) {
         if (!path) return [];
@@ -78,7 +108,7 @@
             variant={isMockMode ? "soft" : "ghost"}
             active={isMockMode}
             tooltip={isMockMode ? "Switch to Real Data" : "Switch to Mock Data"}
-            on:click={() => dispatch("toggleMockMode")}
+            onclick={() => ontogglemockmode?.()}
         />
 
         <div class="divider divider-horizontal mx-0 h-6"></div>
@@ -90,7 +120,7 @@
             disabled={loading}
             {loading}
             variant="ghost"
-            on:click={() => dispatch("selectDirectory")}
+            onclick={() => onselectdirectory?.()}
         />
 
         <div class="divider divider-horizontal mx-0 h-6"></div>
@@ -137,7 +167,7 @@
                 <IconSegmentedControl
                     options={annotationOptions}
                     value={annotationType}
-                    on:change={(e) => dispatch("setAnnotationType", e.detail)}
+                    onchange={(val) => onsetannotationtype?.(val)}
                 />
                 <div class="divider divider-horizontal mx-0 h-6"></div>
             {/if}
@@ -152,7 +182,7 @@
                     ? "Auto-load Active"
                     : "Auto-load Inactive"}
                 disabled={!directoryPath}
-                on:click={() => dispatch("toggleAutoAnnotation")}
+                onclick={() => ontoggleautoannotation?.()}
             />
 
             <!-- Load Annotations -->
@@ -162,7 +192,7 @@
                 tooltip="Load Annotations"
                 disabled={!directoryPath || images.length === 0 || annotating}
                 loading={annotating}
-                on:click={() => dispatch("annotateImages")}
+                onclick={() => onannotateimages?.()}
             />
         </div>
 
@@ -176,7 +206,7 @@
                 label="Export"
                 tooltip="Export Dataset"
                 disabled={!directoryPath || images.length === 0}
-                on:click={() => dispatch("openExportModal")}
+                onclick={() => onopenexportmodal?.()}
             />
 
             <!-- Crop Tool -->
@@ -186,7 +216,7 @@
                 tooltip="Crop & Remap Tool"
                 active={showCropTool}
                 variant={showCropTool ? "soft" : "ghost"}
-                on:click={() => dispatch("toggleCropTool")}
+                onclick={() => ontogglecroptool?.()}
             />
 
             <!-- Advanced Crop Tool -->
@@ -196,7 +226,7 @@
                 tooltip="Advanced Crop with Preview"
                 active={showAdvancedCropTool}
                 variant={showAdvancedCropTool ? "soft" : "ghost"}
-                on:click={() => dispatch("toggleAdvancedCropTool")}
+                onclick={() => ontoggleadvancedcroptool?.()}
             />
         </div>
 
@@ -207,7 +237,7 @@
             <IconSegmentedControl
                 options={viewModeOptions}
                 value={viewMode}
-                on:change={(e) => dispatch("setViewMode", e.detail)}
+                onchange={(val) => onsetviewmode?.(val)}
             />
 
             <div class="divider divider-horizontal mx-0 h-6"></div>
@@ -216,7 +246,7 @@
             <ToggleButtonGroup
                 options={editModeOptions}
                 value={editMode}
-                on:change={(e) => dispatch("setEditMode", e.detail)}
+                onchange={(val) => onseteditmode?.(val)}
             />
         </div>
     </div>

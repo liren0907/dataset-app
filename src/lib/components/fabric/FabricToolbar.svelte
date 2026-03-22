@@ -1,27 +1,41 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
     import type { Mode } from "$lib/logic/FabricManager";
     import RawButton from "$lib/components/ui/RawButton.svelte";
     import IconSegmentedControl from "$lib/components/ui/IconSegmentedControl.svelte";
 
-    export let mode: Mode = "select";
-    export let isPolygonDrawing = false;
-    export let isPolylineDrawing = false;
-    export let strokeWidth = 2;
-    export let showVertexPoints = true;
-
-    const dispatch = createEventDispatcher<{
-        setMode: Mode;
-        triggerFileInput: void;
-        triggerDirectoryInput: void;
-        triggerMockLoad: void;
-        finishPolygon: void;
-        resetPolygon: void;
-        finishPolyline: void;
-        resetPolyline: void;
-        strokeWidthChange: number;
-        toggleVertexPoints: void;
-    }>();
+    let {
+        mode = "select" as Mode,
+        isPolygonDrawing = false,
+        isPolylineDrawing = false,
+        strokeWidth = 2,
+        showVertexPoints = true,
+        onsetmode,
+        ontriggerfileinput,
+        ontriggerdirectoryinput,
+        ontriggermockload,
+        onfinishpolygon,
+        onresetpolygon,
+        onfinishpolyline,
+        onresetpolyline,
+        onstrokewidthchange,
+        ontogglevertexpoints,
+    }: {
+        mode?: Mode;
+        isPolygonDrawing?: boolean;
+        isPolylineDrawing?: boolean;
+        strokeWidth?: number;
+        showVertexPoints?: boolean;
+        onsetmode?: (mode: Mode) => void;
+        ontriggerfileinput?: () => void;
+        ontriggerdirectoryinput?: () => void;
+        ontriggermockload?: () => void;
+        onfinishpolygon?: () => void;
+        onresetpolygon?: () => void;
+        onfinishpolyline?: () => void;
+        onresetpolyline?: () => void;
+        onstrokewidthchange?: (width: number) => void;
+        ontogglevertexpoints?: () => void;
+    } = $props();
 
     const toolOptions = [
         { value: "select", icon: "arrow_selector_tool", tooltip: "Select (V)" },
@@ -32,8 +46,8 @@
         { value: "pan", icon: "pan_tool", tooltip: "Pan (H)" },
     ];
 
-    function handleModeChange(event: CustomEvent<Mode>) {
-        dispatch("setMode", event.detail);
+    function handleModeChange(value: Mode) {
+        onsetmode?.(value);
     }
 </script>
 
@@ -56,7 +70,7 @@
     <IconSegmentedControl
         options={toolOptions}
         value={mode}
-        on:change={handleModeChange}
+        onchange={handleModeChange}
     />
 
     <div class="w-px h-6 bg-base-300"></div>
@@ -65,18 +79,18 @@
     <RawButton
         icon="image"
         label="Load Image"
-        on:click={() => dispatch("triggerFileInput")}
+        onclick={() => ontriggerfileinput?.()}
     />
     <RawButton
         icon="folder_open"
         label="Load Directory"
-        on:click={() => dispatch("triggerDirectoryInput")}
+        onclick={() => ontriggerdirectoryinput?.()}
     />
     <RawButton
         icon="science"
         label="Mock"
         class="btn-ghost text-primary hover:bg-primary/10"
-        on:click={() => dispatch("triggerMockLoad")}
+        onclick={() => ontriggermockload?.()}
     />
 
     <div class="w-px h-6 bg-base-300"></div>
@@ -91,7 +105,7 @@
             step="0.5"
             value={strokeWidth}
             class="range range-xs range-primary w-20"
-            on:input={(e) => dispatch('strokeWidthChange', parseFloat(e.currentTarget.value))}
+            oninput={(e) => onstrokewidthchange?.(parseFloat(e.currentTarget.value))}
         />
         <span class="text-[10px] font-mono text-base-content/50 w-6 text-center">
             {strokeWidth}
@@ -103,7 +117,7 @@
         class="btn btn-ghost btn-xs gap-1"
         class:btn-active={showVertexPoints}
         title={showVertexPoints ? "Hide Vertex Points" : "Show Vertex Points"}
-        on:click={() => dispatch('toggleVertexPoints')}
+        onclick={() => ontogglevertexpoints?.()}
     >
         <span class="material-symbols-rounded text-[18px]">scatter_plot</span>
     </button>
@@ -116,13 +130,13 @@
                 icon="check_circle"
                 label="Finish"
                 class="btn-success text-success-content hover:bg-success hover:text-success-content"
-                on:click={() => dispatch("finishPolygon")}
+                onclick={() => onfinishpolygon?.()}
             />
             <RawButton
                 icon="cancel"
                 label="Cancel"
                 class="btn-error text-error-content hover:bg-error hover:text-error-content"
-                on:click={() => dispatch("resetPolygon")}
+                onclick={() => onresetpolygon?.()}
             />
         </div>
     {/if}
@@ -135,13 +149,13 @@
                 icon="check_circle"
                 label="Finish"
                 class="btn-success text-success-content hover:bg-success hover:text-success-content"
-                on:click={() => dispatch("finishPolyline")}
+                onclick={() => onfinishpolyline?.()}
             />
             <RawButton
                 icon="cancel"
                 label="Cancel"
                 class="btn-error text-error-content hover:bg-error hover:text-error-content"
-                on:click={() => dispatch("resetPolyline")}
+                onclick={() => onresetpolyline?.()}
             />
         </div>
     {/if}

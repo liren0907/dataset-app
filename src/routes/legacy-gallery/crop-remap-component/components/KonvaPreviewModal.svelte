@@ -1,22 +1,23 @@
 <script lang="ts">
-    import { createEventDispatcher, onMount, onDestroy } from "svelte";
+    import { onMount, onDestroy } from "svelte";
     import { KonvaManager, type KonvaState } from "../services/konvaService";
     import type { PreviewImage } from "../services/dataService";
 
-    export let image: PreviewImage;
-
-    const dispatch = createEventDispatcher();
+    let { image, onclose }: {
+        image: PreviewImage;
+        onclose?: () => void;
+    } = $props();
 
     let konvaContainer: HTMLDivElement;
     let manager: KonvaManager;
 
-    let state: KonvaState = {
+    let state: KonvaState = $state({
         scale: 1,
         stageX: 0,
         stageY: 0,
         selectedAnnotationCount: 0,
         totalAnnotations: 0,
-    };
+    });
 
     onMount(() => {
         // Initialize KonvaManager
@@ -40,7 +41,7 @@
 
     function handleKeydown(e: KeyboardEvent) {
         if (e.key === "Escape") {
-            dispatch("close");
+            onclose?.();
         }
 
         // Forward keys to manager or handle locally
@@ -73,26 +74,26 @@
     }
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 <div
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
     role="dialog"
     aria-modal="true"
-    on:click={() => dispatch("close")}
+    onclick={() => onclose?.()}
     tabindex="-1"
 >
     <div
         class="bg-white rounded-lg shadow-xl max-w-6xl max-h-[95vh] overflow-hidden w-full flex flex-col"
         role="document"
-        on:click|stopPropagation
+        onclick={(e) => e.stopPropagation()}
     >
         <div
             class="p-4 border-b border-gray-200 flex justify-between items-center"
         >
             <h3 class="text-lg font-medium text-gray-900">{image.name}</h3>
             <button
-                on:click={() => dispatch("close")}
+                onclick={() => onclose?.()}
                 class="text-gray-400 hover:text-gray-600 text-2xl leading-none px-2"
             >
                 ×
@@ -108,22 +109,22 @@
 
                 <div class="flex gap-1">
                     <button
-                        on:click={() => manager.zoomOut()}
+                        onclick={() => manager.zoomOut()}
                         class="btn-tool"
                         title="Zoom Out (-)">🔍-</button
                     >
                     <button
-                        on:click={() => manager.resetZoom()}
+                        onclick={() => manager.resetZoom()}
                         class="btn-tool"
                         title="Reset (0)">100%</button
                     >
                     <button
-                        on:click={() => manager.zoomIn()}
+                        onclick={() => manager.zoomIn()}
                         class="btn-tool"
                         title="Zoom In (+)">🔍+</button
                     >
                     <button
-                        on:click={() => manager.fitToScreen()}
+                        onclick={() => manager.fitToScreen()}
                         class="btn-tool ml-2 bg-green-500 hover:bg-green-600"
                         title="Fit (R)">📐 Fit</button
                     >
@@ -135,17 +136,17 @@
                 >
                     <span class="text-sm text-gray-600">Annotations:</span>
                     <button
-                        on:click={() => manager.selectAllAnnotations()}
+                        onclick={() => manager.selectAllAnnotations()}
                         class="btn-tool bg-purple-500 hover:bg-purple-600"
                         >Select All</button
                     >
                     <button
-                        on:click={() => manager.deselectAnnotation()}
+                        onclick={() => manager.deselectAnnotation()}
                         class="btn-tool bg-gray-500 hover:bg-gray-600"
                         >Deselect</button
                     >
                     <button
-                        on:click={() => manager.deleteSelectedAnnotation()}
+                        onclick={() => manager.deleteSelectedAnnotation()}
                         class="btn-tool bg-red-500 hover:bg-red-600"
                         >🗑️ Delete</button
                     >

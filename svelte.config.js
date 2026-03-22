@@ -6,11 +6,24 @@ import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-  preprocess: vitePreprocess(),
+  preprocess: [
+    vitePreprocess({ script: true }),
+    {
+      // Strip lang="ts" after TypeScript has been processed
+      // Svelte 5 compiler doesn't support lang="ts" natively
+      markup({ content, filename }) {
+        const processed = content
+          .replace(/<script\s+lang="ts">/g, '<script>')
+          .replace(/<script\s+lang="ts"\s+/g, '<script ')
+          .replace(/<script\s+([^>]*)lang="ts"([^>]*)>/g, '<script $1$2>');
+        if (processed !== content) {
+          return { code: processed };
+        }
+      }
+    }
+  ],
   kit: {
     adapter: adapter({
-      // default options are shown. On some platforms
-      // these options are set automatically — see https://kit.svelte.dev/docs/adapters#platforms
       pages: 'build',
       assets: 'build',
       fallback: '200.html',
@@ -18,11 +31,7 @@ const config = {
       strict: true
     }),
   },
-  /* closing a11y warnings */
-  onwarn: (warning, handler) => {
-    if (warning.code.startsWith('a11y-')) return;
-    handler(warning);
-  },
+  compilerOptions: {},
 };
 
 export default config;

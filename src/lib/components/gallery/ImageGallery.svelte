@@ -1,19 +1,33 @@
 <script lang="ts">
-    import { createEventDispatcher, tick, onMount, afterUpdate } from "svelte";
-    // import { convertFileSrc } from "@tauri-apps/api/core"; // Not strictly needed if previewUrl is always pre-converted by parent
+    import { onMount } from "svelte";
 
-    export let images: any[] = [];
-    export let totalImages: number = 0;
-    export let currentPage: number = 1;
-    export let totalPages: number = 0;
-    export let pageSize: number = 30; // Used for smart loading strategy
-    export let viewMode: "grid" | "column" = "grid";
-    export let annotationType: string = "bounding_box";
-    export let loading: boolean = false;
-    export let loadingMore: boolean = false;
-    export let selectedImage: any = null;
-
-    const dispatch = createEventDispatcher();
+    let {
+        images = [],
+        totalImages = 0,
+        currentPage = 1,
+        totalPages = 0,
+        pageSize = 30,
+        viewMode = "grid",
+        annotationType = "bounding_box",
+        loading = false,
+        loadingMore = false,
+        selectedImage = null,
+        onimageclick,
+        onloadpage,
+    }: {
+        images?: any[];
+        totalImages?: number;
+        currentPage?: number;
+        totalPages?: number;
+        pageSize?: number;
+        viewMode?: "grid" | "column";
+        annotationType?: string;
+        loading?: boolean;
+        loadingMore?: boolean;
+        selectedImage?: any;
+        onimageclick?: (data: { image: any; index: number }) => void;
+        onloadpage?: (page: number) => void;
+    } = $props();
 
     // Image preloading for faster annotation editor loading
     let preloadCache = new Map<string, boolean>();
@@ -25,10 +39,10 @@
         const img = new Image();
         img.onload = () => {
             preloadCache.set(imagePath, true);
-            console.log(`✅ Preloaded image: ${imagePath}`);
+            console.log(`Preloaded image: ${imagePath}`);
         };
         img.onerror = () => {
-            console.warn(`❌ Failed to preload image: ${imagePath}`);
+            console.warn(`Failed to preload image: ${imagePath}`);
         };
         img.src = imagePath;
     }
@@ -38,45 +52,36 @@
         if (!image?.path || preloadCache.has(`annotated_${image.path}`)) return;
 
         try {
-            // Simulate backend call for preloading (in real implementation, this would call the backend)
-            console.log(`🔄 Preloading annotated preview for: ${image.name}`);
-
-            // For now, just preload the regular image
-            // In full implementation, this would preload the annotated version
+            console.log(`Preloading annotated preview for: ${image.name}`);
             if (image.previewUrl) {
                 preloadImage(image.previewUrl);
             }
-
             preloadCache.set(`annotated_${image.path}`, true);
         } catch (error) {
             console.warn(
-                `⚠️ Failed to preload annotated preview for ${image.name}:`,
+                `Failed to preload annotated preview for ${image.name}:`,
                 error,
             );
         }
     }
 
     function handleImageHover(image: any): void {
-        // Clear any existing timeout
         if (preloadTimeout) {
             clearTimeout(preloadTimeout);
         }
-
-        // Start preloading after a short delay (500ms) to avoid unnecessary preloading
         preloadTimeout = setTimeout(() => {
             preloadAnnotatedPreview(image);
         }, 500);
     }
 
     function handleImageLeave(): void {
-        // Clear preload timeout if user moves away quickly
         if (preloadTimeout) {
             clearTimeout(preloadTimeout);
             preloadTimeout = null;
         }
     }
 
-    // --- Helper Functions (can be moved from +page.svelte or kept if only used here) ---
+    // --- Helper Functions ---
     function formatFileSize(bytes: number | null | undefined) {
         if (bytes === null || bytes === undefined) return "";
         if (bytes < 1024) return bytes + " B";
@@ -88,12 +93,12 @@
         let pages: (number | string)[] = [];
         if (total <= 1) return [1];
         pages.push(1);
-        if (current > 3) pages.push("ellipsis_start"); // Use unique string for ellipsis
+        if (current > 3) pages.push("ellipsis_start");
         if (current > 2 && current - 1 !== 1) pages.push(current - 1);
         if (current !== 1 && current !== total) pages.push(current);
         if (current < total - 1 && current + 1 !== total)
             pages.push(current + 1);
-        if (current < total - 2) pages.push("ellipsis_end"); // Use unique string for ellipsis
+        if (current < total - 2) pages.push("ellipsis_end");
         if (total > 1) pages.push(total);
 
         let uniquePages: (number | string)[] = [];
@@ -112,7 +117,7 @@
     }
 
     function handleImageClick(image: any, index: number) {
-        dispatch("imageClick", { image, index });
+        onimageclick?.({ image, index });
     }
 
     function handleLoadPage(page: number | string) {
@@ -122,21 +127,19 @@
             page <= totalPages &&
             page !== currentPage
         ) {
-            dispatch("loadPage", page);
+            onloadpage?.(page);
         }
     }
 
-    // --- Enhanced Lazy Loading Strategy --- (Optimized version)
-    // Improved intersection observer with better preloading and state management
+    // --- Enhanced Lazy Loading Strategy ---
     function setupLazyLoading() {
-        if (typeof document === "undefined") return; // Guard for SSR
+        if (typeof document === "undefined") return;
 
-        // Only select images that need lazy loading (not first page, not already processed)
         const imageElements = document.querySelectorAll(
             `.gallery-lazy-image:not(.observed):not(.loaded)`,
         );
 
-        if (imageElements.length === 0) return; // No images to process
+        if (imageElements.length === 0) return;
 
         const imgObserver = new IntersectionObserver(
             (entries) => {
@@ -145,27 +148,25 @@
                         const img = entry.target as HTMLImageElement;
                         const imageSrc = img.getAttribute("data-src");
 
-                        // Enhanced loading logic with better state management
                         if (
                             imageSrc &&
                             img.src !== imageSrc &&
                             !img.classList.contains("loaded")
                         ) {
                             img.src = imageSrc;
-                            img.classList.add("observed"); // Mark as observed to prevent re-processing
+                            img.classList.add("observed");
                         }
 
-                        imgObserver.unobserve(img); // Stop observing this image
+                        imgObserver.unobserve(img);
                     }
                 });
             },
             {
-                rootMargin: "300px 0px", // Increased for better preloading distance
+                rootMargin: "300px 0px",
                 threshold: 0.01,
             },
         );
 
-        // Observe all eligible images
         imageElements.forEach((img) => {
             imgObserver.observe(img);
         });
@@ -181,15 +182,16 @@
         lastImagesLength = images.length;
     });
 
-    afterUpdate(() => {
-        // Only re-run lazy loading if page changed or new images were added
-        if (
-            currentPage !== lastProcessedPage ||
-            images.length !== lastImagesLength
-        ) {
+    // Replace afterUpdate with $effect
+    $effect(() => {
+        // Track dependencies
+        const _page = currentPage;
+        const _len = images.length;
+
+        if (_page !== lastProcessedPage || _len !== lastImagesLength) {
             setupLazyLoading();
-            lastProcessedPage = currentPage;
-            lastImagesLength = images.length;
+            lastProcessedPage = _page;
+            lastImagesLength = _len;
         }
     });
 </script>
@@ -203,9 +205,9 @@
                     <button
                         type="button"
                         class={`group relative card bg-base-100 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden border ${selectedImage?.path === image.path ? "border-primary ring-2 ring-primary ring-offset-2" : "border-transparent"}`}
-                        on:click={() => handleImageClick(image, i)}
-                        on:mouseenter={() => handleImageHover(image)}
-                        on:mouseleave={handleImageLeave}
+                        onclick={() => handleImageClick(image, i)}
+                        onmouseenter={() => handleImageHover(image)}
+                        onmouseleave={handleImageLeave}
                         aria-label={`View details for ${image.name}`}
                         title={`${image.name}\nSize: ${formatFileSize(image.size)}\nDimensions: ${image.dimensions ? `${image.dimensions.width}x${image.dimensions.height}` : "Unknown"}`}
                     >
@@ -218,7 +220,7 @@
                                 src={image.displayIndex < pageSize
                                     ? image.previewUrl
                                     : "data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 1 1%27%3E%3C/svg%3E"}
-                                on:load={(e) => {
+                                onload={(e) => {
                                     const target = e.target;
                                     if (
                                         target instanceof HTMLImageElement &&
@@ -230,7 +232,7 @@
                                         target.classList.add("observed");
                                     }
                                 }}
-                                on:error={(e) => {
+                                onerror={(e) => {
                                     const target = e.target;
                                     if (target instanceof HTMLImageElement) {
                                         target.classList.add("observed");
@@ -286,9 +288,9 @@
                     <button
                         type="button"
                         class={`card card-side bg-base-100 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer border w-full hover:-translate-y-0.5 ${selectedImage?.path === image.path ? "border-primary ring-2 ring-primary ring-offset-2" : "border-base-300"}`}
-                        on:click={() => handleImageClick(image, i)}
-                        on:mouseenter={() => handleImageHover(image)}
-                        on:mouseleave={handleImageLeave}
+                        onclick={() => handleImageClick(image, i)}
+                        onmouseenter={() => handleImageHover(image)}
+                        onmouseleave={handleImageLeave}
                         aria-label={`View details for ${image.name}`}
                     >
                         <figure class="sm:w-48 h-48 relative">
@@ -299,7 +301,7 @@
                                 src={image.displayIndex < pageSize
                                     ? image.previewUrl
                                     : "data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 1 1%27%3E%3C/svg%3E"}
-                                on:load={(e) => {
+                                onload={(e) => {
                                     const target = e.target;
                                     if (
                                         target instanceof HTMLImageElement &&
@@ -311,7 +313,7 @@
                                         target.classList.add("observed");
                                     }
                                 }}
-                                on:error={(e) => {
+                                onerror={(e) => {
                                     const target = e.target;
                                     if (target instanceof HTMLImageElement) {
                                         target.classList.add("observed");
@@ -347,7 +349,7 @@
                             {/if}
                             {#if image.dimensions}
                                 <p class="text-sm text-base-content/60">
-                                    Dimensions: {image.dimensions.width} × {image
+                                    Dimensions: {image.dimensions.width} x {image
                                         .dimensions.height}
                                 </p>
                             {/if}
@@ -398,17 +400,17 @@
                     <button
                         type="button"
                         class="join-item btn btn-sm"
-                        on:click={() => handleLoadPage(currentPage - 1)}
+                        onclick={() => handleLoadPage(currentPage - 1)}
                         disabled={currentPage === 1 || loading || loadingMore}
                     >
-                        «
+                        &laquo;
                     </button>
                     {#each generatePageNumbers(currentPage, totalPages) as pageNum (typeof pageNum === "number" ? pageNum : pageNum)}
                         {#if typeof pageNum === "number"}
                             <button
                                 type="button"
                                 class={`join-item btn btn-sm ${currentPage === pageNum ? "btn-active" : "btn-ghost border border-neutral"}`}
-                                on:click={() => handleLoadPage(pageNum)}
+                                onclick={() => handleLoadPage(pageNum)}
                                 disabled={loading ||
                                     loadingMore ||
                                     pageNum === currentPage}
@@ -424,12 +426,12 @@
                     <button
                         type="button"
                         class="join-item btn btn-sm"
-                        on:click={() => handleLoadPage(currentPage + 1)}
+                        onclick={() => handleLoadPage(currentPage + 1)}
                         disabled={currentPage === totalPages ||
                             loading ||
                             loadingMore}
                     >
-                        »
+                        &raquo;
                     </button>
                 </div>
             </div>
@@ -480,13 +482,12 @@
 
     /* Enhanced loading states for smoother transitions */
     .gallery-lazy-image.loaded {
-        animation: none; /* Stop shimmer animation */
-        background: none; /* Remove shimmer background */
+        animation: none;
+        background: none;
     }
 
     /* Ensure smooth transitions between states */
     .gallery-lazy-image.observed:not(.loaded) {
-        /* Keep shimmer while loading */
         animation: shimmer 1.4s ease infinite;
     }
 

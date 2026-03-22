@@ -1,25 +1,29 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
-
-    export let options: Array<{
-        value: any;
-        label?: string;
-        icon?: string;
-        tooltip?: string;
-    }> = [];
-    export let value: any;
-    export let size: "sm" | "md" = "sm";
-
-    const dispatch = createEventDispatcher();
+    let {
+        options = [],
+        value = $bindable(),
+        size = "sm",
+        onchange,
+    }: {
+        options?: Array<{
+            value: any;
+            label?: string;
+            icon?: string;
+            tooltip?: string;
+        }>;
+        value?: any;
+        size?: "sm" | "md";
+        onchange?: (value: any) => void;
+    } = $props();
 
     function select(optionValue: any) {
         if (value !== optionValue) {
             value = optionValue;
-            dispatch("change", value);
+            onchange?.(value);
         }
     }
 
-    $: sizeClass = size === "sm" ? "btn-sm" : "btn-md";
+    let sizeClass = $derived(size === "sm" ? "btn-sm" : "btn-md");
 </script>
 
 <div class="join border border-base-300 bg-base-100 rounded-lg p-1 space-x-1">
@@ -31,7 +35,7 @@
                 class:shadow-inner={value === option.value}
                 class:text-base-content={value === option.value}
                 class:text-base-content-secondary={value !== option.value}
-                on:click={() => select(option.value)}
+                onclick={() => select(option.value)}
                 aria-label={option.label || option.tooltip}
             >
                 {#if option.icon}

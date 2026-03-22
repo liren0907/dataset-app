@@ -34,7 +34,7 @@
 			<input
 				type="range"
 				value={$trainRatio}
-				on:input={(e) => handleRangeInput('train', parseInt(e.currentTarget.value))}
+				oninput={(e) => handleRangeInput('train', parseInt(e.currentTarget.value))}
 				min="0"
 				max="100"
 				class="flex-1 h-2 bg-slate-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600"
@@ -42,7 +42,7 @@
 			<input
 				type="number"
 				value={$trainRatio}
-				on:change={(e) => handleRangeInput('train', parseInt(e.currentTarget.value))}
+				onchange={(e) => handleRangeInput('train', parseInt(e.currentTarget.value))}
 				min="0"
 				max="100"
 				class="w-20 px-3 py-1.5 text-right text-sm font-mono border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -56,7 +56,7 @@
 			<input
 				type="range"
 				value={$valRatio}
-				on:input={(e) => handleRangeInput('val', parseInt(e.currentTarget.value))}
+				oninput={(e) => handleRangeInput('val', parseInt(e.currentTarget.value))}
 				min="0"
 				max="100"
 				class="flex-1 h-2 bg-slate-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-amber-500"
@@ -64,7 +64,7 @@
 			<input
 				type="number"
 				value={$valRatio}
-				on:change={(e) => handleRangeInput('val', parseInt(e.currentTarget.value))}
+				onchange={(e) => handleRangeInput('val', parseInt(e.currentTarget.value))}
 				min="0"
 				max="100"
 				class="w-20 px-3 py-1.5 text-right text-sm font-mono border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
@@ -78,7 +78,7 @@
 			<input
 				type="range"
 				value={$testRatio}
-				on:input={(e) => handleRangeInput('test', parseInt(e.currentTarget.value))}
+				oninput={(e) => handleRangeInput('test', parseInt(e.currentTarget.value))}
 				min="0"
 				max="100"
 				class="flex-1 h-2 bg-slate-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-rose-500"
@@ -86,7 +86,7 @@
 			<input
 				type="number"
 				value={$testRatio}
-				on:change={(e) => handleRangeInput('test', parseInt(e.currentTarget.value))}
+				onchange={(e) => handleRangeInput('test', parseInt(e.currentTarget.value))}
 				min="0"
 				max="100"
 				class="w-20 px-3 py-1.5 text-right text-sm font-mono border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-rose-500 focus:border-rose-500"

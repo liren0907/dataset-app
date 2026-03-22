@@ -1,41 +1,54 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
-
-    export let icon: string; // Material Symbol name
-    export let label: string | undefined = undefined; // Optional text label
-    export let tooltip: string | undefined = undefined;
-    export let active: boolean = false;
-    export let loading: boolean = false;
-    export let size: "sm" | "md" | "lg" = "sm";
-    export let variant: "ghost" | "soft" = "ghost";
-    export let disabled: boolean = false;
-
-    const dispatch = createEventDispatcher();
+    let {
+        icon,
+        label = undefined,
+        tooltip = undefined,
+        active = false,
+        loading = false,
+        size = "sm",
+        variant = "ghost",
+        disabled = false,
+        onclick,
+    }: {
+        icon: string;
+        label?: string | undefined;
+        tooltip?: string | undefined;
+        active?: boolean;
+        loading?: boolean;
+        size?: "sm" | "md" | "lg";
+        variant?: "ghost" | "soft";
+        disabled?: boolean;
+        onclick?: (event: MouseEvent) => void;
+    } = $props();
 
     function handleClick(event: MouseEvent) {
         if (!disabled && !loading) {
-            dispatch("click", event);
+            onclick?.(event);
         }
     }
 
-    $: sizeClass =
+    let sizeClass = $derived(
         size === "sm"
             ? "btn-sm text-lg"
             : size === "md"
               ? "btn-md text-xl"
-              : "btn-lg text-2xl";
+              : "btn-lg text-2xl",
+    );
 
-    $: variantClass =
+    let variantClass = $derived(
         variant === "ghost"
             ? "btn-ghost text-base-content/70 hover:bg-base-200"
-            : "bg-base-200 text-base-content hover:bg-base-300 border-none";
+            : "bg-base-200 text-base-content hover:bg-base-300 border-none",
+    );
 
-    $: activeClass = active
-        ? "bg-primary text-primary-content hover:bg-primary hover:text-primary-content shadow-inner"
-        : "";
+    let activeClass = $derived(
+        active
+            ? "bg-primary text-primary-content hover:bg-primary hover:text-primary-content shadow-inner"
+            : "",
+    );
 
     // Use btn-square only when no label
-    $: shapeClass = label ? "gap-2 px-3" : "btn-square";
+    let shapeClass = $derived(label ? "gap-2 px-3" : "btn-square");
 </script>
 
 <div class="tooltip tooltip-bottom" data-tip={tooltip}>
@@ -44,7 +57,7 @@
         class="btn {sizeClass} {variantClass} {activeClass} {shapeClass}"
         {disabled}
         class:loading
-        on:click={handleClick}
+        onclick={handleClick}
     >
         {#if !loading}
             <span class="material-symbols-rounded">{icon}</span>

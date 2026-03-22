@@ -1,13 +1,23 @@
 <script lang="ts">
-    import { createEventDispatcher, onMount } from "svelte";
-    import { fade, scale } from "svelte/transition";
+    import type { Snippet } from "svelte";
+    import { scale } from "svelte/transition";
     import IconButton from "./IconButton.svelte";
 
-    export let isOpen: boolean = false;
-    export let title: string;
-    export let maxWidth: string = "max-w-md";
-
-    const dispatch = createEventDispatcher();
+    let {
+        isOpen = false,
+        title,
+        maxWidth = "max-w-md",
+        onclose,
+        children,
+        actions,
+    }: {
+        isOpen?: boolean;
+        title: string;
+        maxWidth?: string;
+        onclose?: () => void;
+        children?: Snippet;
+        actions?: Snippet;
+    } = $props();
 
     // Close on escape
     function handleKeydown(event: KeyboardEvent) {
@@ -17,11 +27,11 @@
     }
 
     function close() {
-        dispatch("close");
+        onclose?.();
     }
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 {#if isOpen}
     <div
@@ -33,8 +43,8 @@
         <button
             type="button"
             class="modal-backdrop cursor-default"
-            on:click={close}
-            on:keydown={(e) => e.key === "Enter" && close()}
+            onclick={close}
+            onkeydown={(e) => e.key === "Enter" && close()}
             aria-label="Close modal"
         ></button>
 
@@ -48,20 +58,20 @@
                 class="px-6 py-4 flex items-center justify-between border-b border-base-200 bg-base-100 sticky top-0 z-10"
             >
                 <h3 id="modal-title" class="font-bold text-lg">{title}</h3>
-                <IconButton icon="close" size="sm" on:click={close} />
+                <IconButton icon="close" size="sm" onclick={close} />
             </div>
 
             <!-- Content (Scrollable) -->
             <div class="p-6 overflow-y-auto flex-1">
-                <slot />
+                {@render children?.()}
             </div>
 
             <!-- Actions (Footer) -->
-            {#if $$slots.actions}
+            {#if actions}
                 <div
                     class="px-6 py-4 bg-base-200/50 border-t border-base-200 flex justify-end items-center gap-3"
                 >
-                    <slot name="actions" />
+                    {@render actions()}
                 </div>
             {/if}
         </div>

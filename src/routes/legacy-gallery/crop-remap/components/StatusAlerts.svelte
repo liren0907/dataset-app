@@ -1,6 +1,8 @@
 <script lang="ts">
-    export let successMessage: string | null = null;
-    export let errorMessage: string | null = null;
+    let { successMessage = null, errorMessage = null }: {
+        successMessage: string | null;
+        errorMessage: string | null;
+    } = $props();
 </script>
 
 {#if successMessage}

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount, onDestroy, createEventDispatcher } from "svelte";
+    import { onMount, onDestroy } from "svelte";
     import {
         createKonvaManager,
         type KonvaManager,
@@ -7,26 +7,33 @@
         type KonvaAnnotation,
     } from "$lib/services/gallery/konvaService";
 
-    // Props
-    export let showModal: boolean = false;
-    export let imageData: KonvaImageData | null = null;
-
-    // Event dispatcher for communication with parent
-    const dispatch = createEventDispatcher();
+    let {
+        showModal = false,
+        imageData = null,
+        onclose,
+    }: {
+        showModal?: boolean;
+        imageData?: KonvaImageData | null;
+        onclose?: () => void;
+    } = $props();
 
     // KonvaJS manager instance
     let konvaManager: KonvaManager;
     let konvaContainer: HTMLDivElement;
-    let isInitialized = false;
+    let isInitialized = $state(false);
 
     // Reactive statements
-    $: if (showModal && imageData && !isInitialized) {
-        initializeViewer();
-    }
+    $effect(() => {
+        if (showModal && imageData && !isInitialized) {
+            initializeViewer();
+        }
+    });
 
-    $: if (!showModal && isInitialized) {
-        cleanupViewer();
-    }
+    $effect(() => {
+        if (!showModal && isInitialized) {
+            cleanupViewer();
+        }
+    });
 
     onMount(() => {
         konvaManager = createKonvaManager();
@@ -45,19 +52,16 @@
         try {
             console.log("Initializing Konva viewer for image:", imageData.name);
 
-            // Calculate optimal stage dimensions
             const rect = konvaContainer.getBoundingClientRect();
             const stageWidth = Math.max(rect.width || 1000, 1000);
             const stageHeight = Math.max(rect.height || 700, 700);
 
-            // Initialize the stage
             konvaManager.initializeStage(
                 konvaContainer,
                 stageWidth,
                 stageHeight,
             );
 
-            // Load image and annotations
             await konvaManager.loadImageWithAnnotations(
                 imageData,
                 (scale, offsetX, offsetY) => {
@@ -87,14 +91,13 @@
 
     // Close modal handler
     function handleClose(): void {
-        dispatch("close");
+        onclose?.();
     }
 
     // Keyboard event handler
     function handleKeydown(event: KeyboardEvent): void {
         if (!konvaManager) return;
 
-        // Prevent default behavior for handled keys
         const handledKeys = [
             "Delete",
             "Backspace",
@@ -178,27 +181,27 @@
     }
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 {#if showModal && imageData}
-    <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
         role="dialog"
         aria-modal="true"
         aria-labelledby="konva-viewer-title"
-        on:click={handleClose}
-        on:keydown={(e) => {
+        onclick={handleClose}
+        onkeydown={(e) => {
             if (e.key === "Escape") handleClose();
         }}
         tabindex="-1"
     >
-        <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <div
             class="bg-white rounded-lg shadow-xl max-w-6xl max-h-[95vh] overflow-hidden"
             role="document"
-            on:click|stopPropagation
-            on:keydown|stopPropagation
+            onclick={(e) => e.stopPropagation()}
+            onkeydown={(e) => e.stopPropagation()}
         >
             <!-- Header -->
             <div
@@ -211,11 +214,11 @@
                     {imageData.name}
                 </h3>
                 <button
-                    on:click={handleClose}
+                    onclick={handleClose}
                     class="text-gray-400 hover:text-gray-600 text-2xl leading-none focus:outline-none focus:ring-2 focus:ring-gray-500 rounded"
                     aria-label="Close viewer"
                 >
-                    ×
+                    x
                 </button>
             </div>
 
@@ -229,15 +232,15 @@
 
                     <!-- Zoom Controls -->
                     <button
-                        on:click={handleZoomOut}
+                        onclick={handleZoomOut}
                         class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
                         title="Zoom Out (-)"
                         aria-label="Zoom out"
                     >
-                        🔍-
+                        Zoom-
                     </button>
                     <button
-                        on:click={handleResetZoom}
+                        onclick={handleResetZoom}
                         class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
                         title="Reset Zoom (0)"
                         aria-label="Reset zoom"
@@ -245,29 +248,29 @@
                         100%
                     </button>
                     <button
-                        on:click={handleZoomIn}
+                        onclick={handleZoomIn}
                         class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
                         title="Zoom In (=)"
                         aria-label="Zoom in"
                     >
-                        🔍+
+                        Zoom+
                     </button>
 
                     <!-- Fit to Screen -->
                     <button
-                        on:click={handleFitToScreen}
+                        onclick={handleFitToScreen}
                         class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded transition-colors ml-4"
                         title="Fit to Screen (R)"
                         aria-label="Fit to screen"
                     >
-                        📐 Fit
+                        Fit
                     </button>
 
                     <!-- Annotation Controls -->
                     <div class="ml-4 flex items-center gap-2">
                         <span class="text-sm text-gray-600">Annotations:</span>
                         <button
-                            on:click={handleSelectAll}
+                            onclick={handleSelectAll}
                             class="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white text-sm rounded transition-colors"
                             title="Select All (Ctrl+A)"
                             aria-label="Select all annotations"
@@ -275,7 +278,7 @@
                             Select All
                         </button>
                         <button
-                            on:click={handleDeselect}
+                            onclick={handleDeselect}
                             class="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded transition-colors"
                             title="Deselect (Esc)"
                             aria-label="Deselect annotations"
@@ -283,12 +286,12 @@
                             Deselect
                         </button>
                         <button
-                            on:click={handleDeleteSelected}
+                            onclick={handleDeleteSelected}
                             class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded transition-colors"
                             title="Delete Selected (Del)"
                             aria-label="Delete selected annotations"
                         >
-                            🗑️ Delete
+                            Delete
                         </button>
                     </div>
 

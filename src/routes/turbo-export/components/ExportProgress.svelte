@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import {
 		sourceDir,
 		isProcessing,
@@ -6,12 +7,13 @@
 		statusMessage
 	} from '../stores/exportStore';
 
-	import { createEventDispatcher } from 'svelte';
-
-	const dispatch = createEventDispatcher<{ startExport: void }>();
+	let { onstartExport, children }: {
+		onstartExport?: () => void;
+		children?: Snippet;
+	} = $props();
 
 	function handleStartExport() {
-		dispatch('startExport');
+		onstartExport?.();
 	}
 </script>
 
@@ -40,7 +42,7 @@
 	{:else}
 		<!-- 開始按鈕 -->
 		<button
-			on:click={handleStartExport}
+			onclick={handleStartExport}
 			disabled={!$sourceDir}
 			class="w-full py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl font-bold text-lg hover:from-indigo-700 hover:to-indigo-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/25"
 		>
@@ -54,6 +56,6 @@
 		</div>
 	{/if}
 
-	<!-- 詳細統計 slot -->
-	<slot />
+	<!-- 詳細統計 -->
+	{@render children?.()}
 </section>

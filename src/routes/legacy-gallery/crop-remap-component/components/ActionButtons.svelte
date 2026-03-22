@@ -1,18 +1,17 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
-
-    export let loading: boolean = false;
-    export let disabled: boolean = false;
-    export let successMessage: string | null = null;
-    export let errorMessage: string | null = null;
-    export let validationError: string | null = null;
-
-    const dispatch = createEventDispatcher();
+    let { loading = false, disabled = false, successMessage = null, errorMessage = null, validationError = null, onclick }: {
+        loading: boolean;
+        disabled: boolean;
+        successMessage: string | null;
+        errorMessage: string | null;
+        validationError: string | null;
+        onclick?: () => void;
+    } = $props();
 </script>
 
 <div class="mb-6">
     <button
-        on:click={() => dispatch("click")}
+        onclick={() => onclick?.()}
         disabled={loading || disabled}
         class="w-full inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
     >
