@@ -44,7 +44,6 @@
     "daisyui": "^5.5.14",
     "eslint": "^9.0.0",
     "eslint-plugin-svelte": "^3.16.0",
-    "flowbite-svelte": "^0.48.6",
     "globals": "^15.0.0",
     "postcss": "^8.4.47",
     "postcss-load-config": "^4.0.1",

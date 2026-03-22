@@ -37,11 +37,6 @@
 			label: "Fabric Annotator",
 			icon: "brush",
 		},
-		{
-			href: "/legacy-gallery",
-			label: "Legacy Gallery",
-			icon: "history",
-		},
 	];
 </script>
 

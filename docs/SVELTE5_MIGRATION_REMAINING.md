@@ -42,15 +42,11 @@ All 10 store files still use `writable`/`derived` from `svelte/store`. This is i
 
 ---
 
-## 2. Pre-existing TypeScript Errors in Legacy Files
+## 2. Pre-existing TypeScript Errors
 
-~80+ type errors exist in `legacy-gallery/` and `deprecated/` files. These predate the migration.
+The legacy gallery files (which had ~80+ type errors) have been moved to `deprecated/` and are no longer part of the active codebase.
 
-**Affected areas:**
-- `src/routes/legacy-gallery/dataset-gallery-advanced/+page.svelte` — implicit `any`, wrong property names (`hasJson` vs `has_json`), missing type properties
-- `src/routes/legacy-gallery/dataset-gallery-advanced/components/ImageViewerModal.svelte` — implicit `any`, `HTMLElement.complete` usage
-- `src/routes/legacy-gallery/dataset-gallery-advanced/components/AdvancedCropRemapTool.svelte` — type mismatch
-- `src/routes/legacy-gallery/dataset-gallery-advanced/components/KonvaViewer.svelte` — missing import
+One remaining type error exists in the active codebase:
 - `src/routes/turbo-export/stores/exportStore.ts` — `DetailedStats` missing properties
 
 **To check current errors:**
@@ -76,22 +72,7 @@ In `src/routes/turbo-export/components/LabelManager.svelte`, the drag-and-drop e
 
 ---
 
-## 4. `flowbite-svelte` Sourcemap Warnings
-
-During build, `flowbite-svelte` (v0.48.6) produces sourcemap warnings:
-
-```
-node_modules/flowbite-svelte/dist/carousel/Carousel.svelte: Error when using sourcemap for reporting an error: Can't resolve original location of error.
-```
-
-These are harmless and come from the library itself. Options:
-- Upgrade `flowbite-svelte` to a newer version
-- Ignore (does not affect functionality)
-- Remove `flowbite-svelte` if only used in one legacy file (`CropTool.svelte`)
-
----
-
-## 5. Runtime Testing Checklist
+## 4. Runtime Testing Checklist
 
 The build passes but no runtime testing was done. Test these flows with `yarn tauri dev`:
 
@@ -101,11 +82,9 @@ The build passes but no runtime testing was done. Test these flows with `yarn ta
 - [ ] **Smart Tools** (`/smart-tools`): Upload image → crop → preview → export
 - [ ] **Fabric Annotator** (`/fabric-annotator`): Open directory → draw bbox/polygon/polyline → save → navigate images
 - [ ] **Settings** (`/settings`): Theme toggle (light/dark)
-- [ ] **Legacy routes** (`/legacy-gallery/*`): Basic navigation through all sub-routes
-
 ---
 
-## 6. `src/store.js` — Legacy Root Store
+## 5. `src/store.js` — Legacy Root Store
 
 This file at the project root (`src/store.js`) contains several `writable` stores:
 - `theme` — light/dark theme
