@@ -1,12 +1,10 @@
 <script lang="ts">
 	import {
-		outputTarget,
-		annotationType,
-		labelmeOutputFormat,
+		format,
 		type OutputFormat,
 		type AnnotationType,
 		type LabelMeOutputFormat
-	} from '../stores/exportStore';
+	} from '../stores/exportStore.svelte';
 
 	// 格式選項配置
 	const outputFormats: Array<{
@@ -40,8 +38,8 @@
 	];
 
 	// LabelMe 格式時顯示 LabelMe 輸出選項，其他格式顯示標註類型
-	let showAnnotationType = $derived($outputTarget !== 'labelme');
-	let showLabelMeOutputFormat = $derived($outputTarget === 'labelme');
+	let showAnnotationType = $derived(format.outputTarget !== 'labelme');
+	let showLabelMeOutputFormat = $derived(format.outputTarget === 'labelme');
 </script>
 
 <section class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
@@ -54,16 +52,16 @@
 		<div class="{showAnnotationType || showLabelMeOutputFormat ? '' : 'md:col-span-2'}">
 			<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">目標格式</label>
 			<div class="flex gap-2">
-				{#each outputFormats as format}
+				{#each outputFormats as fmt}
 					<button
-						onclick={() => outputTarget.set(format.value)}
+						onclick={() => format.outputTarget = fmt.value}
 						class="flex-1 px-4 py-3 rounded-lg border-2 transition-all text-sm font-medium
-							{$outputTarget === format.value
+							{format.outputTarget === fmt.value
 								? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300'
 								: 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500'}"
 					>
-						<div class="font-bold">{format.label}</div>
-						<div class="text-xs opacity-75">{format.description}</div>
+						<div class="font-bold">{fmt.label}</div>
+						<div class="text-xs opacity-75">{fmt.description}</div>
 					</button>
 				{/each}
 			</div>
@@ -76,9 +74,9 @@
 				<div class="flex gap-2">
 					{#each annotationTypes as type}
 						<button
-							onclick={() => annotationType.set(type.value)}
+							onclick={() => format.annotationType = type.value}
 							class="flex-1 px-4 py-3 rounded-lg border-2 transition-all text-sm font-medium
-								{$annotationType === type.value
+								{format.annotationType === type.value
 									? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
 									: 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500'}"
 						>
@@ -95,16 +93,16 @@
 			<div>
 				<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">輸出點格式</label>
 				<div class="flex gap-2">
-					{#each labelmeOutputFormats as format}
+					{#each labelmeOutputFormats as fmt}
 						<button
-							onclick={() => labelmeOutputFormat.set(format.value)}
+							onclick={() => format.labelmeOutputFormat = fmt.value}
 							class="flex-1 px-4 py-3 rounded-lg border-2 transition-all text-sm font-medium
-								{$labelmeOutputFormat === format.value
+								{format.labelmeOutputFormat === fmt.value
 									? 'border-amber-500 bg-amber-50 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300'
 									: 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500'}"
 						>
-							<div class="font-bold">{format.label}</div>
-							<div class="text-xs opacity-75">{format.description}</div>
+							<div class="font-bold">{fmt.label}</div>
+							<div class="text-xs opacity-75">{fmt.description}</div>
 						</button>
 					{/each}
 				</div>

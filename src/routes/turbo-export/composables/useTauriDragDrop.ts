@@ -3,7 +3,7 @@
  *
  * 封裝了 Tauri 的拖放監聽器設置、座標轉換、以及事件處理邏輯
  */
-import { isDraggingOver, activeDropZone, type DropZoneType } from '../stores/exportStore';
+import { dragDrop, type DropZoneType } from '../stores/exportStore.svelte';
 
 /** 取消監聽函數的型別 */
 type UnlistenFn = () => void;
@@ -65,10 +65,10 @@ function createDragDropHandler(refs: DropZoneRefs, callbacks: DragDropCallbacks)
 		const eventType = payload.type;
 
 		if (eventType === 'enter' || eventType === 'over') {
-			isDraggingOver.set(true);
+			dragDrop.isDraggingOver = true;
 			const position = payload.position;
 			const zone = detectDropZone(position, refs);
-			activeDropZone.set(zone);
+			dragDrop.activeDropZone = zone;
 		} else if (eventType === 'drop') {
 			const paths = payload.paths;
 			const dropPosition = payload.position;
@@ -79,11 +79,7 @@ function createDragDropHandler(refs: DropZoneRefs, callbacks: DragDropCallbacks)
 				dropZone = detectDropZone(dropPosition, refs);
 			} else {
 				// Fallback 到目前 activeDropZone 的值
-				// 注意：這裡需要同步取得 store 值，但在事件處理中我們使用 closure
-				let currentActiveZone: DropZoneType = null;
-				const unsubscribe = activeDropZone.subscribe(v => { currentActiveZone = v; });
-				unsubscribe();
-				dropZone = currentActiveZone;
+				dropZone = dragDrop.activeDropZone;
 			}
 
 			if (paths && paths.length > 0 && dropZone) {
@@ -95,11 +91,11 @@ function createDragDropHandler(refs: DropZoneRefs, callbacks: DragDropCallbacks)
 				}
 			}
 
-			isDraggingOver.set(false);
-			activeDropZone.set(null);
+			dragDrop.isDraggingOver = false;
+			dragDrop.activeDropZone = null;
 		} else if (eventType === 'leave' || eventType === 'cancel') {
-			isDraggingOver.set(false);
-			activeDropZone.set(null);
+			dragDrop.isDraggingOver = false;
+			dragDrop.activeDropZone = null;
 		}
 	};
 }

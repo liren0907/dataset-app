@@ -1,8 +1,9 @@
 <script lang="ts">
     import {
-        labelTaxonomy,
-        type LabelClass,
-    } from "$lib/stores/labelTaxonomyStore";
+        labelClasses,
+        addClass,
+        removeClass,
+    } from "$lib/stores/labelTaxonomyStore.svelte";
     import SectionLabel from "$lib/components/ui/SectionLabel.svelte";
 
     let newClassName = $state("");
@@ -10,7 +11,7 @@
     function handleAddClass() {
         const trimmed = newClassName.trim();
         if (trimmed) {
-            labelTaxonomy.addClass(trimmed);
+            addClass(trimmed);
             newClassName = "";
         }
     }
@@ -24,7 +25,7 @@
     <SectionLabel>Label Classes</SectionLabel>
 
     <div class="flex flex-wrap gap-1">
-        {#each $labelTaxonomy as cls (cls.name)}
+        {#each labelClasses as cls (cls.name)}
             <div
                 class="badge badge-sm gap-1 cursor-default group"
                 style="background-color: {cls.color}20; border-color: {cls.color}; color: {cls.color};"
@@ -35,7 +36,7 @@
                 <span class="text-xs font-medium">{cls.name}</span>
                 <button
                     class="opacity-0 group-hover:opacity-100 ml-0.5 hover:text-error transition-opacity"
-                    onclick={() => labelTaxonomy.removeClass(cls.name)}
+                    onclick={() => removeClass(cls.name)}
                     title="Remove class">×</button
                 >
             </div>

@@ -1,23 +1,14 @@
 <script lang="ts">
 	import {
-		trainRatio,
-		valRatio,
-		testRatio,
+		split,
 		adjustSplitRatios
-	} from '../stores/exportStore';
-
-	// 滑桿配置
-	const sliders = [
-		{ name: 'train', label: 'Train', store: trainRatio, color: 'blue', emoji: '🔵' },
-		{ name: 'val', label: 'Val', store: valRatio, color: 'amber', emoji: '🟡' },
-		{ name: 'test', label: 'Test', store: testRatio, color: 'rose', emoji: '🔴' }
-	] as const;
+	} from '../stores/exportStore.svelte';
 
 	// 處理滑桿輸入
 	function handleRangeInput(name: 'train' | 'val' | 'test', value: number) {
-		if (name === 'train') trainRatio.set(value);
-		else if (name === 'val') valRatio.set(value);
-		else testRatio.set(value);
+		if (name === 'train') split.trainRatio = value;
+		else if (name === 'val') split.valRatio = value;
+		else split.testRatio = value;
 		adjustSplitRatios(name);
 	}
 </script>
@@ -33,7 +24,7 @@
 			<label class="w-20 text-sm font-medium text-slate-700 dark:text-slate-300">Train</label>
 			<input
 				type="range"
-				value={$trainRatio}
+				value={split.trainRatio}
 				oninput={(e) => handleRangeInput('train', parseInt(e.currentTarget.value))}
 				min="0"
 				max="100"
@@ -41,7 +32,7 @@
 			/>
 			<input
 				type="number"
-				value={$trainRatio}
+				value={split.trainRatio}
 				onchange={(e) => handleRangeInput('train', parseInt(e.currentTarget.value))}
 				min="0"
 				max="100"
@@ -55,7 +46,7 @@
 			<label class="w-20 text-sm font-medium text-slate-700 dark:text-slate-300">Val</label>
 			<input
 				type="range"
-				value={$valRatio}
+				value={split.valRatio}
 				oninput={(e) => handleRangeInput('val', parseInt(e.currentTarget.value))}
 				min="0"
 				max="100"
@@ -63,7 +54,7 @@
 			/>
 			<input
 				type="number"
-				value={$valRatio}
+				value={split.valRatio}
 				onchange={(e) => handleRangeInput('val', parseInt(e.currentTarget.value))}
 				min="0"
 				max="100"
@@ -77,7 +68,7 @@
 			<label class="w-20 text-sm font-medium text-slate-700 dark:text-slate-300">Test</label>
 			<input
 				type="range"
-				value={$testRatio}
+				value={split.testRatio}
 				oninput={(e) => handleRangeInput('test', parseInt(e.currentTarget.value))}
 				min="0"
 				max="100"
@@ -85,7 +76,7 @@
 			/>
 			<input
 				type="number"
-				value={$testRatio}
+				value={split.testRatio}
 				onchange={(e) => handleRangeInput('test', parseInt(e.currentTarget.value))}
 				min="0"
 				max="100"
@@ -96,14 +87,14 @@
 
 		<!-- 視覺化比例條 -->
 		<div class="flex h-3 rounded-full overflow-hidden mt-2">
-			<div class="bg-blue-500" style="width: {$trainRatio}%"></div>
-			<div class="bg-amber-500" style="width: {$valRatio}%"></div>
-			<div class="bg-rose-500" style="width: {$testRatio}%"></div>
+			<div class="bg-blue-500" style="width: {split.trainRatio}%"></div>
+			<div class="bg-amber-500" style="width: {split.valRatio}%"></div>
+			<div class="bg-rose-500" style="width: {split.testRatio}%"></div>
 		</div>
 		<div class="flex text-xs text-slate-500 dark:text-slate-400">
-			<span class="flex-1">🔵 Train {$trainRatio}%</span>
-			<span class="flex-1 text-center">🟡 Val {$valRatio}%</span>
-			<span class="flex-1 text-right">🔴 Test {$testRatio}%</span>
+			<span class="flex-1">🔵 Train {split.trainRatio}%</span>
+			<span class="flex-1 text-center">🟡 Val {split.valRatio}%</span>
+			<span class="flex-1 text-right">🔴 Test {split.testRatio}%</span>
 		</div>
 	</div>
 </section>

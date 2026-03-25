@@ -1,10 +1,12 @@
 <script lang="ts">
     import SectionLabel from "$lib/components/ui/SectionLabel.svelte";
     import {
-        imageStatusStore,
+        imageStatusMap,
+        setImageStatus,
+        getImageStatus,
         STATUS_CONFIG,
         type ImageStatus,
-    } from "$lib/stores/imageStatusStore";
+    } from "$lib/stores/imageStatusStore.svelte";
 
     let {
         images = [],
@@ -24,7 +26,7 @@
             .map((img, originalIndex) => ({ ...img, originalIndex }))
             .filter((img) => {
                 if (statusFilter !== "all") {
-                    const status = $imageStatusStore.get(img.path) || "todo";
+                    const status = imageStatusMap.get(img.path) || "todo";
                     if (status !== statusFilter) return false;
                 }
                 return true;
@@ -33,7 +35,7 @@
 
     function cycleStatus(path: string, event: MouseEvent | KeyboardEvent) {
         event.stopPropagation();
-        const current = $imageStatusStore.get(path) || "todo";
+        const current = imageStatusMap.get(path) || "todo";
         const order: ImageStatus[] = [
             "todo",
             "in_progress",
@@ -41,11 +43,11 @@
             "needs_review",
         ];
         const nextIdx = (order.indexOf(current) + 1) % order.length;
-        imageStatusStore.setStatus(path, order[nextIdx]);
+        setImageStatus(path, order[nextIdx]);
     }
 
     function getStatusConfig(path: string) {
-        const status = $imageStatusStore.get(path) || "todo";
+        const status = imageStatusMap.get(path) || "todo";
         return STATUS_CONFIG[status];
     }
 

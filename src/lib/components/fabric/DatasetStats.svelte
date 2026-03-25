@@ -1,8 +1,7 @@
 <script lang="ts">
     import {
-        labelTaxonomy,
-        classColorMap,
-    } from "$lib/stores/labelTaxonomyStore";
+        getClassColorMap,
+    } from "$lib/stores/labelTaxonomyStore.svelte";
     import type {
         BBox,
         Polygon,
@@ -116,7 +115,7 @@
                                     style="width: {Math.min(
                                         100,
                                         (count / totalAnns) * 100,
-                                    )}%; background-color: {$classColorMap.get(
+                                    )}%; background-color: {getClassColorMap().get(
                                         label,
                                     ) || '#6b7280'};"
                                 ></div>

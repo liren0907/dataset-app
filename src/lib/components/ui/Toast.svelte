@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { toastStore } from "$lib/stores/toastStore";
+    import { toasts, dismissToast } from "$lib/stores/toastStore.svelte";
     import { fly } from "svelte/transition";
 
     const variantStyles = {
@@ -17,9 +17,9 @@
     };
 </script>
 
-{#if $toastStore.length > 0}
+{#if toasts.length > 0}
     <div class="toast toast-top toast-end z-50">
-        {#each $toastStore as toast (toast.id)}
+        {#each toasts as toast (toast.id)}
             <div
                 class="alert {variantStyles[toast.variant]} shadow-lg"
                 transition:fly={{ x: 100, duration: 300 }}
@@ -30,7 +30,7 @@
                 <span>{toast.message}</span>
                 <button
                     class="btn btn-ghost btn-xs"
-                    onclick={() => toastStore.dismiss(toast.id)}
+                    onclick={() => dismissToast(toast.id)}
                 >
                     <span class="material-symbols-rounded text-sm">close</span>
                 </button>

@@ -2,20 +2,14 @@
 	import { dndzone } from "svelte-dnd-action";
 	import { flip } from "svelte/animate";
 	import {
-		sourceDir,
-		useCustomLabels,
-		includeEmptyLabelImages,
-		labelList,
-		isScanning,
-		labelScanMessage,
-		isCalculatingCounts,
-		detectedFormat,
-		isDetectingFormat,
+		paths,
+		labels,
+		detection,
 		toggleLabel,
 		selectAllLabels,
 		deselectAllLabels,
 		type LabelInfo,
-	} from "../stores/exportStore";
+	} from "../stores/exportStore.svelte";
 
 	let { onrescan }: {
 		onrescan?: () => void;
@@ -26,11 +20,11 @@
 
 	// ===== svelte-dnd-action 事件處理 =====
 	function handleDndConsider(e: CustomEvent<{ items: LabelInfo[] }>) {
-		labelList.set(e.detail.items);
+		labels.labelList = e.detail.items;
 	}
 
 	function handleDndFinalize(e: CustomEvent<{ items: LabelInfo[] }>) {
-		labelList.set(e.detail.items);
+		labels.labelList = e.detail.items;
 	}
 
 	// 重新掃描
@@ -43,7 +37,7 @@
 	class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm relative"
 >
 	<!-- 背景計算 Spinner -->
-	{#if $isCalculatingCounts}
+	{#if labels.isCalculatingCounts}
 		<div
 			class="absolute top-4 right-4 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"
 		>
@@ -73,25 +67,25 @@
 			🏷️ 標籤選擇
 		</h2>
 		<div class="flex items-center gap-2">
-			{#if $labelScanMessage}
+			{#if labels.labelScanMessage}
 				<span
 					class="text-sm text-emerald-600 dark:text-emerald-400 font-medium"
-					>{$labelScanMessage}</span
+					>{labels.labelScanMessage}</span
 				>
 			{/if}
 			<button
 				onclick={handleRescan}
-				disabled={$isScanning || !$sourceDir}
+				disabled={labels.isScanning || !paths.sourceDir}
 				class="px-3 py-1.5 text-xs bg-indigo-100 dark:bg-indigo-900/50 hover:bg-indigo-200 dark:hover:bg-indigo-800/50 text-indigo-700 dark:text-indigo-300 rounded-md transition-colors disabled:opacity-50"
 				title="重新掃描標籤列表"
 			>
-				{$isScanning ? "掃描中..." : "🔄 重新掃描"}
+				{labels.isScanning ? "掃描中..." : "🔄 重新掃描"}
 			</button>
 		</div>
 	</div>
 
 	<!-- 🆕 格式檢測結果顯示 -->
-	{#if $detectedFormat}
+	{#if detection.detectedFormat}
 		<div
 			class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700"
 		>
@@ -101,14 +95,14 @@
 					>檢測到的格式：</span
 				>
 				<span class="text-blue-600 dark:text-blue-400"
-					>{$detectedFormat.format_description}</span
+					>{detection.detectedFormat.format_description}</span
 				>
 				<span class="ml-auto text-xs text-blue-500 dark:text-blue-400">
-					信心度：{$detectedFormat.confidence_percent}
+					信心度：{detection.detectedFormat.confidence_percent}
 				</span>
 			</div>
 		</div>
-	{:else if $isDetectingFormat}
+	{:else if detection.isDetectingFormat}
 		<div
 			class="mb-4 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600"
 		>
@@ -142,8 +136,8 @@
 			<label class="relative inline-flex items-center cursor-pointer">
 				<input
 					type="checkbox"
-					checked={$useCustomLabels}
-					onchange={() => useCustomLabels.update((v) => !v)}
+					checked={labels.useCustomLabels}
+					onchange={() => labels.useCustomLabels = !labels.useCustomLabels}
 					class="sr-only peer"
 				/>
 				<div
@@ -156,7 +150,7 @@
 		</div>
 
 		<!-- 輸出無標籤圖片（僅在啟用自訂標籤時顯示） -->
-		{#if $useCustomLabels}
+		{#if labels.useCustomLabels}
 			<div
 				class="flex items-center gap-2 pl-3 border-l border-slate-200 dark:border-slate-600"
 			>
@@ -166,9 +160,9 @@
 				>
 					<input
 						type="checkbox"
-						checked={$includeEmptyLabelImages}
+						checked={labels.includeEmptyLabelImages}
 						onchange={() =>
-							includeEmptyLabelImages.update((v) => !v)}
+							labels.includeEmptyLabelImages = !labels.includeEmptyLabelImages}
 						class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
 					/>
 					<span class="text-sm text-slate-600 dark:text-slate-400"
@@ -178,19 +172,19 @@
 			</div>
 		{/if}
 
-		{#if $useCustomLabels && $labelList.length > 0}
+		{#if labels.useCustomLabels && labels.labelList.length > 0}
 			<span
 				class="text-xs text-slate-500 dark:text-slate-400 ml-auto pr-3"
 			>
-				已選 {$labelList.filter((l) => l.selected).length} / {$labelList.length}
+				已選 {labels.labelList.filter((l) => l.selected).length} / {labels.labelList.length}
 			</span>
 		{/if}
 	</div>
 
-	{#if $useCustomLabels}
+	{#if labels.useCustomLabels}
 		<div class="space-y-2">
 			<!-- 可拖拉排序的標籤表格 -->
-			{#if $labelList.length > 0}
+			{#if labels.labelList.length > 0}
 				<div
 					class="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden"
 				>
@@ -204,10 +198,10 @@
 						<div class="flex items-center justify-center gap-1.5">
 							<input
 								type="checkbox"
-								checked={$labelList.every((l) => l.selected)}
-								indeterminate={$labelList.some(
+								checked={labels.labelList.every((l) => l.selected)}
+								indeterminate={labels.labelList.some(
 									(l) => l.selected,
-								) && !$labelList.every((l) => l.selected)}
+								) && !labels.labelList.every((l) => l.selected)}
 								onchange={(e) => {
 									if (e.currentTarget.checked)
 										selectAllLabels();
@@ -231,14 +225,14 @@
 					<div
 						class="divide-y divide-slate-100 dark:divide-slate-700"
 						use:dndzone={{
-							items: $labelList,
+							items: labels.labelList,
 							flipDurationMs,
 							dropTargetStyle: {},
 						}}
 						onconsider={handleDndConsider}
 						onfinalize={handleDndFinalize}
 					>
-						{#each $labelList as label, index (label.id)}
+						{#each labels.labelList as label, index (label.id)}
 							<div
 								animate:flip={{ duration: flipDurationMs }}
 								class="grid grid-cols-[50px_1fr_80px_50px] gap-2 px-3 py-2 items-center bg-white dark:bg-slate-800 cursor-grab active:cursor-grabbing hover:bg-slate-50 dark:hover:bg-slate-700/50
@@ -253,7 +247,7 @@
 										: ''}"
 								>
 									{label.selected
-										? $labelList
+										? labels.labelList
 												.slice(0, index + 1)
 												.filter((l) => l.selected)
 												.length - 1
@@ -276,7 +270,7 @@
 								<span
 									class="text-right text-sm text-slate-500 dark:text-slate-400"
 								>
-									{#if $isCalculatingCounts && label.count === 0}
+									{#if labels.isCalculatingCounts && label.count === 0}
 										<svg
 											class="animate-spin h-4 w-4 inline text-slate-400"
 											viewBox="0 0 24 24"
@@ -321,9 +315,9 @@
 				<div
 					class="text-center py-8 text-slate-500 dark:text-slate-400"
 				>
-					{#if !$sourceDir}
+					{#if !paths.sourceDir}
 						請先選擇來源路徑以掃描可用標籤
-					{:else if $isScanning}
+					{:else if labels.isScanning}
 						<div class="flex items-center justify-center gap-2">
 							<svg
 								class="animate-spin h-5 w-5"

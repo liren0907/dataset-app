@@ -1,26 +1,23 @@
 <script lang="ts">
 	import {
-		showAdvanced,
-		workerCount,
-		randomSeed,
-		removeImageData,
-		outputTarget
-	} from '../stores/exportStore';
+		advanced,
+		format
+	} from '../stores/exportStore.svelte';
 
 	// 是否為 LabelMe 輸出格式
-	let isLabelMeOutput = $derived($outputTarget === 'labelme');
+	let isLabelMeOutput = $derived(format.outputTarget === 'labelme');
 </script>
 
 <section class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
 	<button
-		onclick={() => showAdvanced.update(v => !v)}
+		onclick={() => advanced.showAdvanced = !advanced.showAdvanced}
 		class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
 	>
 		<h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
 			⚙️ 進階選項
 		</h2>
 		<svg
-			class="w-5 h-5 text-slate-400 transition-transform {$showAdvanced ? 'rotate-180' : ''}"
+			class="w-5 h-5 text-slate-400 transition-transform {advanced.showAdvanced ? 'rotate-180' : ''}"
 			fill="none"
 			stroke="currentColor"
 			viewBox="0 0 24 24"
@@ -29,7 +26,7 @@
 		</svg>
 	</button>
 
-	{#if $showAdvanced}
+	{#if advanced.showAdvanced}
 		<div class="px-6 pb-6 space-y-4 border-t border-slate-100 dark:border-slate-700 pt-4">
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 				<!-- Worker 數量 -->
@@ -39,8 +36,8 @@
 					</label>
 					<input
 						type="number"
-						value={$workerCount}
-						oninput={(e) => workerCount.set(parseInt(e.currentTarget.value) || 0)}
+						value={advanced.workerCount}
+						oninput={(e) => advanced.workerCount = parseInt(e.currentTarget.value) || 0}
 						min="0"
 						max="32"
 						class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -56,8 +53,8 @@
 						</label>
 						<input
 							type="number"
-							value={$randomSeed}
-							oninput={(e) => randomSeed.set(parseInt(e.currentTarget.value) || 0)}
+							value={advanced.randomSeed}
+							oninput={(e) => advanced.randomSeed = parseInt(e.currentTarget.value) || 0}
 							min="0"
 							class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
 						/>
@@ -71,8 +68,8 @@
 				<label class="flex items-center gap-3 cursor-pointer">
 					<input
 						type="checkbox"
-						checked={$removeImageData}
-						onchange={() => removeImageData.update(v => !v)}
+						checked={advanced.removeImageData}
+						onchange={() => advanced.removeImageData = !advanced.removeImageData}
 						class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
 					/>
 					<div>

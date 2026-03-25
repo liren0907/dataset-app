@@ -1,8 +1,7 @@
 <script lang="ts">
     import {
-        labelTaxonomy,
-        classColorMap,
-    } from "$lib/stores/labelTaxonomyStore";
+        labelClasses,
+    } from "$lib/stores/labelTaxonomyStore.svelte";
 
     let {
         selectedObject = null,
@@ -59,7 +58,7 @@
                             onBatchUpdateLabel(e.currentTarget.value)}
                     >
                         <option value="">Choose Label...</option>
-                        {#each $labelTaxonomy as cls (cls.name)}
+                        {#each labelClasses as cls (cls.name)}
                             <option value={cls.name}>{cls.name}</option>
                         {/each}
                     </select>

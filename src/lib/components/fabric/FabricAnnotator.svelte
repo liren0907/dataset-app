@@ -17,9 +17,9 @@
     import DatasetStats from "$lib/components/fabric/DatasetStats.svelte";
     import FabricToolbar from "$lib/components/fabric/FabricToolbar.svelte";
     import ImageGallery from "$lib/components/fabric/ImageGallery.svelte";
-    import { shortcutMap, labelTaxonomy } from "$lib/stores/labelTaxonomyStore";
-    import { imageStatusStore } from "$lib/stores/imageStatusStore";
-    import { fabricSettings } from "$lib/stores/fabricSettingsStore";
+    import { getShortcutMap, addClass } from "$lib/stores/labelTaxonomyStore.svelte";
+    import { setImageStatus } from "$lib/stores/imageStatusStore.svelte";
+    import { fabricSettings, setBaseStrokeWidth, toggleVertexPoints } from "$lib/stores/fabricSettingsStore.svelte";
     import { fly } from "svelte/transition";
 
     let parentElement: HTMLDivElement;
@@ -75,7 +75,7 @@
             polylines.length +
             keypoints.length;
         if (currentImagePath && totalAnns > 0) {
-            imageStatusStore.setStatus(currentImagePath, "in_progress");
+            setImageStatus(currentImagePath, "in_progress");
         }
     }
 
@@ -145,12 +145,7 @@
 
         const unsubscribeUpdate = fabricManager.on("update", syncState);
         const unsubscribeMode = fabricManager.on("modeChange", syncState);
-        const unsubscribeSettings = fabricSettings.subscribe(settings => {
-            currentStrokeWidth = settings.baseStrokeWidth;
-            currentShowVertexPoints = settings.showVertexPoints;
-            fabricManager?.setBaseStrokeWidth(settings.baseStrokeWidth);
-            fabricManager?.setShowVertexPoints(settings.showVertexPoints);
-        });
+        // fabricSettings reactivity is handled by $effect below
 
         const resizeObserver = new ResizeObserver((entries) => {
             for (const entry of entries) {
@@ -166,7 +161,6 @@
         return () => {
             unsubscribeUpdate();
             unsubscribeMode();
-            unsubscribeSettings();
             resizeObserver.disconnect();
             fabricManager?.dispose();
         };
@@ -176,12 +170,20 @@
         fabricManager?.setMode(newMode);
     }
 
+    // Sync fabricSettings to canvas manager
+    $effect(() => {
+        currentStrokeWidth = fabricSettings.baseStrokeWidth;
+        currentShowVertexPoints = fabricSettings.showVertexPoints;
+        fabricManager?.setBaseStrokeWidth(fabricSettings.baseStrokeWidth);
+        fabricManager?.setShowVertexPoints(fabricSettings.showVertexPoints);
+    });
+
     function handleStrokeWidthChange(width: number) {
-        fabricSettings.setBaseStrokeWidth(width);
+        setBaseStrokeWidth(width);
     }
 
     function handleToggleVertexPoints() {
-        fabricSettings.toggleVertexPoints();
+        toggleVertexPoints();
     }
 
     /** Derive the LabelMe JSON path from an image path */
@@ -229,7 +231,7 @@
                 // Sync label classes from loaded annotations into taxonomy
                 for (const shape of labelmeData.shapes) {
                     if (shape.label) {
-                        labelTaxonomy.addClass(shape.label);
+                        addClass(shape.label);
                     }
                 }
             }
@@ -423,7 +425,7 @@
         // Quick labeling with number keys (1-9)
         const num = parseInt(event.key);
         if (num >= 1 && num <= 9) {
-            const className = $shortcutMap.get(num);
+            const className = getShortcutMap().get(num);
             if (className && fabricManager) {
                 // Apply to the last drawn annotation
                 const bboxes = fabricManager.getBBoxes();

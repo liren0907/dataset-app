@@ -1,15 +1,12 @@
 <script lang="ts">
 	import {
-		stats,
-		detailedStats,
-		showInvalidDetails,
-		invalidReasonGroups
-	} from '../stores/exportStore';
-	import { writable } from 'svelte/store';
+		execution,
+		getInvalidReasonGroups
+	} from '../stores/exportStore.svelte';
 
-	// 本地狀態：是否展開各類圖片列表
-	const showBackgroundFiles = writable(false);
-	const showFilteredEmptyFiles = writable(false);
+	// 本地狀態
+	let showBackgroundFiles = $state(false);
+	let showFilteredEmptyFiles = $state(false);
 </script>
 
 <!-- 詳細統計（轉換完成後顯示） -->
@@ -17,37 +14,37 @@
 	<!-- 數據摘要 -->
 	<div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-center text-sm">
 		<div>
-			<div class="text-2xl font-bold text-slate-800 dark:text-slate-100">{$stats.processed}</div>
+			<div class="text-2xl font-bold text-slate-800 dark:text-slate-100">{execution.stats.processed}</div>
 			<div class="text-slate-500 dark:text-slate-400">檔案處理</div>
 		</div>
 		<div>
 			<div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-				{$detailedStats.totalAnnotations.toLocaleString()}
+				{execution.detailedStats.totalAnnotations.toLocaleString()}
 			</div>
 			<div class="text-slate-500 dark:text-slate-400">標註匯出</div>
 		</div>
 		<div>
 			<div class="text-2xl font-bold text-amber-600 dark:text-amber-400">
-				{$detailedStats.skippedAnnotations.toLocaleString()}
+				{execution.detailedStats.skippedAnnotations.toLocaleString()}
 			</div>
 			<div class="text-slate-500 dark:text-slate-400">標註跳過</div>
 		</div>
 		<div>
 			<div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
-				{$detailedStats.backgroundImages}
+				{execution.detailedStats.backgroundImages}
 			</div>
 			<div class="text-slate-500 dark:text-slate-400">背景圖片</div>
 		</div>
 		<div>
 			<div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
-				{$detailedStats.filteredEmptyImages}
+				{execution.detailedStats.filteredEmptyImages}
 			</div>
 			<div class="text-slate-500 dark:text-slate-400">篩選空標籤</div>
 		</div>
 	</div>
 
 	<!-- 跳過的標籤提示 -->
-	{#if $detailedStats.skippedLabels.length > 0}
+	{#if execution.detailedStats.skippedLabels.length > 0}
 		<div class="mt-4 p-3 bg-amber-50 dark:bg-amber-900/30 rounded-lg border border-amber-200 dark:border-amber-800">
 			<div class="flex items-start gap-2">
 				<span class="text-amber-500">⚠️</span>
@@ -56,7 +53,7 @@
 						以下標籤未被匯出（不在選擇列表中）：
 					</div>
 					<div class="text-amber-600 dark:text-amber-400 mt-1">
-						{$detailedStats.skippedLabels.join(', ')}
+						{execution.detailedStats.skippedLabels.join(', ')}
 					</div>
 				</div>
 			</div>
@@ -64,18 +61,18 @@
 	{/if}
 
 	<!-- 無效標註詳情（點擊展開） -->
-	{#if $detailedStats.invalidAnnotations.length > 0}
+	{#if execution.detailedStats.invalidAnnotations.length > 0}
 		<div class="mt-4 p-3 bg-orange-50 dark:bg-orange-900/30 rounded-lg border border-orange-200 dark:border-orange-800">
 			<button
-				onclick={() => showInvalidDetails.update(v => !v)}
+				onclick={() => execution.showInvalidDetails = !execution.showInvalidDetails}
 				class="w-full flex items-center justify-between text-left"
 			>
 				<div class="flex items-start gap-2">
 					<span class="text-orange-500">🔍</span>
 					<div class="text-sm">
 						<div class="font-medium text-orange-700 dark:text-orange-300">
-							發現 {$detailedStats.invalidAnnotations.length} 個無效標註
-							{#if $detailedStats.invalidAnnotations.length >= 100}
+							發現 {execution.detailedStats.invalidAnnotations.length} 個無效標註
+							{#if execution.detailedStats.invalidAnnotations.length >= 100}
 								<span class="text-orange-500">（僅顯示前 100 筆）</span>
 							{/if}
 						</div>
@@ -84,16 +81,16 @@
 						</div>
 					</div>
 				</div>
-				<span class="text-orange-500 transition-transform {$showInvalidDetails ? 'rotate-180' : ''}">
+				<span class="text-orange-500 transition-transform {execution.showInvalidDetails ? 'rotate-180' : ''}">
 					▼
 				</span>
 			</button>
 
-			{#if $showInvalidDetails}
+			{#if execution.showInvalidDetails}
 				<div class="mt-3 pt-3 border-t border-orange-200 dark:border-orange-700">
 					<!-- 按原因分組統計 -->
 					<div class="space-y-3">
-						{#each Object.entries($invalidReasonGroups) as [reason, items]}
+						{#each Object.entries(getInvalidReasonGroups()) as [reason, items]}
 							<div class="bg-white dark:bg-slate-800 rounded-lg p-3 border border-orange-100 dark:border-orange-800/50">
 								<div class="flex items-center justify-between mb-2">
 									<span class="font-medium text-orange-700 dark:text-orange-300 text-sm">
@@ -131,18 +128,18 @@
 	{/if}
 
 	<!-- 背景圖片清單（原本無 JSON 標註檔的圖片） -->
-	{#if $detailedStats.backgroundImages > 0}
+	{#if execution.detailedStats.backgroundImages > 0}
 		<div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-800">
 			<button
-				onclick={() => showBackgroundFiles.update(v => !v)}
+				onclick={() => showBackgroundFiles = !showBackgroundFiles}
 				class="w-full flex items-center justify-between text-left"
 			>
 				<div class="flex items-start gap-2">
 					<span class="text-blue-500">🖼️</span>
 					<div class="text-sm">
 						<div class="font-medium text-blue-700 dark:text-blue-300">
-							{$detailedStats.backgroundImages} 張背景圖片
-							{#if $detailedStats.backgroundFiles.length >= 100}
+							{execution.detailedStats.backgroundImages} 張背景圖片
+							{#if execution.detailedStats.backgroundFiles.length >= 100}
 								<span class="text-blue-500">（僅顯示前 100 筆）</span>
 							{/if}
 						</div>
@@ -151,23 +148,23 @@
 						</div>
 					</div>
 				</div>
-				<span class="text-blue-500 transition-transform {$showBackgroundFiles ? 'rotate-180' : ''}">
+				<span class="text-blue-500 transition-transform {showBackgroundFiles ? 'rotate-180' : ''}">
 					▼
 				</span>
 			</button>
 
-			{#if $showBackgroundFiles}
+			{#if showBackgroundFiles}
 				<div class="mt-3 pt-3 border-t border-blue-200 dark:border-blue-700">
 					<div class="max-h-40 overflow-y-auto text-xs space-y-1">
-						{#each $detailedStats.backgroundFiles.slice(0, 100) as fileName}
+						{#each execution.detailedStats.backgroundFiles.slice(0, 100) as fileName}
 							<div class="flex items-center gap-2 text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/50 rounded px-2 py-1">
 								<span class="text-slate-400 dark:text-slate-500">🖼️</span>
 								<span class="font-mono truncate flex-1" title={fileName}>{fileName}</span>
 							</div>
 						{/each}
-						{#if $detailedStats.backgroundImages > 100}
+						{#if execution.detailedStats.backgroundImages > 100}
 							<div class="text-center text-slate-400 dark:text-slate-500 py-1">
-								...還有 {$detailedStats.backgroundImages - 100} 個
+								...還有 {execution.detailedStats.backgroundImages - 100} 個
 							</div>
 						{/if}
 					</div>
@@ -177,18 +174,18 @@
 	{/if}
 
 	<!-- 因篩選產生的空標籤圖片 -->
-	{#if $detailedStats.filteredEmptyImages > 0}
+	{#if execution.detailedStats.filteredEmptyImages > 0}
 		<div class="mt-4 p-3 bg-purple-50 dark:bg-purple-900/30 rounded-lg border border-purple-200 dark:border-purple-800">
 			<button
-				onclick={() => showFilteredEmptyFiles.update(v => !v)}
+				onclick={() => showFilteredEmptyFiles = !showFilteredEmptyFiles}
 				class="w-full flex items-center justify-between text-left"
 			>
 				<div class="flex items-start gap-2">
 					<span class="text-purple-500">🏷️</span>
 					<div class="text-sm">
 						<div class="font-medium text-purple-700 dark:text-purple-300">
-							{$detailedStats.filteredEmptyImages} 張圖片因標籤篩選而變成空標籤
-							{#if $detailedStats.filteredEmptyFiles.length >= 100}
+							{execution.detailedStats.filteredEmptyImages} 張圖片因標籤篩選而變成空標籤
+							{#if execution.detailedStats.filteredEmptyFiles.length >= 100}
 								<span class="text-purple-500">（僅顯示前 100 筆）</span>
 							{/if}
 						</div>
@@ -197,23 +194,23 @@
 						</div>
 					</div>
 				</div>
-				<span class="text-purple-500 transition-transform {$showFilteredEmptyFiles ? 'rotate-180' : ''}">
+				<span class="text-purple-500 transition-transform {showFilteredEmptyFiles ? 'rotate-180' : ''}">
 					▼
 				</span>
 			</button>
 
-			{#if $showFilteredEmptyFiles}
+			{#if showFilteredEmptyFiles}
 				<div class="mt-3 pt-3 border-t border-purple-200 dark:border-purple-700">
 					<div class="max-h-40 overflow-y-auto text-xs space-y-1">
-						{#each $detailedStats.filteredEmptyFiles.slice(0, 100) as fileName}
+						{#each execution.detailedStats.filteredEmptyFiles.slice(0, 100) as fileName}
 							<div class="flex items-center gap-2 text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/50 rounded px-2 py-1">
 								<span class="text-slate-400 dark:text-slate-500">🏷️</span>
 								<span class="font-mono truncate flex-1" title={fileName}>{fileName}</span>
 							</div>
 						{/each}
-						{#if $detailedStats.filteredEmptyImages > 100}
+						{#if execution.detailedStats.filteredEmptyImages > 100}
 							<div class="text-center text-slate-400 dark:text-slate-500 py-1">
-								...還有 {$detailedStats.filteredEmptyImages - 100} 個
+								...還有 {execution.detailedStats.filteredEmptyImages - 100} 個
 							</div>
 						{/if}
 					</div>
@@ -223,12 +220,12 @@
 	{/if}
 
 	<!-- 失敗提示 -->
-	{#if $stats.failed > 0}
+	{#if execution.stats.failed > 0}
 		<div class="mt-4 p-3 bg-rose-50 dark:bg-rose-900/30 rounded-lg border border-rose-200 dark:border-rose-800">
 			<div class="flex items-start gap-2">
 				<span class="text-rose-500">❌</span>
 				<div class="text-sm text-rose-600 dark:text-rose-400">
-					有 {$stats.failed} 個檔案處理失敗，請檢查來源檔案是否完整。
+					有 {execution.stats.failed} 個檔案處理失敗，請檢查來源檔案是否完整。
 				</div>
 			</div>
 		</div>

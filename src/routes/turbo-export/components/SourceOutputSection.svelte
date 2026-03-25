@@ -1,13 +1,10 @@
 <script lang="ts">
 	import { open } from '@tauri-apps/plugin-dialog';
 	import {
-		sourceDir,
-		outputDir,
-		customDatasetName,
-		isDraggingOver,
-		activeDropZone,
-		defaultDatasetName
-	} from '../stores/exportStore';
+		paths,
+		dragDrop,
+		getDefaultDatasetName
+	} from '../stores/exportStore.svelte';
 
 	let { sourceDropZone = $bindable<HTMLElement | null>(null), outputDropZone = $bindable<HTMLElement | null>(null), onsourceSelected, onoutputSelected }: {
 		sourceDropZone?: HTMLElement | null;
@@ -24,7 +21,7 @@
 			title: '選擇 LabelMe JSON 資料夾'
 		});
 		if (selected && typeof selected === 'string') {
-			sourceDir.set(selected);
+			paths.sourceDir = selected;
 			onsourceSelected?.(selected);
 		}
 	}
@@ -36,7 +33,7 @@
 			title: '選擇輸出路徑'
 		});
 		if (selected && typeof selected === 'string') {
-			outputDir.set(selected);
+			paths.outputDir = selected;
 			onoutputSelected?.(selected);
 		}
 	}
@@ -56,13 +53,13 @@
 			tabindex="0"
 		>
 			<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">來源路徑</label>
-			<div class="flex gap-2 transition-all duration-200 {$isDraggingOver && $activeDropZone !== 'source' ? 'opacity-50' : ''}">
+			<div class="flex gap-2 transition-all duration-200 {dragDrop.isDraggingOver && dragDrop.activeDropZone !== 'source' ? 'opacity-50' : ''}">
 				<input
 					type="text"
-					value={$sourceDir}
+					value={paths.sourceDir}
 					placeholder="選擇或拖放包含 LabelMe JSON 的資料夾"
 					class="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-slate-50 dark:bg-slate-700 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200
-						{$activeDropZone === 'source' ? 'border-indigo-400 ring-2 ring-indigo-200' : ''}"
+						{dragDrop.activeDropZone === 'source' ? 'border-indigo-400 ring-2 ring-indigo-200' : ''}"
 					readonly
 				/>
 				<button
@@ -73,7 +70,7 @@
 				</button>
 			</div>
 			<!-- 磨砂玻璃拖放覆蓋層 -->
-			{#if $activeDropZone === 'source'}
+			{#if dragDrop.activeDropZone === 'source'}
 				<div class="absolute inset-0 rounded-lg overflow-hidden z-10 animate-pulse-subtle">
 					<div class="absolute inset-0 bg-gradient-to-br from-indigo-500/30 via-indigo-400/20 to-purple-500/30 backdrop-blur-md"></div>
 					<div class="absolute inset-0 border-2 border-dashed border-indigo-400 rounded-lg"></div>
@@ -86,7 +83,7 @@
 						</div>
 					</div>
 				</div>
-			{:else if $isDraggingOver && $activeDropZone !== 'output'}
+			{:else if dragDrop.isDraggingOver && dragDrop.activeDropZone !== 'output'}
 				<!-- 拖動中但不在此區域 - 顯示提示邊框 -->
 				<div class="absolute inset-0 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 z-10 pointer-events-none"></div>
 			{/if}
@@ -100,13 +97,13 @@
 			tabindex="0"
 		>
 			<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">輸出路徑 (選填)</label>
-			<div class="flex gap-2 transition-all duration-200 {$isDraggingOver && $activeDropZone !== 'output' ? 'opacity-50' : ''}">
+			<div class="flex gap-2 transition-all duration-200 {dragDrop.isDraggingOver && dragDrop.activeDropZone !== 'output' ? 'opacity-50' : ''}">
 				<input
 					type="text"
-					value={$outputDir}
+					value={paths.outputDir}
 					placeholder="預設為來源路徑"
 					class="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-slate-50 dark:bg-slate-700 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200
-						{$activeDropZone === 'output' ? 'border-emerald-400 ring-2 ring-emerald-200' : ''}"
+						{dragDrop.activeDropZone === 'output' ? 'border-emerald-400 ring-2 ring-emerald-200' : ''}"
 					readonly
 				/>
 				<button
@@ -117,7 +114,7 @@
 				</button>
 			</div>
 			<!-- 磨砂玻璃拖放覆蓋層 -->
-			{#if $activeDropZone === 'output'}
+			{#if dragDrop.activeDropZone === 'output'}
 				<div class="absolute inset-0 rounded-lg overflow-hidden z-10 animate-pulse-subtle">
 					<div class="absolute inset-0 bg-gradient-to-br from-emerald-500/30 via-emerald-400/20 to-teal-500/30 backdrop-blur-md"></div>
 					<div class="absolute inset-0 border-2 border-dashed border-emerald-400 rounded-lg"></div>
@@ -130,7 +127,7 @@
 						</div>
 					</div>
 				</div>
-			{:else if $isDraggingOver && $activeDropZone !== 'source'}
+			{:else if dragDrop.isDraggingOver && dragDrop.activeDropZone !== 'source'}
 				<!-- 拖動中但不在此區域 - 顯示提示邊框 -->
 				<div class="absolute inset-0 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 z-10 pointer-events-none"></div>
 			{/if}
@@ -144,15 +141,15 @@
 		</label>
 		<input
 			type="text"
-			value={$customDatasetName}
-			oninput={(e) => customDatasetName.set(e.currentTarget.value)}
+			value={paths.customDatasetName}
+			oninput={(e) => paths.customDatasetName = e.currentTarget.value}
 			placeholder="留空則自動產生"
 			class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-slate-50 dark:bg-slate-700 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
 		/>
 		<div class="mt-2 text-xs text-slate-500 dark:text-slate-400">
 			<span class="font-medium">預覽：</span>
 			<code class="bg-slate-100 dark:bg-slate-600 px-2 py-0.5 rounded text-indigo-600 dark:text-indigo-300">
-				{$customDatasetName || $defaultDatasetName || '請先選擇來源路徑'}
+				{paths.customDatasetName || getDefaultDatasetName() || '請先選擇來源路徑'}
 			</code>
 		</div>
 	</div>

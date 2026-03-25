@@ -19,11 +19,11 @@
     import { generateAnnotatedPreviews } from "$lib/services/gallery/datasetService";
     import type { KonvaImageData } from "$lib/services/gallery/konvaService";
 
-    // Import separated stores
-    import { imageStore } from "$lib/stores/gallery/imageStore";
-    import { uiStore } from "$lib/stores/gallery/uiStore";
-    import { annotationStore } from "$lib/stores/gallery/annotationStore";
-    import { exportStore } from "$lib/stores/gallery/exportStore";
+    // Import runes-based stores
+    import { imageState, setMockMode, selectDirectory, loadImagesPage, generateLabelMeSummary } from "$lib/stores/gallery/imageStore.svelte";
+    import { uiState, resetSelection } from "$lib/stores/gallery/uiStore.svelte";
+    import { annotationState, annotateImages, autoLoadAnnotationsForPage } from "$lib/stores/gallery/annotationStore.svelte";
+    import { exportState, runUnifiedExport, handleCropCompleted, openCroppedDatasetInGallery, removeCroppedDataset, clearAllCroppedDatasets, openCropModalWithLabel, closeCropModal, switchToOriginal, runCropInBackground, validateCroppedDatasets } from "$lib/stores/gallery/exportStore.svelte";
 
     const PREVIEW_SAMPLE_COUNT = 8;
 
@@ -38,13 +38,13 @@
 
     // --- Helper: Trigger Auto-Annotation ---
     async function triggerAutoAnnotationIfNeeded(
-        page: number = $imageStore.currentPage,
+        page: number = imageState.currentPage,
     ) {
         if (
-            $annotationStore.autoAnnotationEnabled &&
-            $imageStore.images.length > 0
+            annotationState.autoAnnotationEnabled &&
+            imageState.images.length > 0
         ) {
-            await annotationStore.autoLoadAnnotationsForPage(page);
+            await autoLoadAnnotationsForPage(page);
         }
     }
 
@@ -52,22 +52,22 @@
         const isTauri = typeof window !== "undefined" && "__TAURI__" in window;
         if (!isTauri) {
             console.log("Browser environment detected (No Tauri).");
-            await imageStore.setMockMode(true);
+            await setMockMode(true);
         } else {
-            await exportStore.validateCroppedDatasets();
+            await validateCroppedDatasets();
         }
     });
 
     // Keyboard shortcuts
     function handleKeydown(event: KeyboardEvent) {
-        if (event.key === "Escape" && $uiStore.selectedImage) {
-            $uiStore.selectedImage = null;
-            $uiStore.showAnnotationModal = false;
+        if (event.key === "Escape" && uiState.selectedImage) {
+            uiState.selectedImage = null;
+            uiState.showAnnotationModal = false;
         }
     }
 
     async function handlePageChange(page: number) {
-        await imageStore.loadImagesPage(page);
+        await loadImagesPage(page);
         await triggerAutoAnnotationIfNeeded(page);
     }
 
@@ -153,36 +153,33 @@
 
     // Type-safe setters for store union types
     function setAnnotationType(val: string) {
-        $annotationStore.annotationType = val as "bounding_box" | "polygon";
+        annotationState.annotationType = val as "bounding_box" | "polygon";
     }
     function setViewMode(val: string) {
-        $uiStore.viewMode = val as "grid" | "column";
+        uiState.viewMode = val as "grid" | "column";
     }
     function setEditMode(val: string) {
-        $uiStore.editMode = val as "modal" | "sidebar";
+        uiState.editMode = val as "modal" | "sidebar";
     }
 
     // Helper to get currentExportDataset (dynamically added property)
     function getCurrentExportDataset(): any {
-        return ($exportStore as any).currentExportDataset;
+        return (exportState as any).currentExportDataset;
     }
     function openExportForDataset(dataset: any) {
-        exportStore.update((s) => {
-            const updated: any = { ...s, showActualExportModal: true };
-            updated.currentExportDataset = dataset;
-            return updated;
-        });
+        exportState.showActualExportModal = true;
+        (exportState as any).currentExportDataset = dataset;
     }
 
     // Trigger auto-annotation on initial directory load
     let lastLoadedDirectory = "";
     $effect(() => {
         if (
-            $imageStore.directoryPath &&
-            $imageStore.images.length > 0 &&
-            $imageStore.directoryPath !== lastLoadedDirectory
+            imageState.directoryPath &&
+            imageState.images.length > 0 &&
+            imageState.directoryPath !== lastLoadedDirectory
         ) {
-            lastLoadedDirectory = $imageStore.directoryPath;
+            lastLoadedDirectory = imageState.directoryPath;
             triggerAutoAnnotationIfNeeded();
         }
     });
@@ -207,52 +204,52 @@
 
             <!-- New Gallery Navbar -->
             <GalleryNavbar
-                isMockMode={$imageStore.isMockMode}
-                loading={$imageStore.loading}
-                directoryPath={$imageStore.directoryPath}
-                images={$imageStore.images}
-                annotationType={$annotationStore.annotationType}
-                autoAnnotationEnabled={$annotationStore.autoAnnotationEnabled}
-                annotating={$annotationStore.annotating}
-                showCropTool={$exportStore.showCropTool}
-                showAdvancedCropTool={$exportStore.showAdvancedCropTool}
-                viewMode={$uiStore.viewMode}
-                editMode={$uiStore.editMode}
+                isMockMode={imageState.isMockMode}
+                loading={imageState.loading}
+                directoryPath={imageState.directoryPath}
+                images={imageState.images}
+                annotationType={annotationState.annotationType}
+                autoAnnotationEnabled={annotationState.autoAnnotationEnabled}
+                annotating={annotationState.annotating}
+                showCropTool={exportState.showCropTool}
+                showAdvancedCropTool={exportState.showAdvancedCropTool}
+                viewMode={uiState.viewMode}
+                editMode={uiState.editMode}
                 ontogglemockmode={() =>
-                    imageStore.setMockMode(!$imageStore.isMockMode)}
-                onselectdirectory={imageStore.selectDirectory}
+                    setMockMode(!imageState.isMockMode)}
+                onselectdirectory={selectDirectory}
                 onsetannotationtype={setAnnotationType}
                 ontoggleautoannotation={() =>
-                    ($annotationStore.autoAnnotationEnabled =
-                        !$annotationStore.autoAnnotationEnabled)}
-                onannotateimages={annotationStore.annotateImages}
+                    (annotationState.autoAnnotationEnabled =
+                        !annotationState.autoAnnotationEnabled)}
+                onannotateimages={annotateImages}
                 onopenexportmodal={() => {
-                    $exportStore.showActualExportModal = true;
-                    $exportStore.pageExportError = "";
-                    $exportStore.pageExportSuccess = "";
+                    exportState.showActualExportModal = true;
+                    exportState.pageExportError = "";
+                    exportState.pageExportSuccess = "";
                 }}
                 ontogglecroptool={() =>
-                    ($exportStore.showCropTool = !$exportStore.showCropTool)}
+                    (exportState.showCropTool = !exportState.showCropTool)}
                 ontoggleadvancedcroptool={() =>
-                    ($exportStore.showAdvancedCropTool =
-                        !$exportStore.showAdvancedCropTool)}
+                    (exportState.showAdvancedCropTool =
+                        !exportState.showAdvancedCropTool)}
                 onsetviewmode={setViewMode}
                 onseteditmode={setEditMode}
             />
 
-            {#if $imageStore.error}
+            {#if imageState.error}
                 <div class="alert alert-error mb-6">
                     <span class="material-symbols-rounded">error</span>
-                    <span>{$imageStore.error}</span>
+                    <span>{imageState.error}</span>
                 </div>
             {/if}
 
             <!-- Main Content Area -->
 
             <!-- Active Cropped Dataset Indicator -->
-            {#if $exportStore.activeCroppedDatasetPath}
-                {@const activeDataset = $exportStore.croppedDatasets.find(
-                    (d) => d.tempPath === $exportStore.activeCroppedDatasetPath,
+            {#if exportState.activeCroppedDatasetPath}
+                {@const activeDataset = exportState.croppedDatasets.find(
+                    (d) => d.tempPath === exportState.activeCroppedDatasetPath,
                 )}
                 <div
                     class="mb-6 p-4 rounded-xl bg-primary/5 border border-primary/20"
@@ -273,7 +270,7 @@
                                 <div class="text-sm text-base-content/60">
                                     {activeDataset?.imageCount || 0} images from
                                     <span class="font-mono text-xs"
-                                        >{$exportStore.activeCroppedDatasetPath
+                                        >{exportState.activeCroppedDatasetPath
                                             ?.split("/")
                                             .pop()}</span
                                     >
@@ -286,8 +283,8 @@
                             tooltip="Switch back to original dataset"
                             variant="ghost"
                             onclick={() =>
-                                exportStore.switchToOriginal(
-                                    $exportStore.originalDirectoryPath,
+                                switchToOriginal(
+                                    exportState.originalDirectoryPath,
                                 )}
                         />
                     </div>
@@ -295,41 +292,41 @@
             {/if}
 
             <!-- 1. Dataset Summary (Original) -->
-            {#if !$exportStore.activeCroppedDatasetPath}
+            {#if !exportState.activeCroppedDatasetPath}
                 <div class="mb-8">
                     <DatasetSummary
-                        datasetSummary={$imageStore.datasetSummary}
+                        datasetSummary={imageState.datasetSummary}
                         oninitiatecrop={(data) =>
-                            exportStore.openCropModalWithLabel(data.label)}
+                            openCropModalWithLabel(data.label)}
                     />
 
                     <!-- Hierarchical Crop Toggle Button -->
-                    {#if $imageStore.directoryPath && $imageStore.datasetSummary}
+                    {#if imageState.directoryPath && imageState.datasetSummary}
                         <div class="mt-4 flex justify-end">
                             <RawButton
                                 icon="account_tree"
                                 label="Hierarchical Crop"
                                 tooltip="Crop by parent label and remap children"
-                                active={$exportStore.showHierarchicalCrop}
-                                variant={$exportStore.showHierarchicalCrop
+                                active={exportState.showHierarchicalCrop}
+                                variant={exportState.showHierarchicalCrop
                                     ? "soft"
                                     : "ghost"}
                                 onclick={() =>
-                                    ($exportStore.showHierarchicalCrop =
-                                        !$exportStore.showHierarchicalCrop)}
+                                    (exportState.showHierarchicalCrop =
+                                        !exportState.showHierarchicalCrop)}
                             />
                         </div>
                     {/if}
 
                     <!-- Hierarchical Crop Tool -->
-                    {#if $exportStore.showHierarchicalCrop}
+                    {#if exportState.showHierarchicalCrop}
                         <div class="mt-4">
                             <HierarchicalCrop
-                                currentDirectory={$imageStore.directoryPath}
-                                cropToolOpen={$exportStore.showHierarchicalCrop}
-                                preSelectedParentLabel={$exportStore.cropModalParentLabel}
+                                currentDirectory={imageState.directoryPath}
+                                cropToolOpen={exportState.showHierarchicalCrop}
+                                preSelectedParentLabel={exportState.cropModalParentLabel}
                                 oncropstart={(detail) => {
-                                    exportStore.runCropInBackground(detail);
+                                    runCropInBackground(detail);
                                 }}
                             />
                         </div>
@@ -338,7 +335,7 @@
             {/if}
 
             <!-- Crop Processing Progress Bar -->
-            {#if $exportStore.cropProcessing}
+            {#if exportState.cropProcessing}
                 <div
                     class="mb-6 p-4 bg-base-200 rounded-xl border border-primary/20"
                 >
@@ -348,14 +345,14 @@
                                 class="loading loading-spinner loading-sm text-primary"
                             ></span>
                             <span class="font-medium text-primary"
-                                >{$exportStore.cropProgressMessage}</span
+                                >{exportState.cropProgressMessage}</span
                             >
                         </div>
-                        {#if $exportStore.cropProgressTotal > 0}
+                        {#if exportState.cropProgressTotal > 0}
                             <span class="text-sm font-mono text-primary/80">
                                 {Math.round(
-                                    ($exportStore.cropProgressCurrent /
-                                        $exportStore.cropProgressTotal) *
+                                    (exportState.cropProgressCurrent /
+                                        exportState.cropProgressTotal) *
                                         100,
                                 )}%
                             </span>
@@ -366,13 +363,13 @@
                     >
                         <div
                             class="bg-primary h-full rounded-full transition-all duration-300"
-                            style="width: {$exportStore.cropProgressTotal > 0
-                                ? ($exportStore.cropProgressCurrent /
-                                      $exportStore.cropProgressTotal) *
+                            style="width: {exportState.cropProgressTotal > 0
+                                ? (exportState.cropProgressCurrent /
+                                      exportState.cropProgressTotal) *
                                       100 +
                                   '%'
                                 : '100%'}"
-                            class:animate-pulse={$exportStore.cropProgressTotal ===
+                            class:animate-pulse={exportState.cropProgressTotal ===
                                 0}
                         ></div>
                     </div>
@@ -385,7 +382,7 @@
             {/if}
 
             <!-- Cropped Datasets Section -->
-            {#if $exportStore.croppedDatasets.length > 0}
+            {#if exportState.croppedDatasets.length > 0}
                 <div class="mb-8">
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center gap-2">
@@ -393,7 +390,7 @@
                                 >check_circle</span
                             >
                             <h3 class="font-bold text-base-content">
-                                Cropped Datasets ({$exportStore.croppedDatasets
+                                Cropped Datasets ({exportState.croppedDatasets
                                     .length})
                             </h3>
                         </div>
@@ -405,13 +402,13 @@
                             size="sm"
                             onclick={async () => {
                                 if (await confirmClearAll()) {
-                                    exportStore.clearAllCroppedDatasets();
+                                    clearAllCroppedDatasets();
                                 }
                             }}
                         />
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {#each $exportStore.croppedDatasets as dataset (dataset.tempPath)}
+                        {#each exportState.croppedDatasets as dataset (dataset.tempPath)}
                             <CroppedDatasetCard
                                 tempPath={dataset.tempPath}
                                 exportedPath={dataset.exportedPath}
@@ -422,11 +419,11 @@
                                 onpreview={(data) =>
                                     openCroppedPreview(data.tempPath)}
                                 onopeningallery={(data) =>
-                                    exportStore.openCroppedDatasetInGallery(
+                                    openCroppedDatasetInGallery(
                                         data.tempPath,
                                     )}
                                 onremove={(data) =>
-                                    exportStore.removeCroppedDataset(
+                                    removeCroppedDataset(
                                         data.tempPath,
                                     )}
                                 onexport={() => openExportForDataset(dataset)}
@@ -444,34 +441,34 @@
                 <div
                     class="flex-1 w-full h-full overflow-hidden flex flex-col transition-all duration-300"
                 >
-                    {#if $imageStore.loading || !$imageStore.directoryPath || $imageStore.images.length === 0}
+                    {#if imageState.loading || !imageState.directoryPath || imageState.images.length === 0}
                         <!-- Shared Empty/Loading State Component -->
                         <GalleryEmptyState
-                            loading={$imageStore.loading}
-                            directoryPath={$imageStore.directoryPath}
-                            images={$imageStore.images}
-                            onselectdirectory={imageStore.selectDirectory}
+                            loading={imageState.loading}
+                            directoryPath={imageState.directoryPath}
+                            images={imageState.images}
+                            onselectdirectory={selectDirectory}
                         />
                     {:else}
                         <!-- Image Gallery Component -->
                         <div
                             class="h-full overflow-y-auto pr-2 rounded-box border border-base-300 bg-base-100"
-                            class:pointer-events-none={$uiStore.showAnnotationModal}
+                            class:pointer-events-none={uiState.showAnnotationModal}
                         >
                             <ImageGallery
-                                images={$imageStore.images}
-                                viewMode={$uiStore.viewMode}
-                                currentPage={$imageStore.currentPage}
-                                totalPages={$imageStore.totalPages}
-                                pageSize={$imageStore.pageSize}
-                                selectedImage={$uiStore.selectedImage}
+                                images={imageState.images}
+                                viewMode={uiState.viewMode}
+                                currentPage={imageState.currentPage}
+                                totalPages={imageState.totalPages}
+                                pageSize={imageState.pageSize}
+                                selectedImage={uiState.selectedImage}
                                 onloadpage={(page) => handlePageChange(page)}
                                 onimageclick={(data) => {
-                                    if ($uiStore.editMode === "modal") {
-                                        $uiStore.selectedImage = data.image;
-                                        $uiStore.showAnnotationModal = true;
+                                    if (uiState.editMode === "modal") {
+                                        uiState.selectedImage = data.image;
+                                        uiState.showAnnotationModal = true;
                                     } else {
-                                        $uiStore.selectedImage = data.image;
+                                        uiState.selectedImage = data.image;
                                     }
                                 }}
                             />
@@ -480,13 +477,13 @@
                 </div>
 
                 <!-- Right Sidebar Panel -->
-                {#if $uiStore.selectedImage && $uiStore.editMode === "sidebar"}
+                {#if uiState.selectedImage && uiState.editMode === "sidebar"}
                     <div
                         class="w-full lg:w-[450px] xl:w-[500px] h-full flex-none bg-base-100 rounded-box shadow-xl border border-base-300 overflow-hidden flex flex-col animate-in slide-in-from-right-4 duration-300"
                     >
                         <ImagePreviewPanel
-                            selectedImage={$uiStore.selectedImage}
-                            onclose={() => ($uiStore.selectedImage = null)}
+                            selectedImage={uiState.selectedImage}
+                            onclose={() => (uiState.selectedImage = null)}
                         />
                     </div>
                 {/if}
@@ -497,17 +494,16 @@
 
 <!-- Unified Export Modal -->
 <ExportModal
-    bind:showModal={$exportStore.showActualExportModal}
+    bind:showModal={exportState.showActualExportModal}
     currentDirectoryPath={getCurrentExportDataset()?.tempPath ||
-        $imageStore.directoryPath}
-    currentDatasetSummary={$imageStore.datasetSummary}
+        imageState.directoryPath}
+    currentDatasetSummary={imageState.datasetSummary}
     onclosemodal={() => {
-        $exportStore.showActualExportModal = false;
-        exportStore.update((s) => ({ ...s }));
+        exportState.showActualExportModal = false;
     }}
     onrunexport={(detail) => {
         const dataset = getCurrentExportDataset();
-        exportStore.runUnifiedExport({
+        runUnifiedExport({
             ...detail,
             sourceDir: dataset?.tempPath || detail.sourceDir,
         });
@@ -534,14 +530,14 @@
 />
 
 <!-- Modal Annotation Viewer (Pop-out Mode) -->
-{#if $uiStore.showAnnotationModal && $uiStore.selectedImage}
+{#if uiState.showAnnotationModal && uiState.selectedImage}
     <ModalAnnotationViewer
-        showModal={$uiStore.showAnnotationModal}
-        selectedImage={$uiStore.selectedImage}
-        autoAnnotationEnabled={$annotationStore.autoAnnotationEnabled}
-        isMockMode={$imageStore.isMockMode}
+        showModal={uiState.showAnnotationModal}
+        selectedImage={uiState.selectedImage}
+        autoAnnotationEnabled={annotationState.autoAnnotationEnabled}
+        isMockMode={imageState.isMockMode}
         onclose={() => {
-            uiStore.resetSelection();
+            resetSelection();
         }}
         onsave={(data) => {
             console.log("Annotation retained/saved via modal");
@@ -551,19 +547,19 @@
 
 <!-- Crop & Remap Modal -->
 <CropRemapTool
-    isOpen={$exportStore.showCropTool}
+    isOpen={exportState.showCropTool}
     oncropcompleted={(data) =>
-        exportStore.handleCropCompleted(data.outputDir)}
-    onclose={() => ($exportStore.showCropTool = false)}
+        handleCropCompleted(data.outputDir)}
+    onclose={() => (exportState.showCropTool = false)}
 />
 
 <!-- Advanced Crop & Remap Tool -->
-{#if $exportStore.showAdvancedCropTool}
+{#if exportState.showAdvancedCropTool}
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
         class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-8"
-        onclick={(e) => { if (e.target === e.currentTarget) exportStore.closeCropModal(); }}
-        onkeydown={(e) => e.key === "Escape" && exportStore.closeCropModal()}
+        onclick={(e) => { if (e.target === e.currentTarget) closeCropModal(); }}
+        onkeydown={(e) => e.key === "Escape" && closeCropModal()}
         role="dialog"
         aria-modal="true"
         tabindex="-1"
@@ -579,26 +575,26 @@
                         >crop</span
                     >
                     Advanced Crop & Remap
-                    {#if $exportStore.cropModalParentLabel}
+                    {#if exportState.cropModalParentLabel}
                         <span class="badge badge-primary"
-                            >{$exportStore.cropModalParentLabel}</span
+                            >{exportState.cropModalParentLabel}</span
                         >
                     {/if}
                 </h2>
                 <button
                     class="btn btn-sm btn-ghost btn-square"
-                    onclick={() => exportStore.closeCropModal()}
+                    onclick={() => closeCropModal()}
                 >
                     <span class="material-symbols-rounded">close</span>
                 </button>
             </div>
             <AdvancedCropRemapTool
-                currentDirectory={$imageStore.directoryPath}
-                cropToolOpen={$exportStore.showAdvancedCropTool}
-                preSelectedParentLabel={$exportStore.cropModalParentLabel}
+                currentDirectory={imageState.directoryPath}
+                cropToolOpen={exportState.showAdvancedCropTool}
+                preSelectedParentLabel={exportState.cropModalParentLabel}
                 oncropcompleted={(data) => {
-                    exportStore.handleCropCompleted(data.outputDir, {
-                        parentLabel: $exportStore.cropModalParentLabel,
+                    handleCropCompleted(data.outputDir, {
+                        parentLabel: exportState.cropModalParentLabel,
                         childLabels: data.childLabels || [],
                         imageCount: data.imageCount || 0,
                     });

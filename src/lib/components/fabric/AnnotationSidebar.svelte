@@ -8,9 +8,9 @@
     import SectionLabel from "$lib/components/ui/SectionLabel.svelte";
     import ClassManager from "$lib/components/fabric/ClassManager.svelte";
     import {
-        labelTaxonomy,
-        classColorMap,
-    } from "$lib/stores/labelTaxonomyStore";
+        labelClasses,
+        getClassColorMap,
+    } from "$lib/stores/labelTaxonomyStore.svelte";
 
     let {
         bBoxes = [],
@@ -47,7 +47,7 @@
     } = $props();
 
     function getColor(label: string): string {
-        return $classColorMap.get(label) || "#6b7280";
+        return getClassColorMap().get(label) || "#6b7280";
     }
 
     function isSelected(id: number, type: string): boolean {
@@ -128,7 +128,7 @@
                                     )}
                             >
                                 <option value="">—</option>
-                                {#each $labelTaxonomy as cls (cls.name)}
+                                {#each labelClasses as cls (cls.name)}
                                     <option value={cls.name}
                                         >{cls.shortcut
                                             ? `${cls.shortcut}: `
@@ -224,7 +224,7 @@
                                     )}
                             >
                                 <option value="">—</option>
-                                {#each $labelTaxonomy as cls (cls.name)}
+                                {#each labelClasses as cls (cls.name)}
                                     <option value={cls.name}
                                         >{cls.shortcut
                                             ? `${cls.shortcut}: `
@@ -310,7 +310,7 @@
                                     )}
                             >
                                 <option value="">—</option>
-                                {#each $labelTaxonomy as cls (cls.name)}
+                                {#each labelClasses as cls (cls.name)}
                                     <option value={cls.name}
                                         >{cls.shortcut
                                             ? `${cls.shortcut}: `
@@ -396,7 +396,7 @@
                                     )}
                             >
                                 <option value="">—</option>
-                                {#each $labelTaxonomy as cls (cls.name)}
+                                {#each labelClasses as cls (cls.name)}
                                     <option value={cls.name}
                                         >{cls.shortcut
                                             ? `${cls.shortcut}: `
