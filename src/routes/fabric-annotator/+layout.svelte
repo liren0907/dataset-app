@@ -5,6 +5,6 @@
     let { children }: { children: Snippet } = $props();
 </script>
 
-<div class="absolute inset-0 overflow-hidden">
+<div class="h-screen -mx-6 -mt-8 overflow-hidden">
     {@render children()}
 </div>

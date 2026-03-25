@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount } from "svelte";
+    import { onMount, untrack } from "svelte";
     import { open } from "@tauri-apps/plugin-dialog";
     import { invoke, convertFileSrc } from "@tauri-apps/api/core";
     import {
@@ -172,10 +172,16 @@
 
     // Sync fabricSettings to canvas manager
     $effect(() => {
-        currentStrokeWidth = fabricSettings.baseStrokeWidth;
-        currentShowVertexPoints = fabricSettings.showVertexPoints;
-        fabricManager?.setBaseStrokeWidth(fabricSettings.baseStrokeWidth);
-        fabricManager?.setShowVertexPoints(fabricSettings.showVertexPoints);
+        const sw = fabricSettings.baseStrokeWidth;
+        const vp = fabricSettings.showVertexPoints;
+        currentStrokeWidth = sw;
+        currentShowVertexPoints = vp;
+        // untrack to avoid syncState() reads (triggered via emit("update"))
+        // from being tracked as dependencies of this effect
+        untrack(() => {
+            fabricManager?.setBaseStrokeWidth(sw);
+            fabricManager?.setShowVertexPoints(vp);
+        });
     });
 
     function handleStrokeWidthChange(width: number) {
@@ -520,7 +526,7 @@
     {/if}
 
     <button
-        class="fixed bottom-4 right-80 z-40 btn btn-circle btn-primary shadow-lg"
+        class="fixed bottom-4 right-80 z-30 btn btn-circle btn-primary shadow-lg"
         class:right-4={!showSidebar}
         onclick={() => (showStats = !showStats)}
         title="View Dataset Stats"
