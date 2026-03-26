@@ -3,9 +3,7 @@
         DatasetSummary,
         ProcessedImage,
     } from "$lib/services/gallery/datasetService";
-    import IconButton from "$lib/components/ui/IconButton.svelte";
-    import ToggleButtonGroup from "$lib/components/ui/ToggleButtonGroup.svelte";
-    import IconSegmentedControl from "$lib/components/ui/IconSegmentedControl.svelte";
+    import { IconButton, ToggleButtonGroup } from "$lib/components/ui";
 
     let {
         isMockMode,
@@ -164,7 +162,7 @@
         <div class="flex items-center gap-1 sm:gap-2">
             <!-- Annotation Type Toggle -->
             {#if directoryPath && images.length > 0}
-                <IconSegmentedControl
+                <ToggleButtonGroup
                     options={annotationOptions}
                     value={annotationType}
                     onchange={(val) => onsetannotationtype?.(val)}
@@ -234,7 +232,7 @@
         <div class="flex-1"></div>
         <div class="flex items-center gap-2">
             <!-- View Mode Toggle -->
-            <IconSegmentedControl
+            <ToggleButtonGroup
                 options={viewModeOptions}
                 value={viewMode}
                 onchange={(val) => onsetviewmode?.(val)}

@@ -1,5 +1,6 @@
 <script lang="ts">
     import { invoke } from "@tauri-apps/api/core";
+    import { Badge } from "$lib/components/ui";
     import { safeConvertFileSrc } from "$lib/utils/tauriUtils";
     import { open } from "@tauri-apps/plugin-dialog";
     import { appDataDir } from "@tauri-apps/api/path";
@@ -481,11 +482,7 @@
                                         {image.name}
                                     </h5>
                                     <div class="flex gap-1 mt-1">
-                                        <div
-                                            class="badge badge-xs badge-primary"
-                                        >
-                                            {image.annotations?.length || 0}
-                                        </div>
+                                        <Badge variant="primary" size="xs">{image.annotations?.length || 0}</Badge>
                                     </div>
                                 </div>
                             </div>
@@ -588,11 +585,9 @@
                                 >
                                     <span class="font-bold">{label}</span>
                                     {#if datasetSummary?.label_counts[label]}
-                                        <span
-                                            class="badge badge-sm bg-base-100/20 border-0 text-current opacity-80"
-                                        >
+                                        <Badge size="sm" class="bg-base-100/20 border-0 text-current opacity-80">
                                             {datasetSummary.label_counts[label]}
-                                        </span>
+                                        </Badge>
                                     {/if}
                                 </button>
                             {/each}
@@ -707,14 +702,14 @@
                     class="label font-medium text-base-content/80"
                 >
                     <span>Padding Factor</span>
-                    <span class="badge badge-neutral font-mono">
+                    <Badge variant="neutral" class="font-mono">
                         {((paddingFactor - 1) * 100).toFixed(0)}% {paddingFactor >
                         1
                             ? "larger"
                             : paddingFactor < 1
                               ? "smaller"
                               : "original"}
-                    </span>
+                    </Badge>
                 </label>
                 <div class="flex items-center gap-4 px-1">
                     <input

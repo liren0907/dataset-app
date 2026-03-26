@@ -1,5 +1,6 @@
 <script lang="ts">
     import { safeConvertFileSrc } from "$lib/utils/tauriUtils";
+    import { Badge } from "$lib/components/ui";
 
     let {
         selectedImage = null,
@@ -235,10 +236,10 @@
             {/if}
         </div>
         {#if selectedImage?.annotated}
-            <div class="badge badge-success badge-sm gap-1">
+            <Badge variant="success" size="sm" class="gap-1">
                 <span class="material-symbols-rounded text-xs">check</span>
                 Annotated
-            </div>
+            </Badge>
         {/if}
     </div>
 </div>

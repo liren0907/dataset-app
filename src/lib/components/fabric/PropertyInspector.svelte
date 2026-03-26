@@ -2,6 +2,7 @@
     import {
         labelClasses,
     } from "$lib/stores/labelTaxonomyStore.svelte";
+    import { TextInput, Badge } from "$lib/components/ui";
 
     let {
         selectedObject = null,
@@ -20,6 +21,10 @@
         onUpdateProperty(selectedObject.id, selectedObject.type, prop, value);
     }
 
+    function getInputValue(e: Event): number {
+        return parseFloat((e.target as any).value);
+    }
+
     let type = $derived(selectedObject?.type || "");
     let isMultiSelect = $derived(selectedObjects.length > 1);
 </script>
@@ -32,11 +37,9 @@
             {isMultiSelect ? "Batch Actions" : "Properties"}
         </h3>
         {#if !isMultiSelect && type}
-            <span class="badge badge-outline badge-xs opacity-70">{type}</span>
+            <Badge variant="outline" size="xs" class="opacity-70">{type}</Badge>
         {:else if isMultiSelect}
-            <span class="badge badge-primary badge-xs"
-                >{selectedObjects.length} selected</span
-            >
+            <Badge variant="primary" size="xs">{selectedObjects.length} selected</Badge>
         {/if}
     </div>
 
@@ -84,101 +87,101 @@
                 <div>
                     <label
                         class="block text-base-content/40 mb-0.5"
-                        for="bbox-x1">X1</label
+                        >X1</label
                     >
-                    <input
-                        id="bbox-x1"
+                    <TextInput
                         type="number"
-                        class="input input-bordered input-xs w-full"
+                        size="xs"
+                        class="w-full"
                         value={Math.round(selectedObject.x1)}
                         onchange={(e) =>
                             handleChange(
                                 "x1",
-                                parseFloat(e.currentTarget.value),
+                                getInputValue(e),
                             )}
                     />
                 </div>
                 <div>
                     <label
                         class="block text-base-content/40 mb-0.5"
-                        for="bbox-y1">Y1</label
+                        >Y1</label
                     >
-                    <input
-                        id="bbox-y1"
+                    <TextInput
                         type="number"
-                        class="input input-bordered input-xs w-full"
+                        size="xs"
+                        class="w-full"
                         value={Math.round(selectedObject.y1)}
                         onchange={(e) =>
                             handleChange(
                                 "y1",
-                                parseFloat(e.currentTarget.value),
+                                getInputValue(e),
                             )}
                     />
                 </div>
                 <div>
                     <label
                         class="block text-base-content/40 mb-0.5"
-                        for="bbox-x2">X2</label
+                        >X2</label
                     >
-                    <input
-                        id="bbox-x2"
+                    <TextInput
                         type="number"
-                        class="input input-bordered input-xs w-full"
+                        size="xs"
+                        class="w-full"
                         value={Math.round(selectedObject.x2)}
                         onchange={(e) =>
                             handleChange(
                                 "x2",
-                                parseFloat(e.currentTarget.value),
+                                getInputValue(e),
                             )}
                     />
                 </div>
                 <div>
                     <label
                         class="block text-base-content/40 mb-0.5"
-                        for="bbox-y2">Y2</label
+                        >Y2</label
                     >
-                    <input
-                        id="bbox-y2"
+                    <TextInput
                         type="number"
-                        class="input input-bordered input-xs w-full"
+                        size="xs"
+                        class="w-full"
                         value={Math.round(selectedObject.y2)}
                         onchange={(e) =>
                             handleChange(
                                 "y2",
-                                parseFloat(e.currentTarget.value),
+                                getInputValue(e),
                             )}
                     />
                 </div>
             {:else if type === "keypoint"}
                 <div>
-                    <label class="block text-base-content/40 mb-0.5" for="kp-x"
+                    <label class="block text-base-content/40 mb-0.5"
                         >X</label
                     >
-                    <input
-                        id="kp-x"
+                    <TextInput
                         type="number"
-                        class="input input-bordered input-xs w-full"
+                        size="xs"
+                        class="w-full"
                         value={Math.round(selectedObject.x)}
                         onchange={(e) =>
                             handleChange(
                                 "x",
-                                parseFloat(e.currentTarget.value),
+                                getInputValue(e),
                             )}
                     />
                 </div>
                 <div>
-                    <label class="block text-base-content/40 mb-0.5" for="kp-y"
+                    <label class="block text-base-content/40 mb-0.5"
                         >Y</label
                     >
-                    <input
-                        id="kp-y"
+                    <TextInput
                         type="number"
-                        class="input input-bordered input-xs w-full"
+                        size="xs"
+                        class="w-full"
                         value={Math.round(selectedObject.y)}
                         onchange={(e) =>
                             handleChange(
                                 "y",
-                                parseFloat(e.currentTarget.value),
+                                getInputValue(e),
                             )}
                     />
                 </div>

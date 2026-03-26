@@ -14,7 +14,7 @@
     import CroppedDatasetSummary from "$lib/components/gallery/CroppedDatasetSummary.svelte";
     import CroppedDatasetPreviewModal from "$lib/components/gallery/CroppedDatasetPreviewModal.svelte";
     import KonvaViewer from "$lib/components/gallery/KonvaViewer.svelte";
-    import { IconButton, RawButton, Toast } from "$lib/components/ui";
+    import { IconButton, Toast } from "$lib/components/ui";
     import { confirm as tauriConfirm } from "@tauri-apps/plugin-dialog";
     import { generateAnnotatedPreviews } from "$lib/services/gallery/datasetService";
     import type { KonvaImageData } from "$lib/services/gallery/konvaService";
@@ -303,7 +303,7 @@
                     <!-- Hierarchical Crop Toggle Button -->
                     {#if imageState.directoryPath && imageState.datasetSummary}
                         <div class="mt-4 flex justify-end">
-                            <RawButton
+                            <IconButton
                                 icon="account_tree"
                                 label="Hierarchical Crop"
                                 tooltip="Crop by parent label and remap children"
@@ -394,7 +394,7 @@
                                     .length})
                             </h3>
                         </div>
-                        <RawButton
+                        <IconButton
                             icon="delete_sweep"
                             label="Clear All"
                             tooltip="Clear all cropped dataset records"

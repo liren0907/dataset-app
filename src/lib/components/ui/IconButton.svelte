@@ -7,7 +7,9 @@
         loading = false,
         size = "sm",
         variant = "ghost",
+        bordered = false,
         disabled = false,
+        class: className = "",
         onclick,
     }: {
         icon: string;
@@ -17,7 +19,9 @@
         loading?: boolean;
         size?: "sm" | "md" | "lg";
         variant?: "ghost" | "soft";
+        bordered?: boolean;
         disabled?: boolean;
+        class?: string;
         onclick?: (event: MouseEvent) => void;
     } = $props();
 
@@ -35,10 +39,12 @@
               : "btn-lg text-2xl",
     );
 
+    let borderStyle = $derived(bordered ? "border border-base-300" : "");
+
     let variantClass = $derived(
         variant === "ghost"
-            ? "btn-ghost text-base-content/70 hover:bg-base-200"
-            : "bg-base-200 text-base-content hover:bg-base-300 border-none",
+            ? `btn-ghost text-base-content/70 hover:bg-base-200 ${borderStyle}`
+            : `bg-base-200 text-base-content hover:bg-base-300 ${bordered ? borderStyle : "border-none"}`,
     );
 
     let activeClass = $derived(
@@ -54,7 +60,7 @@
 <div class="tooltip tooltip-bottom" data-tip={tooltip}>
     <button
         type="button"
-        class="btn {sizeClass} {variantClass} {activeClass} {shapeClass}"
+        class="btn {sizeClass} {variantClass} {activeClass} {shapeClass} {className}"
         {disabled}
         class:loading
         onclick={handleClick}

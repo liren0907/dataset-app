@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { IconButton } from "$lib/components/ui";
+    import { IconButton, Badge } from "$lib/components/ui";
 
     let {
         tempPath,
@@ -90,9 +90,7 @@
                             {formatPath(displayPath)}
                         </h4>
                         {#if !isExported}
-                            <span class="badge badge-warning badge-xs"
-                                >Temp</span
-                            >
+                            <Badge variant="warning" size="xs">Temp</Badge>
                         {/if}
                     </div>
                     <p class="text-xs text-base-content/50">
@@ -131,14 +129,10 @@
                     <span class="text-base-content/40">-></span>
                     <div class="flex gap-1">
                         {#each childLabels.slice(0, 3) as child}
-                            <span class="badge badge-xs badge-outline"
-                                >{child}</span
-                            >
+                            <Badge variant="outline" size="xs">{child}</Badge>
                         {/each}
                         {#if childLabels.length > 3}
-                            <span class="badge badge-xs badge-ghost"
-                                >+{childLabels.length - 3}</span
-                            >
+                            <Badge variant="ghost" size="xs">+{childLabels.length - 3}</Badge>
                         {/if}
                     </div>
                 </div>

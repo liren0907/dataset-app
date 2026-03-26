@@ -1,7 +1,6 @@
 <script lang="ts">
     import type { Mode } from "$lib/logic/FabricManager";
-    import RawButton from "$lib/components/ui/RawButton.svelte";
-    import IconSegmentedControl from "$lib/components/ui/IconSegmentedControl.svelte";
+    import { IconButton, ToggleButtonGroup } from "$lib/components/ui";
 
     let {
         mode = "select" as Mode,
@@ -67,7 +66,7 @@
     <div class="w-px h-6 bg-base-300"></div>
 
     <!-- Tool Mode Selector -->
-    <IconSegmentedControl
+    <ToggleButtonGroup
         options={toolOptions}
         value={mode}
         onchange={handleModeChange}
@@ -76,19 +75,22 @@
     <div class="w-px h-6 bg-base-300"></div>
 
     <!-- Load Image / Directory -->
-    <RawButton
+    <IconButton
         icon="image"
         label="Load Image"
+        bordered
         onclick={() => ontriggerfileinput?.()}
     />
-    <RawButton
+    <IconButton
         icon="folder_open"
         label="Load Directory"
+        bordered
         onclick={() => ontriggerdirectoryinput?.()}
     />
-    <RawButton
+    <IconButton
         icon="science"
         label="Mock"
+        bordered
         class="btn-ghost text-primary hover:bg-primary/10"
         onclick={() => ontriggermockload?.()}
     />
@@ -126,15 +128,17 @@
     {#if mode === "polygon" && isPolygonDrawing}
         <div class="w-px h-6 bg-base-300"></div>
         <div class="flex items-center gap-2">
-            <RawButton
+            <IconButton
                 icon="check_circle"
                 label="Finish"
+                bordered
                 class="btn-success text-success-content hover:bg-success hover:text-success-content"
                 onclick={() => onfinishpolygon?.()}
             />
-            <RawButton
+            <IconButton
                 icon="cancel"
                 label="Cancel"
+                bordered
                 class="btn-error text-error-content hover:bg-error hover:text-error-content"
                 onclick={() => onresetpolygon?.()}
             />
@@ -145,15 +149,17 @@
     {#if mode === "polyline" && isPolylineDrawing}
         <div class="w-px h-6 bg-base-300"></div>
         <div class="flex items-center gap-2">
-            <RawButton
+            <IconButton
                 icon="check_circle"
                 label="Finish"
+                bordered
                 class="btn-success text-success-content hover:bg-success hover:text-success-content"
                 onclick={() => onfinishpolyline?.()}
             />
-            <RawButton
+            <IconButton
                 icon="cancel"
                 label="Cancel"
+                bordered
                 class="btn-error text-error-content hover:bg-error hover:text-error-content"
                 onclick={() => onresetpolyline?.()}
             />

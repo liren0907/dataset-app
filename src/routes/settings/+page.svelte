@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { Card, Badge } from "$lib/components/ui";
     import { onMount } from "svelte";
 
     // Theme state
@@ -75,12 +76,7 @@
     </div>
 
     <!-- Theme Section -->
-    <div class="card bg-base-200 shadow-sm mb-6">
-        <div class="card-body">
-            <h2 class="card-title text-lg flex items-center gap-2">
-                <span class="material-symbols-rounded text-xl">palette</span>
-                主題設定
-            </h2>
+    <Card variant="base-200" shadow="sm" icon="palette" title="主題設定" class="mb-6">
             <p class="text-sm text-base-content/60 mb-4">
                 選擇您偏好的顯示模式
             </p>
@@ -139,17 +135,11 @@
                     {/if}
                 </span>
             </div>
-        </div>
-    </div>
+    </Card>
 
     <!-- Language Section (Placeholder) -->
-    <div class="card bg-base-200 shadow-sm mb-6">
-        <div class="card-body">
-            <h2 class="card-title text-lg flex items-center gap-2">
-                <span class="material-symbols-rounded text-xl">translate</span>
-                語言設定
-                <span class="badge badge-ghost badge-sm">即將推出</span>
-            </h2>
+    <Card variant="base-200" shadow="sm" icon="translate" title="語言設定" class="mb-6">
+            <Badge variant="ghost" size="sm">即將推出</Badge>
             <p class="text-sm text-base-content/60 mb-4">
                 選擇介面顯示語言（此功能尚未實作）
             </p>
@@ -173,26 +163,19 @@
                     </span>
                 </div>
             </div>
-        </div>
-    </div>
+    </Card>
 
     <!-- About Section -->
-    <div class="card bg-base-200 shadow-sm">
-        <div class="card-body">
-            <h2 class="card-title text-lg flex items-center gap-2">
-                <span class="material-symbols-rounded text-xl">info</span>
-                關於
-            </h2>
+    <Card variant="base-200" shadow="sm" icon="info" title="關於">
             <div class="text-sm space-y-2 text-base-content/70">
                 <p>
                     <span class="font-medium">版本：</span>
-                    <span class="badge badge-ghost">0.0.1</span>
+                    <Badge variant="ghost">0.0.1</Badge>
                 </p>
                 <p>
                     <span class="font-medium">技術棧：</span>
                     SvelteKit + Tauri v2
                 </p>
             </div>
-        </div>
-    </div>
+    </Card>
 </div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { Card } from "$lib/components/ui";
     import type { ProcessedImage } from "$lib/services/gallery/datasetService";
 
     let {
@@ -51,7 +52,7 @@
     </div>
 {:else if images.length === 0}
     <!-- Empty State - No Images -->
-    <div class="card bg-base-100 shadow-sm border border-base-300 h-full">
+    <Card shadow="sm" bordered class="h-full border-base-300">
         <div class="card-body items-center text-center justify-center">
             <span
                 class="material-symbols-rounded text-6xl text-base-content/20 mb-4"
@@ -63,5 +64,5 @@
                 files.
             </p>
         </div>
-    </div>
+    </Card>
 {/if}

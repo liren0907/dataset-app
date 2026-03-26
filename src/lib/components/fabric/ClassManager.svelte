@@ -5,6 +5,7 @@
         removeClass,
     } from "$lib/stores/labelTaxonomyStore.svelte";
     import SectionLabel from "$lib/components/ui/SectionLabel.svelte";
+    import { TextInput } from "$lib/components/ui";
 
     let newClassName = $state("");
 
@@ -44,9 +45,9 @@
     </div>
 
     <div class="flex gap-1">
-        <input
-            type="text"
-            class="input input-xs input-bordered flex-1 bg-base-200 text-xs"
+        <TextInput
+            size="xs"
+            class="flex-1 bg-base-200 text-xs"
             placeholder="Add class..."
             bind:value={newClassName}
             onkeydown={handleKeyDown}

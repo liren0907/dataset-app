@@ -5,7 +5,6 @@
         Button,
         LabelBadge,
         Alert,
-        RawButton,
     } from "$lib/components/ui";
 
     let {
@@ -239,7 +238,7 @@
                             >
                         </div>
                         <div class="flex items-center gap-3">
-                            <RawButton
+                            <IconButton
                                 icon="select_all"
                                 label="Select All"
                                 variant="ghost"
@@ -247,7 +246,7 @@
                                 onclick={selectAllChildren}
                             />
                             <div class="w-px h-4 bg-base-300"></div>
-                            <RawButton
+                            <IconButton
                                 icon="close"
                                 label="Clear"
                                 variant="ghost"

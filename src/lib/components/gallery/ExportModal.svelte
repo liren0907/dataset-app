@@ -8,6 +8,7 @@
         SplitPaneModal,
         Alert,
         LabelBadge,
+        TextInput,
     } from "$lib/components/ui";
 
     let {
@@ -249,10 +250,11 @@
                             <div
                                 class="flex-1 flex flex-col items-center gap-1"
                             >
-                                <input
+                                <TextInput
                                     type="number"
+                                    size="xs"
+                                    class="w-full text-center font-mono"
                                     bind:value={trainRatio}
-                                    class="input input-xs input-bordered w-full text-center font-mono"
                                     step="0.1"
                                 />
                                 <div
@@ -266,10 +268,11 @@
                             <div
                                 class="flex-1 flex flex-col items-center gap-1"
                             >
-                                <input
+                                <TextInput
                                     type="number"
+                                    size="xs"
+                                    class="w-full text-center font-mono"
                                     bind:value={valRatio}
-                                    class="input input-xs input-bordered w-full text-center font-mono"
                                     step="0.1"
                                 />
                                 <div
@@ -283,10 +286,11 @@
                             <div
                                 class="flex-1 flex flex-col items-center gap-1"
                             >
-                                <input
+                                <TextInput
                                     type="number"
+                                    size="xs"
+                                    class="w-full text-center font-mono"
                                     bind:value={testRatio}
-                                    class="input input-xs input-bordered w-full text-center font-mono"
                                     step="0.1"
                                 />
                                 <div

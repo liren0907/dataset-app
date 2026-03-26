@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
+    import { Badge } from "$lib/components/ui";
     import { safeConvertFileSrc } from "$lib/utils/tauriUtils";
     import { invoke } from "@tauri-apps/api/core";
     import {
@@ -606,19 +607,19 @@
 
                 <div class="flex items-center gap-2">
                     {#if autoAnnotationEnabled}
-                        <div class="badge badge-success gap-1 shadow-sm">
+                        <Badge variant="success" class="gap-1 shadow-sm">
                             <span class="material-symbols-rounded text-xs"
                                 >dns</span
                             >
                             Backend Data
-                        </div>
+                        </Badge>
                     {:else}
-                        <div class="badge badge-info gap-1 shadow-sm">
+                        <Badge variant="info" class="gap-1 shadow-sm">
                             <span class="material-symbols-rounded text-xs"
                                 >computer</span
                             >
                             Live Mode
-                        </div>
+                        </Badge>
                     {/if}
                 </div>
             </div>
@@ -750,16 +751,14 @@
 
                     {#if isInitialized}
                         <div class="absolute bottom-4 right-4 z-10">
-                            <div
-                                class="badge badge-neutral badge-lg shadow-sm gap-2 p-3"
-                            >
+                            <Badge variant="neutral" size="lg" class="shadow-sm gap-2 p-3">
                                 <span class="font-mono font-bold"
                                     >{annotationCount}</span
                                 >
                                 <span class="text-xs font-normal opacity-70"
                                     >annotations</span
                                 >
-                            </div>
+                            </Badge>
                         </div>
                     {/if}
                 </div>

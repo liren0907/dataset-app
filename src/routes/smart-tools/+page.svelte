@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from "svelte";
+	import { Card, Badge } from "$lib/components/ui";
 	import { open } from "@tauri-apps/plugin-dialog";
 	import { convertFileSrc } from "@tauri-apps/api/core";
 	import { listen } from "@tauri-apps/api/event";
@@ -219,27 +220,19 @@
 						Advanced interactive image cropping and processing tools
 					</p>
 				</div>
-				<div class="badge badge-success gap-1">
+				<Badge variant="success" class="gap-1">
 					<span class="material-symbols-rounded icon-sm"
 						>verified</span
 					>
 					Pro Tools
-				</div>
+				</Badge>
 			</div>
 		</div>
 
 		<ShortcutsGuide />
 
 		<!-- Crop Tool Section -->
-		<div class="card bg-base-100 shadow-xl mb-8">
-			<div class="card-body">
-				<h2 class="card-title text-2xl flex items-center gap-2">
-					<span class="material-symbols-rounded text-primary"
-						>crop</span
-					>
-					Interactive Crop Tool
-				</h2>
-
+		<Card shadow="xl" bordered={false} icon="crop" title="Interactive Crop Tool" class="mb-8">
 				{#if !uploadedImage}
 					<UploadArea {isDragHover} onselectfile={selectFile} />
 				{:else}
@@ -296,8 +289,7 @@
 						</div>
 					</div>
 				{/if}
-			</div>
-		</div>
+		</Card>
 	</div>
 </div>
 

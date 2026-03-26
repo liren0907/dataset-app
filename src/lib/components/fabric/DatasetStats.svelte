@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { Card } from "$lib/components/ui";
     import {
         getClassColorMap,
     } from "$lib/stores/labelTaxonomyStore.svelte";
@@ -53,7 +54,7 @@
     let annotatedImages = $derived(images.filter((img) => img.hasJson).length);
 </script>
 
-<div class="card bg-base-100 shadow-xl border border-base-200">
+<Card shadow="xl" bordered>
     <div class="card-body p-6">
         <h2 class="card-title text-sm font-bold flex items-center gap-2 mb-4">
             <span class="material-symbols-rounded text-primary">analytics</span>
@@ -137,4 +138,4 @@
             <div>Points: {allKeypoints.length}</div>
         </div>
     </div>
-</div>
+</Card>
