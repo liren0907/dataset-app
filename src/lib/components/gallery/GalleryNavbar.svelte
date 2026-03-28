@@ -174,6 +174,7 @@
             <IconButton
                 icon="autorenew"
                 label="Auto"
+                responsiveLabel={true}
                 active={autoAnnotationEnabled}
                 variant={autoAnnotationEnabled ? "soft" : "ghost"}
                 tooltip={autoAnnotationEnabled
@@ -187,6 +188,7 @@
             <IconButton
                 icon="label"
                 label="Load"
+                responsiveLabel={true}
                 tooltip="Load Annotations"
                 disabled={!directoryPath || images.length === 0 || annotating}
                 loading={annotating}
@@ -194,38 +196,75 @@
             />
         </div>
 
-        <div class="divider divider-horizontal mx-0 h-6"></div>
+        <div class="divider divider-horizontal mx-0 h-6 hidden md:flex"></div>
 
-        <!-- Center: Export & Crop Tools -->
-        <div class="flex items-center gap-1 sm:gap-2">
-            <!-- Export -->
+        <!-- Center: Export & Crop Tools — inline (md+) -->
+        <div class="hidden md:flex items-center gap-1 sm:gap-2">
             <IconButton
                 icon="ios_share"
                 label="Export"
+                responsiveLabel={true}
                 tooltip="Export Dataset"
                 disabled={!directoryPath || images.length === 0}
                 onclick={() => onopenexportmodal?.()}
             />
-
-            <!-- Crop Tool -->
             <IconButton
                 icon="crop"
                 label="Crop"
+                responsiveLabel={true}
                 tooltip="Crop & Remap Tool"
                 active={showCropTool}
                 variant={showCropTool ? "soft" : "ghost"}
                 onclick={() => ontogglecroptool?.()}
             />
-
-            <!-- Advanced Crop Tool -->
             <IconButton
                 icon="auto_awesome"
                 label="Preview"
+                responsiveLabel={true}
                 tooltip="Advanced Crop with Preview"
                 active={showAdvancedCropTool}
                 variant={showAdvancedCropTool ? "soft" : "ghost"}
                 onclick={() => ontoggleadvancedcroptool?.()}
             />
+        </div>
+
+        <!-- Center: Export & Crop Tools — dropdown (<md) -->
+        <div class="dropdown dropdown-bottom md:hidden">
+            <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+            <label tabindex="0" class="btn btn-sm btn-ghost btn-square">
+                <span class="material-symbols-rounded text-lg">more_horiz</span>
+            </label>
+            <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+            <ul tabindex="0" class="dropdown-content z-50 menu p-2 shadow-lg bg-base-100 rounded-box w-48 border border-base-200">
+                <li>
+                    <button
+                        class="flex items-center gap-2"
+                        disabled={!directoryPath || images.length === 0}
+                        onclick={() => { onopenexportmodal?.(); document.activeElement?.blur(); }}
+                    >
+                        <span class="material-symbols-rounded text-lg">ios_share</span>
+                        Export
+                    </button>
+                </li>
+                <li>
+                    <button
+                        class="flex items-center gap-2 {showCropTool ? 'active' : ''}"
+                        onclick={() => { ontogglecroptool?.(); document.activeElement?.blur(); }}
+                    >
+                        <span class="material-symbols-rounded text-lg">crop</span>
+                        Crop
+                    </button>
+                </li>
+                <li>
+                    <button
+                        class="flex items-center gap-2 {showAdvancedCropTool ? 'active' : ''}"
+                        onclick={() => { ontoggleadvancedcroptool?.(); document.activeElement?.blur(); }}
+                    >
+                        <span class="material-symbols-rounded text-lg">auto_awesome</span>
+                        Preview
+                    </button>
+                </li>
+            </ul>
         </div>
 
         <!-- Right: View Controls -->
@@ -244,6 +283,7 @@
             <ToggleButtonGroup
                 options={editModeOptions}
                 value={editMode}
+                responsiveLabels={true}
                 onchange={(val) => onseteditmode?.(val)}
             />
         </div>

@@ -3,6 +3,7 @@
         options = [],
         value = $bindable(),
         size = "sm",
+        responsiveLabels = false,
         onchange,
     }: {
         options?: Array<{
@@ -13,6 +14,7 @@
         }>;
         value?: any;
         size?: "sm" | "md";
+        responsiveLabels?: boolean;
         onchange?: (value: any) => void;
     } = $props();
 
@@ -48,7 +50,7 @@
                     >
                 {/if}
                 {#if option.label}
-                    <span>{option.label}</span>
+                    <span class={responsiveLabels ? 'hidden xl:inline' : ''}>{option.label}</span>
                 {/if}
             </button>
         </div>

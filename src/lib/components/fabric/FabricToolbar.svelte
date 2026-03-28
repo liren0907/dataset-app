@@ -58,7 +58,7 @@
         <span class="material-symbols-rounded text-primary text-[20px]"
             >brush</span
         >
-        <h1 class="text-base font-bold text-base-content whitespace-nowrap">
+        <h1 class="text-base font-bold text-base-content whitespace-nowrap hidden xl:block">
             Fabric Annotator
         </h1>
     </div>
@@ -72,33 +72,76 @@
         onchange={handleModeChange}
     />
 
-    <div class="w-px h-6 bg-base-300"></div>
+    <div class="w-px h-6 bg-base-300 hidden md:block"></div>
 
-    <!-- Load Image / Directory -->
-    <IconButton
-        icon="image"
-        label="Load Image"
-        bordered
-        onclick={() => ontriggerfileinput?.()}
-    />
-    <IconButton
-        icon="folder_open"
-        label="Load Directory"
-        bordered
-        onclick={() => ontriggerdirectoryinput?.()}
-    />
-    <IconButton
-        icon="science"
-        label="Mock"
-        bordered
-        class="btn-ghost text-primary hover:bg-primary/10"
-        onclick={() => ontriggermockload?.()}
-    />
+    <!-- Load Image / Directory — inline (md+) -->
+    <div class="hidden md:flex items-center gap-1">
+        <IconButton
+            icon="image"
+            label="Load Image"
+            responsiveLabel={true}
+            bordered
+            onclick={() => ontriggerfileinput?.()}
+        />
+        <IconButton
+            icon="folder_open"
+            label="Load Directory"
+            responsiveLabel={true}
+            bordered
+            onclick={() => ontriggerdirectoryinput?.()}
+        />
+        <IconButton
+            icon="science"
+            label="Mock"
+            responsiveLabel={true}
+            bordered
+            class="btn-ghost text-primary hover:bg-primary/10"
+            onclick={() => ontriggermockload?.()}
+        />
+    </div>
 
-    <div class="w-px h-6 bg-base-300"></div>
+    <!-- Load — dropdown (<md) -->
+    <div class="dropdown dropdown-bottom md:hidden">
+        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+        <label tabindex="0" class="btn btn-sm btn-ghost btn-square">
+            <span class="material-symbols-rounded text-lg">file_open</span>
+        </label>
+        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+        <ul tabindex="0" class="dropdown-content z-50 menu p-2 shadow-lg bg-base-100 rounded-box w-48 border border-base-200">
+            <li>
+                <button
+                    class="flex items-center gap-2"
+                    onclick={() => { ontriggerfileinput?.(); document.activeElement?.blur(); }}
+                >
+                    <span class="material-symbols-rounded text-lg">image</span>
+                    Load Image
+                </button>
+            </li>
+            <li>
+                <button
+                    class="flex items-center gap-2"
+                    onclick={() => { ontriggerdirectoryinput?.(); document.activeElement?.blur(); }}
+                >
+                    <span class="material-symbols-rounded text-lg">folder_open</span>
+                    Load Directory
+                </button>
+            </li>
+            <li>
+                <button
+                    class="flex items-center gap-2"
+                    onclick={() => { ontriggermockload?.(); document.activeElement?.blur(); }}
+                >
+                    <span class="material-symbols-rounded text-lg">science</span>
+                    Mock
+                </button>
+            </li>
+        </ul>
+    </div>
 
-    <!-- Stroke Width Control -->
-    <div class="flex items-center gap-1.5" title="Stroke Width">
+    <div class="w-px h-6 bg-base-300 hidden md:block"></div>
+
+    <!-- Stroke Width + Vertex — inline (md+) -->
+    <div class="hidden md:flex items-center gap-1.5" title="Stroke Width">
         <span class="material-symbols-rounded text-base-content/60 text-[18px]">line_weight</span>
         <input
             type="range"
@@ -114,15 +157,51 @@
         </span>
     </div>
 
-    <!-- Vertex Points Toggle -->
     <button
-        class="btn btn-ghost btn-xs gap-1"
+        class="btn btn-ghost btn-xs gap-1 hidden md:inline-flex"
         class:btn-active={showVertexPoints}
         title={showVertexPoints ? "Hide Vertex Points" : "Show Vertex Points"}
         onclick={() => ontogglevertexpoints?.()}
     >
         <span class="material-symbols-rounded text-[18px]">scatter_plot</span>
     </button>
+
+    <!-- Stroke Width + Vertex — dropdown (<md) -->
+    <div class="dropdown dropdown-bottom md:hidden">
+        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+        <label tabindex="0" class="btn btn-sm btn-ghost btn-square">
+            <span class="material-symbols-rounded text-lg">tune</span>
+        </label>
+        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+        <div tabindex="0" class="dropdown-content z-50 p-3 shadow-lg bg-base-100 rounded-box w-56 border border-base-200">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="material-symbols-rounded text-base-content/60 text-[18px]">line_weight</span>
+                <span class="text-xs text-base-content/70">Stroke Width</span>
+            </div>
+            <div class="flex items-center gap-2 mb-3">
+                <input
+                    type="range"
+                    min="0.5"
+                    max="5"
+                    step="0.5"
+                    value={strokeWidth}
+                    class="range range-xs range-primary flex-1"
+                    oninput={(e) => onstrokewidthchange?.(parseFloat(e.currentTarget.value))}
+                />
+                <span class="text-xs font-mono text-base-content/50 w-6 text-center">
+                    {strokeWidth}
+                </span>
+            </div>
+            <button
+                class="btn btn-ghost btn-xs gap-2 w-full justify-start"
+                class:btn-active={showVertexPoints}
+                onclick={() => ontogglevertexpoints?.()}
+            >
+                <span class="material-symbols-rounded text-[18px]">scatter_plot</span>
+                {showVertexPoints ? "Hide" : "Show"} Vertex Points
+            </button>
+        </div>
+    </div>
 
     <!-- Polygon Actions (contextual) -->
     {#if mode === "polygon" && isPolygonDrawing}
@@ -131,6 +210,7 @@
             <IconButton
                 icon="check_circle"
                 label="Finish"
+                responsiveLabel={true}
                 bordered
                 class="btn-success text-success-content hover:bg-success hover:text-success-content"
                 onclick={() => onfinishpolygon?.()}
@@ -138,6 +218,7 @@
             <IconButton
                 icon="cancel"
                 label="Cancel"
+                responsiveLabel={true}
                 bordered
                 class="btn-error text-error-content hover:bg-error hover:text-error-content"
                 onclick={() => onresetpolygon?.()}
@@ -152,6 +233,7 @@
             <IconButton
                 icon="check_circle"
                 label="Finish"
+                responsiveLabel={true}
                 bordered
                 class="btn-success text-success-content hover:bg-success hover:text-success-content"
                 onclick={() => onfinishpolyline?.()}
@@ -159,6 +241,7 @@
             <IconButton
                 icon="cancel"
                 label="Cancel"
+                responsiveLabel={true}
                 bordered
                 class="btn-error text-error-content hover:bg-error hover:text-error-content"
                 onclick={() => onresetpolyline?.()}

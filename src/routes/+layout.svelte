@@ -7,6 +7,30 @@
 
 	let theme = $state("light");
 	let isSidebarExpanded = $state(true);
+	let sidebarWidth = $state(256);
+	let isResizing = $state(false);
+
+	const MIN_SIDEBAR_WIDTH = 200;
+	const MAX_SIDEBAR_WIDTH = 480;
+
+	function handleResizeStart(e) {
+		e.preventDefault();
+		isResizing = true;
+
+		function onMouseMove(e) {
+			const newWidth = Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, e.clientX));
+			sidebarWidth = newWidth;
+		}
+
+		function onMouseUp() {
+			isResizing = false;
+			window.removeEventListener("mousemove", onMouseMove);
+			window.removeEventListener("mouseup", onMouseUp);
+		}
+
+		window.addEventListener("mousemove", onMouseMove);
+		window.addEventListener("mouseup", onMouseUp);
+	}
 
 	onMount(() => {
 		// Check for saved theme or system preference
@@ -46,7 +70,12 @@
     - lg:drawer-open: Forces sidebar to be visible and pushes content.
     - We toggle this class based on isSidebarExpanded.
 -->
-<div class="app drawer" class:lg:drawer-open={isSidebarExpanded}>
+<div
+	class="app drawer"
+	class:lg:drawer-open={isSidebarExpanded}
+	class:resizing={isResizing}
+	style:--sidebar-width="{sidebarWidth}px"
+>
 	<input id="sidebar-drawer" type="checkbox" class="drawer-toggle" />
 
 	<div class="drawer-content flex flex-col transition-all duration-300">
@@ -85,12 +114,51 @@
 			aria-label="close sidebar"
 			class="drawer-overlay"
 		></label>
-		<Sidebar {theme} {toggleTheme} {isSidebarExpanded} {toggleSidebar} />
+		<Sidebar {theme} {toggleTheme} {isSidebarExpanded} {toggleSidebar} width={sidebarWidth} />
 	</div>
+
+	<!-- Resize Handle (outside drawer-side to avoid overflow:hidden clipping) -->
+	{#if isSidebarExpanded}
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div
+			class="resize-handle hidden lg:block"
+			onmousedown={handleResizeStart}
+			style="left: {sidebarWidth}px"
+			class:active={isResizing}
+		></div>
+	{/if}
 </div>
 
 <style>
 	.app {
 		min-height: 100vh;
+	}
+
+	.app.resizing {
+		user-select: none;
+		cursor: col-resize;
+	}
+
+	/* Override DaisyUI drawer width — only at lg+ where drawer-open is active */
+	@media (min-width: 1024px) {
+		:global(.app.lg\:drawer-open > .drawer-side) {
+			width: var(--sidebar-width, 256px);
+		}
+	}
+
+	.resize-handle {
+		position: fixed;
+		top: 0;
+		bottom: 0;
+		width: 6px;
+		transform: translateX(-3px);
+		cursor: col-resize;
+		z-index: 50;
+		transition: background-color 0.15s;
+	}
+
+	.resize-handle:hover,
+	.resize-handle.active {
+		background-color: oklch(var(--p) / 0.3);
 	}
 </style>

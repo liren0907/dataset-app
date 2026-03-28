@@ -8,6 +8,7 @@
         size = "sm",
         variant = "ghost",
         bordered = false,
+        responsiveLabel = false,
         disabled = false,
         class: className = "",
         onclick,
@@ -20,6 +21,7 @@
         size?: "sm" | "md" | "lg";
         variant?: "ghost" | "soft";
         bordered?: boolean;
+        responsiveLabel?: boolean;
         disabled?: boolean;
         class?: string;
         onclick?: (event: MouseEvent) => void;
@@ -68,7 +70,7 @@
         {#if !loading}
             <span class="material-symbols-rounded">{icon}</span>
             {#if label}
-                <span class="text-sm font-medium">{label}</span>
+                <span class="text-sm font-medium {responsiveLabel ? 'hidden xl:inline' : ''}">{label}</span>
             {/if}
         {/if}
     </button>

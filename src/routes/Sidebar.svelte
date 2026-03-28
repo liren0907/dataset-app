@@ -7,11 +7,13 @@
 		toggleTheme = () => {},
 		isSidebarExpanded = true,
 		toggleSidebar = () => {},
+		width = 256,
 	}: {
 		theme?: string;
 		toggleTheme?: () => void;
 		isSidebarExpanded?: boolean;
 		toggleSidebar?: () => void;
+		width?: number;
 	} = $props();
 
 	// 工具列表 - using Material Symbols icon names
@@ -42,7 +44,8 @@
 
 <!-- Modern Minimalist Sidebar (Gallery Style) -->
 <ul
-	class="menu bg-base-100 min-h-full w-64 p-4 gap-1 border-r border-base-200 text-base-content"
+	class="menu bg-base-100 min-h-full p-4 gap-1 border-r border-base-200 text-base-content"
+	style="width: {width}px"
 >
 	<!-- Logo / Title -->
 	<li
