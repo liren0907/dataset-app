@@ -1,22 +1,18 @@
 <script lang="ts">
-	// @ts-ignore - SvelteKit 內建模組，運行時正常
+	// @ts-ignore - SvelteKit built-in module, works at runtime
 	import { page } from "$app/stores";
 
 	let {
-		theme = "light",
-		toggleTheme = () => {},
 		isSidebarExpanded = true,
 		toggleSidebar = () => {},
 		width = 256,
 	}: {
-		theme?: string;
-		toggleTheme?: () => void;
 		isSidebarExpanded?: boolean;
 		toggleSidebar?: () => void;
 		width?: number;
 	} = $props();
 
-	// 工具列表 - using Material Symbols icon names
+	// Tool list - using Material Symbols icon names
 	const tools = [
 		{ href: "/", label: "Home", icon: "home" },
 		{
@@ -112,23 +108,6 @@
 		</a>
 	</li>
 
-	<!-- Divider -->
-	<li class="divider my-2"></li>
-
-	<!-- Theme Toggle -->
-	<li>
-		<button
-			onclick={toggleTheme}
-			class="flex items-center gap-3 px-3 py-2 rounded-lg text-base-content/70 hover:bg-base-200 hover:text-base-content transition-colors"
-		>
-			<span class="material-symbols-rounded text-[20px]">
-				{theme === "dark" ? "light_mode" : "dark_mode"}
-			</span>
-			<span class="text-sm">
-				{theme === "dark" ? "Light Mode" : "Dark Mode"}
-			</span>
-		</button>
-	</li>
 </ul>
 
 <style>

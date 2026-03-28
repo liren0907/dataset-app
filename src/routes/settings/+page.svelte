@@ -70,15 +70,15 @@
             class="text-3xl font-bold text-base-content flex items-center gap-3"
         >
             <span class="material-symbols-rounded text-primary">settings</span>
-            設定
+            Settings
         </h1>
-        <p class="text-base-content/60 mt-2">自訂您的應用程式偏好設定</p>
+        <p class="text-base-content/60 mt-2">Customize your application preferences</p>
     </div>
 
     <!-- Theme Section -->
-    <Card variant="base-200" shadow="sm" icon="palette" title="主題設定" class="mb-6">
+    <Card variant="base-200" shadow="sm" icon="palette" title="Theme" class="mb-6">
             <p class="text-sm text-base-content/60 mb-4">
-                選擇您偏好的顯示模式
+                Choose your preferred display mode
             </p>
 
             <div class="join w-full">
@@ -86,36 +86,36 @@
                 <button
                     class={`btn btn-sm join-item flex-1 gap-2 border-0 px-4 ${themeMode === "light" ? "bg-base-100 text-base-content shadow-inner" : "btn-ghost text-base-content/70"}`}
                     onclick={() => setThemeMode("light")}
-                    title="明亮清晰"
+                    title="Bright and clear"
                 >
                     <span class="material-symbols-rounded text-lg"
                         >light_mode</span
                     >
-                    <span class="font-medium">淺色模式</span>
+                    <span class="font-medium">Light</span>
                 </button>
 
                 <!-- Dark Mode -->
                 <button
                     class={`btn btn-sm join-item flex-1 gap-2 border-0 px-4 ${themeMode === "dark" ? "bg-base-100 text-base-content shadow-inner" : "btn-ghost text-base-content/70"}`}
                     onclick={() => setThemeMode("dark")}
-                    title="保護眼睛"
+                    title="Easy on the eyes"
                 >
                     <span class="material-symbols-rounded text-lg"
                         >dark_mode</span
                     >
-                    <span class="font-medium">深色模式</span>
+                    <span class="font-medium">Dark</span>
                 </button>
 
                 <!-- Auto Mode -->
                 <button
                     class={`btn btn-sm join-item flex-1 gap-2 border-0 px-4 ${themeMode === "auto" ? "bg-base-100 text-base-content shadow-inner" : "btn-ghost text-base-content/70"}`}
                     onclick={() => setThemeMode("auto")}
-                    title="跟隨系統"
+                    title="Follow system"
                 >
                     <span class="material-symbols-rounded text-lg"
                         >brightness_auto</span
                     >
-                    <span class="font-medium">自動</span>
+                    <span class="font-medium">Auto</span>
                 </button>
             </div>
 
@@ -125,23 +125,23 @@
             >
                 <span class="material-symbols-rounded text-primary">info</span>
                 <span>
-                    目前套用主題：<span class="font-semibold"
+                    Current theme: <span class="font-semibold"
                         >{currentAppliedTheme === "dark"
-                            ? "深色"
-                            : "淺色"}</span
+                            ? "Dark"
+                            : "Light"}</span
                     >
                     {#if themeMode === "auto"}
-                        <span class="text-base-content/60">（由系統決定）</span>
+                        <span class="text-base-content/60">(system default)</span>
                     {/if}
                 </span>
             </div>
     </Card>
 
     <!-- Language Section (Placeholder) -->
-    <Card variant="base-200" shadow="sm" icon="translate" title="語言設定" class="mb-6">
-            <Badge variant="ghost" size="sm">即將推出</Badge>
+    <Card variant="base-200" shadow="sm" icon="translate" title="Language" class="mb-6">
+            <Badge variant="ghost" size="sm">Coming Soon</Badge>
             <p class="text-sm text-base-content/60 mb-4">
-                選擇介面顯示語言（此功能尚未實作）
+                Choose interface language (not yet implemented)
             </p>
 
             <div class="form-control">
@@ -159,21 +159,21 @@
                 </select>
                 <div class="label">
                     <span class="label-text-alt text-base-content/50">
-                        多語言支援將在未來版本中推出
+                        Multi-language support coming in a future release
                     </span>
                 </div>
             </div>
     </Card>
 
     <!-- About Section -->
-    <Card variant="base-200" shadow="sm" icon="info" title="關於">
+    <Card variant="base-200" shadow="sm" icon="info" title="About">
             <div class="text-sm space-y-2 text-base-content/70">
                 <p>
-                    <span class="font-medium">版本：</span>
+                    <span class="font-medium">Version: </span>
                     <Badge variant="ghost">0.0.1</Badge>
                 </p>
                 <p>
-                    <span class="font-medium">技術棧：</span>
+                    <span class="font-medium">Tech Stack: </span>
                     SvelteKit + Tauri v2
                 </p>
             </div>

@@ -5,7 +5,6 @@
 
 	let { children } = $props();
 
-	let theme = $state("light");
 	let isSidebarExpanded = $state(true);
 	let sidebarWidth = $state(256);
 	let isResizing = $state(false);
@@ -33,25 +32,10 @@
 	}
 
 	onMount(() => {
-		// Check for saved theme or system preference
-		const savedTheme = localStorage.getItem("theme");
-		if (savedTheme) {
-			theme = savedTheme;
-		} else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-			theme = "dark";
-		}
-		document.documentElement.setAttribute("data-theme", theme);
-
-		// Restore sidebar state if we wanted to persist it, but user asked for default expanded.
-		// let savedSidebar = localStorage.getItem("sidebarExpanded");
-		// if(savedSidebar !== null) isSidebarExpanded = savedSidebar === "true";
+		// Apply saved theme (managed by /settings page), default to light
+		const savedTheme = localStorage.getItem("theme") || "light";
+		document.documentElement.setAttribute("data-theme", savedTheme);
 	});
-
-	function toggleTheme() {
-		theme = theme === "light" ? "dark" : "light";
-		document.documentElement.setAttribute("data-theme", theme);
-		localStorage.setItem("theme", theme);
-	}
 
 	function toggleSidebar() {
 		isSidebarExpanded = !isSidebarExpanded;
@@ -114,7 +98,7 @@
 			aria-label="close sidebar"
 			class="drawer-overlay"
 		></label>
-		<Sidebar {theme} {toggleTheme} {isSidebarExpanded} {toggleSidebar} width={sidebarWidth} />
+		<Sidebar {isSidebarExpanded} {toggleSidebar} width={sidebarWidth} />
 	</div>
 
 	<!-- Resize Handle (outside drawer-side to avoid overflow:hidden clipping) -->
